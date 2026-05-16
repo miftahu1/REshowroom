@@ -2452,3 +2452,85 @@ body.low-perf .hero-bike-shadow {
 .form-success {
     text-align: center;
 }
+
+/* ── ADMIN PANEL ── */
+.admin-container {
+  display: flex;
+  min-height: 100vh;
+}
+
+.admin-sidebar {
+  width: 250px;
+  background: var(--charcoal);
+  padding: 40px 20px;
+  border-right: 1px solid var(--border);
+}
+
+.admin-sidebar h2 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.admin-sidebar ul {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-sidebar ul a {
+  display: block;
+  padding: 12px 20px;
+  border-radius: var(--radius);
+  font-family: var(--font-heading);
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  transition: var(--transition);
+}
+
+.admin-sidebar ul a:hover {
+  background: var(--gunmetal);
+  color: var(--gold);
+}
+
+.admin-content {
+  flex: 1;
+  padding: 40px;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-header {
+  margin-bottom: 40px;
+}
+
+.admin-header h1 {
+  font-family: var(--font-heading);
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.login-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
+.login-form {
+  width: 100%;
+  max-width: 450px;
+  padding: 48px;
+}
+
+.google-login {
+  margin-top: 24px;
+  text-align: center;
+}
