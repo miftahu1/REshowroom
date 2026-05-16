@@ -159,7 +159,7 @@ const Dashboard = ({ bookings, messages, products }: { bookings: any[], messages
 );
 
 const ProductManagement = ({ products, onDataChange }: { products: any[], onDataChange: () => void }) => {
-  const getInitialFormState = () => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [{ value: '', label: '' }, { value: '', label: '' }, { value: '', label: '' }] });
+  const getInitialFormState = () => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
   const [formState, setFormState] = useState(getInitialFormState());
   const [isEditing, setIsEditing] = useState<string | null>(null);
 
@@ -174,9 +174,20 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
     setFormState(prevState => ({ ...prevState, specs: newSpecs }));
   };
 
+  const addSpecField = () => {
+    setFormState(prevState => ({ ...prevState, specs: [...prevState.specs, { value: '', label: '' }] }));
+  };
+
+  const removeSpecField = (index: number) => {
+    const newSpecs = [...formState.specs];
+    newSpecs.splice(index, 1);
+    setFormState(prevState => ({ ...prevState, specs: newSpecs }));
+  };
+
   const handleEditClick = (product: any) => {
     setIsEditing(product.id);
-    setFormState(product);
+    // Use initial state as a base to ensure all fields are present, especially `specs`
+    setFormState({ ...getInitialFormState(), ...product });
   };
 
   const handleCancelEdit = () => {
@@ -187,11 +198,13 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const productData = { ...formState, createdAt: serverTimestamp() };
       if (isEditing) {
         const productRef = doc(db, "products", isEditing);
+        // Don't update createdAt timestamp on edit
+        const { createdAt, ...productData } = formState;
         await updateDoc(productRef, productData);
       } else {
+        const productData = { ...formState, createdAt: serverTimestamp() };
         await addDoc(collection(db, "products"), productData);
       }
       handleCancelEdit();
@@ -246,13 +259,21 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
             <div className="form-group"><label>Starting Price</label><input name="price" type="text" value={formState.price} onChange={handleInputChange} placeholder="e.g., ₹1.93 L" required /></div>
             <div className="form-group"><label>Image URL</label><input name="imageUrl" type="text" value={formState.imageUrl} onChange={handleInputChange} placeholder="e.g., /assets/images/classic_350.png" required /></div>
             <div className="form-group"><label>Badge</label><input name="badge" type="text" value={formState.badge} onChange={handleInputChange} placeholder="e.g., Bestseller" /></div>
-            <p style={{color: 'var(--text-secondary)', marginTop: '12px', fontSize: '0.9rem'}}>Specifications:</p>
-            {formState.specs.map((spec, index) => (
-                <div key={index} className="form-grid" style={{gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'center'}}>
-                    <div className="form-group"><label>Spec {index + 1} Value</label><input type="text" value={spec.value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
-                    <div className="form-group"><label>Spec {index + 1} Label</label><input type="text" value={spec.label} onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
+            
+            <div style={{borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop:'10px'}}>
+                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+                    <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0}}>Specifications</p>
+                    <button type="button" onClick={addSpecField} className="btn-outline" style={{fontSize: '0.7rem', padding: '6px 10px'}}><i className="fa-solid fa-plus"></i> Add Spec</button>
                 </div>
-            ))}
+                {formState.specs.map((spec, index) => (
+                    <div key={index} style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px'}}>
+                        <div className="form-group" style={{margin:0}}><input type="text" value={spec.value} placeholder="Value (e.g. 20.2)" onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
+                        <div className="form-group" style={{margin:0}}><input type="text" value={spec.label} placeholder="Label (e.g. BHP)" onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
+                        <button type="button" onClick={() => removeSpecField(index)} className="btn-delete" style={{padding: '10px 12px'}}><i className="fa-solid fa-trash"></i></button>
+                    </div>
+                ))}
+            </div>
+
           </div>
           <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
              <button type="submit" className="btn-primary" style={{ width: '100%' }}>{isEditing ? 'Update Product' : 'Add Product'}</button>

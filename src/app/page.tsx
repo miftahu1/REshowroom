@@ -139,7 +139,6 @@ export default function Home() {
       }
 
       const heroBike = document.getElementById('hero-bike');
-      const hunterCard = document.getElementById('hunter-card');
       const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       if (!prefersReduced) {
@@ -163,9 +162,8 @@ export default function Home() {
         gsap.set(['.hero-badge', '.hero-headline', '.hero-sub', '.hero-desc', '.hero-cta', '.hero-stat', '.hero-scroll-indicator', heroBike], { opacity: 1, y: 0 });
       }
 
-      let floatAnim;
       if (heroBike && !prefersReduced) {
-        floatAnim = gsap.to(heroBike, {
+        gsap.to(heroBike, {
           y: -16,
           duration: 3,
           ease: 'sine.inOut',
@@ -175,64 +173,6 @@ export default function Home() {
         });
       }
 
-      if (heroBike && hunterCard && !prefersReduced) {
-        const getTargetPos = () => {
-          const cardImg = hunterCard.querySelector('.model-card-img');
-          if (!cardImg) return { x: 0, y: 0 };
-          const rect = cardImg.getBoundingClientRect();
-          return {
-            x: rect.left + rect.width / 2,
-            y: rect.top + rect.height / 2
-          };
-        };
-
-        const bikeScrollTL = gsap.timeline({
-          scrollTrigger: {
-            trigger: '#hero',
-            start: 'top top',
-            end: '+=100%',
-            pin: true,
-            scrub: 1.8,
-            anticipatePin: 1,
-            invalidateOnRefresh: true,
-            onEnter: () => { if (floatAnim) floatAnim.pause(); },
-            onLeaveBack: () => { if (floatAnim) floatAnim.resume(); }
-          }
-        });
-
-        bikeScrollTL
-          .to('.hero-content', { opacity: 0, y: -60, duration: 0.35, ease: 'power2.in' }, 0)
-          .to('.hero-stats', { opacity: 0, y: 30, duration: 0.3, ease: 'power2.in' }, 0.05)
-          .to('.hero-scroll-indicator', { opacity: 0, duration: 0.2 }, 0)
-          .to('.hero-bg-grad', { opacity: 0, duration: 0.6, ease: 'power1.out' }, 0)
-          .to(heroBike, {
-            scale: 0.22,
-            x: () => {
-              const target = getTargetPos();
-              const bikeRect = heroBike.getBoundingClientRect();
-              const bikeX = bikeRect.left + bikeRect.width / 2;
-              return target.x - bikeX;
-            },
-            y: () => {
-              const target = getTargetPos();
-              const bikeRect = heroBike.getBoundingClientRect();
-              const bikeY = bikeRect.top + bikeRect.height / 2;
-              return target.y - bikeY;
-            },
-            opacity: 0,
-            duration: 0.65,
-            ease: 'power3.inOut'
-          }, 0.3)
-          .to('#hunter-card', {
-            keyframes: [
-              { boxShadow: '0 0 0 0 rgba(201,168,76,0)', duration: 0 },
-              { boxShadow: '0 0 60px 10px rgba(201,168,76,0.55), 0 0 120px 20px rgba(201,168,76,0.2)', duration: 0.15 },
-              { boxShadow: '0 0 0 0 rgba(201,168,76,0)', duration: 0.3 },
-            ],
-            duration: 0.45,
-            ease: 'power2.out'
-          }, 0.88);
-      }
     }, main);
 
     return () => ctx.revert();
@@ -325,7 +265,7 @@ export default function Home() {
         <div className="models-grid">
             {products.map(product => (
                  <Link key={product.id} href={`/product/${product.id}`} passHref>
-                    <article className="model-card" role="article">
+                    <article className="model-card" role="article" id={product.name === 'Hunter 350' ? 'hunter-card' : undefined}>
                     <div className="model-card-img">
                         <img src={product.imageUrl} alt={`Royal Enfield ${product.name}`} loading="lazy" />
                         {product.badge && <span className="model-card-badge">{product.badge}</span>}
