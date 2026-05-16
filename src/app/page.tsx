@@ -1,9 +1,137 @@
 
+'use client';
+
+import { useEffect, useRef } from 'react';
 import './globals.css';
+import { gsap } from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Home() {
+  const main = useRef(null);
+
+  useEffect(() => {
+    const ctx = gsap.context(() => {
+      const progressBar = document.getElementById('scroll-progress');
+      if (progressBar) {
+        gsap.to(progressBar, {
+          scaleX: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: document.documentElement,
+            start: 'top top',
+            end: 'bottom bottom',
+            scrub: 0,
+            onUpdate: self => {
+              progressBar.style.transform = `scaleX(${self.progress})`;
+            }
+          }
+        });
+      }
+
+      const heroBike = document.getElementById('hero-bike');
+      const hunterCard = document.getElementById('hunter-card');
+      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      if (!prefersReduced) {
+        const heroLoadTL = gsap.timeline({ delay: 0.3 });
+        heroLoadTL
+          .fromTo('.hero-badge', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
+          .fromTo('.hero-headline', { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1.0, ease: 'power3.out' }, '-=0.4')
+          .fromTo('.hero-sub', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.5')
+          .fromTo('.hero-desc', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.4')
+          .fromTo('.hero-cta', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.35')
+          .fromTo('.hero-stat', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.12, ease: 'power2.out' }, '-=0.3')
+          .fromTo('.hero-scroll-indicator', { opacity: 0 }, { opacity: 1, duration: 0.5 }, '-=0.2');
+        if (heroBike) {
+          heroLoadTL.fromTo(heroBike,
+            { opacity: 0, x: 80, scale: 0.88 },
+            { opacity: 1, x: 0, scale: 1, duration: 1.2, ease: 'power3.out' }, '-=1.1'
+          );
+        }
+        heroLoadTL.play();
+      } else {
+        gsap.set(['.hero-badge', '.hero-headline', '.hero-sub', '.hero-desc', '.hero-cta', '.hero-stat', '.hero-scroll-indicator', heroBike], { opacity: 1, y: 0 });
+      }
+
+      let floatAnim;
+      if (heroBike && !prefersReduced) {
+        floatAnim = gsap.to(heroBike, {
+          y: -16,
+          duration: 3,
+          ease: 'sine.inOut',
+          yoyo: true,
+          repeat: -1,
+          delay: 1.5
+        });
+      }
+
+      if (heroBike && hunterCard && !prefersReduced) {
+        const getTargetPos = () => {
+          const cardImg = hunterCard.querySelector('.model-card-img');
+          if (!cardImg) return { x: 0, y: 0 };
+          const rect = cardImg.getBoundingClientRect();
+          return {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+          };
+        };
+
+        const bikeScrollTL = gsap.timeline({
+          scrollTrigger: {
+            trigger: '#hero',
+            start: 'top top',
+            end: '+=100%',
+            pin: true,
+            scrub: 1.8,
+            anticipatePin: 1,
+            invalidateOnRefresh: true,
+            onEnter: () => { if (floatAnim) floatAnim.pause(); },
+            onLeaveBack: () => { if (floatAnim) floatAnim.resume(); }
+          }
+        });
+
+        bikeScrollTL
+          .to('.hero-content', { opacity: 0, y: -60, duration: 0.35, ease: 'power2.in' }, 0)
+          .to('.hero-stats', { opacity: 0, y: 30, duration: 0.3, ease: 'power2.in' }, 0.05)
+          .to('.hero-scroll-indicator', { opacity: 0, duration: 0.2 }, 0)
+          .to('.hero-bg-grad', { opacity: 0, duration: 0.6, ease: 'power1.out' }, 0)
+          .to(heroBike, {
+            scale: 0.22,
+            x: () => {
+              const target = getTargetPos();
+              const bikeRect = heroBike.getBoundingClientRect();
+              const bikeX = bikeRect.left + bikeRect.width / 2;
+              return target.x - bikeX;
+            },
+            y: () => {
+              const target = getTargetPos();
+              const bikeRect = heroBike.getBoundingClientRect();
+              const bikeY = bikeRect.top + bikeRect.height / 2;
+              return target.y - bikeY;
+            },
+            opacity: 0,
+            duration: 0.65,
+            ease: 'power3.inOut'
+          }, 0.3)
+          .to('#hunter-card', {
+            keyframes: [
+              { boxShadow: '0 0 0 0 rgba(201,168,76,0)', duration: 0 },
+              { boxShadow: '0 0 60px 10px rgba(201,168,76,0.55), 0 0 120px 20px rgba(201,168,76,0.2)', duration: 0.15 },
+              { boxShadow: '0 0 0 0 rgba(201,168,76,0)', duration: 0.3 },
+            ],
+            duration: 0.45,
+            ease: 'power2.out'
+          }, 0.88);
+      }
+    }, main);
+
+    return () => ctx.revert();
+  }, []);
+
   return (
-    <>
+    <div ref={main}>
       <div id="scroll-progress" aria-hidden="true"></div>
       <nav id="navbar">
         <a href="#hero" className="nav-logo" aria-label="Royal Enfield Home">
@@ -680,6 +808,6 @@ export default function Home() {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   )
 }

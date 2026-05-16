@@ -1,17 +1,10 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { 
-  getAuth,
-  signInWithEmailAndPassword, 
-  GoogleAuthProvider, 
-  signInWithPopup,
-  onAuthStateChanged,
-  signOut,
-  User
-} from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 import '../globals.css';
 
 // Your web app's Firebase configuration
@@ -24,159 +17,113 @@ const firebaseConfig = {
   appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
 };
 
-const ADMIN_EMAIL = 'miftahulhussain43@gmail.com';
+// Initialize Firebase
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const auth = getAuth(app);
+const db = getFirestore(app);
 
 const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
-
-  // Initialize Firebase and Auth within the component and memoize it
-  const auth = useMemo(() => {
-    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    return getAuth(app);
-  }, []);
+  const [productName, setProductName] = useState('');
+  const [productDescription, setProductDescription] = useState('');
+  const [productPrice, setProductPrice] = useState('');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      console.log('Auth state changed:', currentUser);
       setUser(currentUser);
       setLoading(false);
     });
     return () => unsubscribe();
-  }, [auth]); // Dependency array ensures this runs once when auth is memoized
+  }, []);
 
-  useEffect(() => {
-    if (user) {
-      setIsAdmin(user.email === ADMIN_EMAIL);
-    } else {
-      setIsAdmin(false);
-    }
-  }, [user]);
-
-  const handleEmailLogin = async (e: React.FormEvent) => {
+  const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
+    if (!user) return;
 
-  const handleGoogleLogin = async () => {
-    setError('');
-    const provider = new GoogleAuthProvider();
     try {
-      await signInWithPopup(auth, provider);
-    } catch (err: any) {
-      setError(err.message);
-    }
-  };
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (err: any) {
-      setError(err.message);
+      await addDoc(collection(db, "products"), {
+        name: productName,
+        description: productDescription,
+        price: parseFloat(productPrice),
+        createdAt: serverTimestamp()
+      });
+      setProductName('');
+      setProductDescription('');
+      setProductPrice('');
+      alert('Product added successfully!');
+    } catch (error) {
+      console.error("Error adding document: ", error);
+      alert('Error adding product.');
     }
   };
 
   if (loading) {
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>
-            <h1>Loading...</h1>
-            <p>If this message persists, please check the browser console for errors.</p>
-        </div>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <h1>Loading...</h1>
+      </div>
     );
   }
 
-  if (user) {
-    if (isAdmin) {
-      // Logged in as Admin
-      return (
-        <div className="admin-container">
-          <div className="admin-sidebar">
-            <h2>Admin Panel</h2>
-            <ul>
-              <li><a href="#dashboard">Dashboard</a></li>
-              <li><a href="#users">Users</a></li>
-              <li><a href="#settings">Settings</a></li>
-              <li><button onClick={handleLogout} className="btn-outline" style={{width: '100%', marginTop: '20px'}}>Logout</button></li>
-            </ul>
-          </div>
-          <div className="admin-content">
-            <header className="admin-header">
-              <h1>Welcome, Admin</h1>
-              <p>Logged in as {user.email}</p>
-            </header>
-            <main>
-              <h2>Dashboard</h2>
-              <p>This is the main admin dashboard area. You can add your components here.</p>
-            </main>
-          </div>
-        </div>
-      );
-    } else {
-      // Logged in but not admin
-      return (
-        <div style={{ textAlign: 'center', padding: '50px', color: 'white' }}>
-          <h1>Access Denied</h1>
-          <p>You are logged in as {user.email}, which does not have admin privileges.</p>
-          <button onClick={handleLogout} className="btn-primary" style={{marginTop: '20px'}}>Logout</button>
-        </div>
-      );
-    }
+  if (!user) {
+    return (
+      <div style={{ textAlign: 'center', padding: '50px' }}>
+        <h1>Access Denied</h1>
+        <p>You must be logged in to view this page.</p>
+      </div>
+    );
   }
 
-  // Not logged in, show login form
   return (
-    <div className="admin-container" style={{ justifyContent: 'center' }}>
-      <main>
-        <div className="login-container">
-          <div className="login-form glass-card">
-            <h3 className="form-title">Admin Login</h3>
-            {error && <p style={{ color: 'var(--red)', marginBottom: '16px', textAlign: 'center' }}>{error.replace("Firebase: ", "")}</p>}
-            <form onSubmit={handleEmailLogin}>
-              <div className="form-group">
-                <label htmlFor="email">Email</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  name="email" 
-                  placeholder="admin@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)} 
-                  required 
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="password">Password</label>
-                <input 
-                  type="password" 
-                  id="password" 
-                  name="password" 
-                  placeholder="********" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              <button type="submit" className="form-submit">Login</button>
-            </form>
-            <div style={{ textAlign: 'center', margin: '16px 0', color: 'var(--text-muted)' }}>OR</div>
-            <div className="google-login">
-              <button onClick={handleGoogleLogin} className="btn-outline" style={{width: '100%', justifyContent: 'center'}}>
-                <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google icon" style={{width: '18px', marginRight: '10px'}}/>
-                Login with Google
-              </button>
+    <div className="admin-container">
+      <div className="admin-sidebar">
+        <h2>Admin Panel</h2>
+        <ul>
+          <li><a href="#products">Products</a></li>
+        </ul>
+      </div>
+      <div className="admin-content">
+        <header className="admin-header">
+          <h1>Welcome, Admin</h1>
+        </header>
+        <main>
+          <h2 id="products">Manage Products</h2>
+          <form onSubmit={handleAddProduct} className="product-form">
+            <h3>Add New Product</h3>
+            <div className="form-group">
+              <label htmlFor="productName">Product Name</label>
+              <input
+                type="text"
+                id="productName"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                required
+              />
             </div>
-          </div>
-        </div>
-      </main>
+            <div className="form-group">
+              <label htmlFor="productDescription">Product Description</label>
+              <textarea
+                id="productDescription"
+                value={productDescription}
+                onChange={(e) => setProductDescription(e.target.value)}
+                required
+              ></textarea>
+            </div>
+            <div className="form-group">
+              <label htmlFor="productPrice">Product Price</label>
+              <input
+                type="number"
+                id="productPrice"
+                value={productPrice}
+                onChange={(e) => setProductPrice(e.target.value)}
+                required
+              />
+            </div>
+            <button type="submit" className="btn-primary">Add Product</button>
+          </form>
+        </main>
+      </div>
     </div>
   );
 };
