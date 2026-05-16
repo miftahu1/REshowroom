@@ -37,6 +37,7 @@ export default function Home() {
     message: ''
   });
   const [formSuccess, setFormSuccess] = useState(false);
+  const [formError, setFormError] = useState('');
 
   const [loanAmount, setLoanAmount] = useState(150000);
   const [loanTenure, setLoanTenure] = useState(36);
@@ -58,6 +59,8 @@ export default function Home() {
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError('');
+    setFormSuccess(false);
     try {
       await addDoc(collection(db, "bookings"), {
         ...formData,
@@ -75,6 +78,7 @@ export default function Home() {
       });
     } catch (error) {
       console.error("Error adding document: ", error);
+      setFormError("There's something wrong booking the test drive, try again after some time");
     }
   };
 
@@ -629,6 +633,7 @@ export default function Home() {
                 <i className="fa-solid fa-paper-plane"></i> &nbsp; Submit Request
               </button>
             </form>
+            {formError && <p style={{ color: 'var(--red)', marginTop: '15px', textAlign: 'center' }}>{formError}</p>}
             <div className="form-success" aria-live="polite" style={{ display: formSuccess ? 'block' : 'none' }}>
               <i className="fa-solid fa-circle-check"></i>
               <h3>Request Received!</h3>
