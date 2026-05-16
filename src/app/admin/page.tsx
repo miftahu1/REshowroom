@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue } from "firebase/firestore";
 import '../globals.css';
 
 const firebaseConfig = {
@@ -20,6 +20,19 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+// Define a type for the product data to prevent build errors
+type Spec = { value: string; label: string };
+interface ProductData {
+    name: string;
+    engine: string;
+    price: string;
+    imageUrl: string;
+    badge: string;
+    specs: Spec[];
+    createdAt?: FieldValue;
+    id?: string;
+}
 
 const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -159,8 +172,8 @@ const Dashboard = ({ bookings, messages, products }: { bookings: any[], messages
 );
 
 const ProductManagement = ({ products, onDataChange }: { products: any[], onDataChange: () => void }) => {
-  const getInitialFormState = () => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
-  const [formState, setFormState] = useState(getInitialFormState());
+  const getInitialFormState = (): Omit<ProductData, 'id' | 'createdAt'> => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
+  const [formState, setFormState] = useState<ProductData>(getInitialFormState());
   const [isEditing, setIsEditing] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -184,9 +197,8 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
     setFormState(prevState => ({ ...prevState, specs: newSpecs }));
   };
 
-  const handleEditClick = (product: any) => {
-    setIsEditing(product.id);
-    // Use initial state as a base to ensure all fields are present, especially `specs`
+  const handleEditClick = (product: ProductData) => {
+    setIsEditing(product.id || null);
     setFormState({ ...getInitialFormState(), ...product });
   };
 
@@ -200,8 +212,7 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
     try {
       if (isEditing) {
         const productRef = doc(db, "products", isEditing);
-        // Don't update createdAt timestamp on edit
-        const { createdAt, ...productData } = formState;
+        const { createdAt, id, ...productData } = formState;
         await updateDoc(productRef, productData);
       } else {
         const productData = { ...formState, createdAt: serverTimestamp() };
@@ -237,13 +248,13 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
             </tr>
           </thead>
           <tbody>
-            {products.map(p => (
+            {products.map((p: ProductData) => (
               <tr key={p.id}>
                 <td>{p.name}</td>
                 <td>{p.price}</td>
                 <td style={{ display: 'flex', gap: '8px' }}>
                   <button onClick={() => handleEditClick(p)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i></button>
-                  <button onClick={() => handleDeleteProduct(p.id)} className="btn-delete"><i className="fa-solid fa-trash"></i></button>
+                  <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i></button>
                 </td>
               </tr>
             ))}
