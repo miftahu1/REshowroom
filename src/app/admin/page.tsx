@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 import '../globals.css';
 
 // Your web app's Firebase configuration
@@ -25,38 +25,33 @@ const db = getFirestore(app);
 const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [productName, setProductName] = useState('');
-  const [productDescription, setProductDescription] = useState('');
-  const [productPrice, setProductPrice] = useState('');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [bookings, setBookings] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        fetchData();
+      }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
-  const handleAddProduct = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
+  const fetchData = async () => {
+    // Fetch bookings
+    const bookingsQuery = query(collection(db, "bookings"), orderBy("date", "desc"), limit(50));
+    const bookingsSnapshot = await getDocs(bookingsQuery);
+    setBookings(bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    try {
-      await addDoc(collection(db, "products"), {
-        name: productName,
-        description: productDescription,
-        price: parseFloat(productPrice),
-        createdAt: serverTimestamp()
-      });
-      setProductName('');
-      setProductDescription('');
-      setProductPrice('');
-      alert('Product added successfully!');
-    } catch (error) {
-      console.error("Error adding document: ", error);
-      alert('Error adding product.');
-    }
+    // Fetch messages
+    const messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(50));
+    const messagesSnapshot = await getDocs(messagesQuery);
+    setMessages(messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
   };
+
 
   if (loading) {
     return (
@@ -80,52 +75,87 @@ const AdminPage = () => {
       <div className="admin-sidebar">
         <h2>Admin Panel</h2>
         <ul>
-          <li><a href="#products">Products</a></li>
+          <li><a href="#" onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'active' : ''}><i className="fa-solid fa-tachometer-alt"></i> Dashboard</a></li>
+          <li><a href="#" onClick={() => setActiveTab('bookings')} className={activeTab === 'bookings' ? 'active' : ''}><i className="fa-solid fa-calendar-check"></i> Bookings</a></li>
+          <li><a href="#" onClick={() => setActiveTab('messages')} className={activeTab === 'messages' ? 'active' : ''}><i className="fa-solid fa-envelope"></i> Messages</a></li>
         </ul>
       </div>
       <div className="admin-content">
         <header className="admin-header">
           <h1>Welcome, Admin</h1>
+          <p>Here's what's happening with your dealership.</p>
         </header>
         <main>
-          <h2 id="products">Manage Products</h2>
-          <form onSubmit={handleAddProduct} className="product-form">
-            <h3>Add New Product</h3>
-            <div className="form-group">
-              <label htmlFor="productName">Product Name</label>
-              <input
-                type="text"
-                id="productName"
-                value={productName}
-                onChange={(e) => setProductName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="form-group">
-              <label htmlFor="productDescription">Product Description</label>
-              <textarea
-                id="productDescription"
-                value={productDescription}
-                onChange={(e) => setProductDescription(e.target.value)}
-                required
-              ></textarea>
-            </div>
-            <div className="form-group">
-              <label htmlFor="productPrice">Product Price</label>
-              <input
-                type="number"
-                id="productPrice"
-                value={productPrice}
-                onChange={(e) => setProductPrice(e.target.value)}
-                required
-              />
-            </div>
-            <button type="submit" className="btn-primary">Add Product</button>
-          </form>
+          {activeTab === 'dashboard' && <Dashboard bookings={bookings} messages={messages} />}
+          {activeTab === 'bookings' && <BookingsManagement bookings={bookings} />}
+          {activeTab === 'messages' && <MessagesInbox messages={messages} />}
         </main>
       </div>
     </div>
   );
 };
+
+const Dashboard = ({ bookings, messages }: { bookings: any[], messages: any[] }) => (
+  <div className="dashboard">
+    <div className="dashboard-grid">
+      <div className="dashboard-card">
+        <h3>Total Bookings</h3>
+        <p className="dashboard-stat">{bookings.length}</p>
+      </div>
+      <div className="dashboard-card">
+        <h3>New Messages</h3>
+        <p className="dashboard-stat">{messages.length}</p>
+      </div>
+    </div>
+  </div>
+);
+
+const BookingsManagement = ({ bookings }: { bookings: any[] }) => (
+  <div className="bookings-management">
+    <h2>Test Ride Bookings</h2>
+    <div className="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Model</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody>
+          {bookings.map(booking => (
+            <tr key={booking.id}>
+              <td>{booking.name}</td>
+              <td>{booking.phone}</td>
+              <td>{booking.email}</td>
+              <td>{booking.model}</td>
+              <td>{booking.date}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+);
+
+const MessagesInbox = ({ messages }: { messages: any[] }) => (
+  <div className="messages-inbox">
+    <h2>Contact Messages</h2>
+    <div className="messages-list">
+      {messages.map(message => (
+        <div key={message.id} className="message-item">
+          <div className="message-header">
+            <p><strong>{message.name}</strong> ({message.email})</p>
+            <p>{new Date(message.timestamp?.toDate()).toLocaleString()}</p>
+          </div>
+          <p>{message.message}</p>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 
 export default AdminPage;

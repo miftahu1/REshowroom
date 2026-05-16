@@ -1,15 +1,108 @@
 
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './globals.css';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDiG0SkbQ0X2HfbqW7W8ItZTvg4lBkWk9A",
+  authDomain: "reshowroom-28210251-f6ef0.firebaseapp.com",
+  projectId: "reshowroom-28210251-f6ef0",
+  storageBucket: "reshowroom-28210251-f6ef0.appspot.com",
+  messagingSenderId: "405365661255",
+  appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
+};
+
+// Initialize Firebase
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
+
 export default function Home() {
   const main = useRef(null);
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    model: '',
+    date: '',
+    city: '',
+    message: ''
+  });
+  const [formSuccess, setFormSuccess] = useState(false);
+
+  const [loanAmount, setLoanAmount] = useState(150000);
+  const [loanTenure, setLoanTenure] = useState(36);
+  const [interestRate, setInterestRate] = useState(9.0);
+  const [emi, setEmi] = useState(0);
+  const [totalAmount, setTotalAmount] = useState(0);
+  const [totalInterest, setTotalInterest] = useState(0);
+
+  const toggleMenu = () => {
+    setMenuOpen(!isMenuOpen);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      await addDoc(collection(db, "bookings"), {
+        ...formData,
+        timestamp: serverTimestamp()
+      });
+      setFormSuccess(true);
+      setFormData({
+        name: '',
+        phone: '',
+        email: '',
+        model: '',
+        date: '',
+        city: '',
+        message: ''
+      });
+    } catch (error) {
+      console.error("Error adding document: ", error);
+    }
+  };
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    const calculateEmi = () => {
+      const p = loanAmount;
+      const r = interestRate / 12 / 100;
+      const n = loanTenure;
+      if (p > 0 && r > 0 && n > 0) {
+        const emiValue = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+        const totalAmountValue = emiValue * n;
+        const totalInterestValue = totalAmountValue - p;
+        setEmi(Math.round(emiValue));
+        setTotalAmount(Math.round(totalAmountValue));
+        setTotalInterest(Math.round(totalInterestValue));
+      }
+    };
+    calculateEmi();
+  }, [loanAmount, loanTenure, interestRate]);
+
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -146,17 +239,17 @@ export default function Home() {
           <li><a href="#contact">Contact</a></li>
         </ul>
         <a href="#test-ride" className="nav-cta">Book Test Ride</a>
-        <button className="nav-hamburger" aria-label="Toggle menu" id="hamburger">
+        <button className={`nav-hamburger ${isMenuOpen ? 'open' : ''}`} aria-label="Toggle menu" id="hamburger" onClick={toggleMenu}>
           <span></span><span></span><span></span>
         </button>
       </nav>
-      <div className="mobile-menu" id="mobile-menu">
-        <a href="#models">Models</a>
-        <a href="#about">About</a>
-        <a href="#services">Services</a>
-        <a href="#test-ride">Test Ride</a>
-        <a href="#emi">Finance</a>
-        <a href="#contact">Contact</a>
+      <div className={`mobile-menu ${isMenuOpen ? 'open' : ''}`} id="mobile-menu">
+        <a href="#models" onClick={toggleMenu}>Models</a>
+        <a href="#about" onClick={toggleMenu}>About</a>
+        <a href="#services" onClick={toggleMenu}>Services</a>
+        <a href="#test-ride" onClick={toggleMenu}>Test Ride</a>
+        <a href="#emi" onClick={toggleMenu}>Finance</a>
+        <a href="#contact" onClick={toggleMenu}>Contact</a>
       </div>
       <section id="hero" aria-label="Hero">
         <canvas id="hero-canvas" aria-hidden="true"></canvas>
@@ -493,24 +586,24 @@ export default function Home() {
           </div>
           <div className="test-ride-form glass-card">
             <h3 className="form-title">Reserve Your Slot</h3>
-            <form id="booking-form" noValidate>
+            <form id="booking-form" noValidate onSubmit={handleBookingSubmit}>
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="f-name">Full Name</label>
-                  <input type="text" id="f-name" name="name" placeholder="Rajiv Mehta" required />
+                  <input type="text" id="f-name" name="name" placeholder="Rajiv Mehta" required value={formData.name} onChange={handleInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-phone">Phone Number</label>
-                  <input type="tel" id="f-phone" name="phone" placeholder="+91 98765 43210" required />
+                  <input type="tel" id="f-phone" name="phone" placeholder="+91 98765 43210" required value={formData.phone} onChange={handleInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-email">Email Address</label>
-                  <input type="email" id="f-email" name="email" placeholder="rajiv@mail.com" />
+                  <input type="email" id="f-email" name="email" placeholder="rajiv@mail.com" value={formData.email} onChange={handleInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-model">Preferred Model</label>
-                  <select id="f-model" name="model" required>
-                    <option value="" disabled selected>Select a model</option>
+                  <select id="f-model" name="model" required value={formData.model} onChange={handleInputChange}>
+                    <option value="" disabled>Select a model</option>
                     <option>Classic 350</option>
                     <option>Himalayan</option>
                     <option>Meteor 350</option>
@@ -521,22 +614,22 @@ export default function Home() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-date">Preferred Date</label>
-                  <input type="date" id="f-date" name="date" />
+                  <input type="date" id="f-date" name="date" value={formData.date} onChange={handleInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-city">Your City</label>
-                  <input type="text" id="f-city" name="city" placeholder="Mumbai" />
+                  <input type="text" id="f-city" name="city" placeholder="Mumbai" value={formData.city} onChange={handleInputChange} />
                 </div>
                 <div className="form-group full">
                   <label htmlFor="f-msg">Message (Optional)</label>
-                  <textarea id="f-msg" name="message" placeholder="Any specific queries or requirements..."></textarea>
+                  <textarea id="f-msg" name="message" placeholder="Any specific queries or requirements..." value={formData.message} onChange={handleInputChange}></textarea>
                 </div>
               </div>
               <button type="submit" className="form-submit">
                 <i className="fa-solid fa-paper-plane"></i> &nbsp; Submit Request
               </button>
             </form>
-            <div className="form-success" aria-live="polite">
+            <div className="form-success" aria-live="polite" style={{ display: formSuccess ? 'block' : 'none' }}>
               <i className="fa-solid fa-circle-check"></i>
               <h3>Request Received!</h3>
               <p>Our team will contact you within 24 hours to confirm your test ride slot. Thank you for choosing
@@ -558,36 +651,36 @@ export default function Home() {
               <div className="emi-slider-group">
                 <div className="emi-slider-header">
                   <span className="emi-slider-label">Loan Amount</span>
-                  <span className="emi-slider-value" id="loan-display">₹1.5L</span>
+                  <span className="emi-slider-value" id="loan-display">₹{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(loanAmount)}</span>
                 </div>
-                <input type="range" id="loan-amount" min="50000" max="700000" step="5000" value="150000" aria-label="Loan Amount" />
+                <input type="range" id="loan-amount" min="50000" max="700000" step="5000" value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value))} aria-label="Loan Amount" />
               </div>
               <div className="emi-slider-group">
                 <div className="emi-slider-header">
                   <span className="emi-slider-label">Loan Tenure</span>
-                  <span className="emi-slider-value" id="tenure-display">36 mo</span>
+                  <span className="emi-slider-value" id="tenure-display">{loanTenure} mo</span>
                 </div>
-                <input type="range" id="loan-tenure" min="12" max="60" step="6" value="36" aria-label="Loan Tenure" />
+                <input type="range" id="loan-tenure" min="12" max="60" step="6" value={loanTenure} onChange={e => setLoanTenure(Number(e.target.value))} aria-label="Loan Tenure" />
               </div>
               <div className="emi-slider-group">
                 <div className="emi-slider-header">
                   <span className="emi-slider-label">Interest Rate (p.a.)</span>
-                  <span className="emi-slider-value" id="rate-display">9.0%</span>
+                  <span className="emi-slider-value" id="rate-display">{interestRate.toFixed(1)}%</span>
                 </div>
-                <input type="range" id="loan-rate" min="8.5" max="16" step="0.1" value="9.0" aria-label="Interest Rate" />
+                <input type="range" id="loan-rate" min="8.5" max="16" step="0.1" value={interestRate} onChange={e => setInterestRate(Number(e.target.value))} aria-label="Interest Rate" />
               </div>
             </div>
             <div className="emi-result">
               <div className="emi-result-label">Monthly EMI</div>
-              <div className="emi-result-amount" id="emi-display">₹4,770</div>
+              <div className="emi-result-amount" id="emi-display">₹{new Intl.NumberFormat('en-IN').format(emi)}</div>
               <div className="emi-result-sub">Estimated — subject to credit approval</div>
               <div className="emi-breakdown">
                 <div className="emi-break-item">
-                  <div className="emi-break-val" id="total-display">₹171K</div>
+                  <div className="emi-break-val" id="total-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalAmount / 1000)}K</div>
                   <div className="emi-break-label">Total Amount</div>
                 </div>
                 <div className="emi-break-item">
-                  <div className="emi-break-val" id="interest-display">₹21K</div>
+                  <div className="emi-break-val" id="interest-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalInterest / 1000)}K</div>
                   <div className="emi-break-label">Interest Payable</div>
                 </div>
                 <div className="emi-break-item">

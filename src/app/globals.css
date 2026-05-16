@@ -224,6 +224,7 @@ ul {
 .btn-primary {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     padding: 14px 36px;
     background: linear-gradient(135deg, var(--gold), var(--gold-light));
@@ -261,6 +262,7 @@ ul {
 .btn-outline {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     padding: 13px 36px;
     background: transparent;
@@ -386,6 +388,7 @@ ul {
     gap: 5px;
     background: none;
     padding: 4px;
+    z-index: 1001;
 }
 
 .nav-hamburger span {
@@ -410,7 +413,7 @@ ul {
 }
 
 .mobile-menu {
-    display: none;
+    display: flex;
     position: fixed;
     top: 0;
     left: 0;
@@ -418,20 +421,22 @@ ul {
     bottom: 0;
     background: rgba(8, 8, 8, 0.97);
     backdrop-filter: blur(20px);
-    z-index: 999;
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 1000;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: 36px;
     opacity: 0;
+    transform: translateY(-100%);
     pointer-events: none;
-    transition: opacity 0.4s ease;
+    transition: transform 0.5s cubic-bezier(0.76, 0, 0.24, 1), opacity 0.5s ease;
 }
 
 .mobile-menu.open {
     opacity: 1;
+    transform: translateY(0);
     pointer-events: all;
-    display: flex;
 }
 
 .mobile-menu a {
@@ -440,7 +445,22 @@ ul {
     letter-spacing: 0.12em;
     color: var(--text-primary);
     transition: color 0.3s;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.4s ease 0.3s, transform 0.4s ease 0.3s, color 0.3s;
 }
+
+.mobile-menu.open a {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.mobile-menu.open a:nth-child(1) { transition-delay: 0.3s; }
+.mobile-menu.open a:nth-child(2) { transition-delay: 0.35s; }
+.mobile-menu.open a:nth-child(3) { transition-delay: 0.4s; }
+.mobile-menu.open a:nth-child(4) { transition-delay: 0.45s; }
+.mobile-menu.open a:nth-child(5) { transition-delay: 0.5s; }
+.mobile-menu.open a:nth-child(6) { transition-delay: 0.55s; }
 
 .mobile-menu a:hover {
     color: var(--gold);
@@ -455,6 +475,7 @@ ul {
     display: grid;
     grid-template-columns: 1fr 1fr;
     align-items: center;
+    overflow: hidden;
 }
 
 #hero-canvas {
@@ -1974,6 +1995,13 @@ footer {
     footer {
         padding: 60px 40px 30px;
     }
+
+    .hero-bike-wrap {
+        width: 70%;
+        right: -8%;
+        opacity: 0.6;
+        z-index: 2;
+    }
 }
 
 @media (max-width: 900px) {
@@ -1987,12 +2015,67 @@ footer {
         display: flex;
     }
 
+    #hero {
+        grid-template-columns: 1fr;
+        align-content: center;
+        text-align: center;
+    }
+
+    .hero-content {
+        max-width: 100%;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        margin-top: -10vh;
+        z-index: 10;
+        position: relative;
+        transform: translateY(-50%);
+    }
+
+    .hero-badge {
+        margin: 0 auto 24px;
+    }
+
+    .hero-bike-wrap {
+        width: 120%;
+        right: -10%;
+        top: auto;
+        bottom: -5%;
+        transform: none;
+        opacity: 0.85;
+        z-index: 2;
+    }
+
+    #hero-bike {
+        transform: none;
+        filter: drop-shadow(0 -5px 25px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 15px rgba(201, 168, 76, 0.2));
+    }
+
+    .hero-desc {
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 480px;
+    }
+
+    .hero-cta {
+        justify-content: center;
+    }
+
+    .hero-headline {
+        font-size: clamp(2.8rem, 10vw, 3.5rem);
+    }
+
+    .hero-headline .gold-text {
+        font-size: clamp(3rem, 11vw, 3.8rem);
+    }
+
     .about-grid,
     .services-layout,
     .test-ride-layout,
     .contact-layout {
         grid-template-columns: 1fr;
-        gap: 48px;
+        gap: 60px;
     }
 
     .about-image-main {
@@ -2011,11 +2094,63 @@ footer {
         grid-template-columns: 1fr 1fr;
         gap: 40px;
     }
+
+    .about-content,
+    .services-layout > div:not(.services-image),
+    .test-ride-info {
+        text-align: center;
+    }
+
+    .about-content .section-tag,
+    .services-layout > div > .section-tag,
+    .test-ride-info .section-tag {
+        justify-content: center;
+    }
+
+    .about-content .section-tag::before,
+    .services-layout > div > .section-tag::before,
+    .test-ride-info .section-tag::before {
+        display: none;
+    }
+
+    .about-content .section-tag::after,
+    .services-layout > div > .section-tag::after,
+    .test-ride-info .section-tag::after {
+        content: '';
+        display: inline-block;
+        width: 30px;
+        height: 1px;
+        background: var(--gold);
+    }
+
+    .test-ride-perks {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+        margin: 0 auto 36px;
+    }
+    
+    .contact-map {
+        height: 350px;
+    }
 }
 
 @media (max-width: 640px) {
+    body {
+        line-height: 1.7;
+    }
+
     #navbar {
         padding: 16px 24px;
+    }
+
+    #navbar.scrolled {
+        padding: 12px 24px;
+    }
+    
+    .section-title {
+        font-size: 2rem;
     }
 
     .hero-content {
@@ -2024,13 +2159,13 @@ footer {
 
     .hero-cta {
         flex-direction: column;
-        gap: 12px;
-    }
-
-    .btn-primary,
-    .btn-outline {
+        gap: 16px;
         width: 100%;
-        justify-content: center;
+    }
+    
+    .btn-primary, .btn-outline {
+        padding: 16px 24px;
+        font-size: 1rem;
     }
 
     #models,
@@ -2043,8 +2178,9 @@ footer {
         padding: 80px 24px;
     }
 
-    .models-grid {
+    .models-grid, .services-grid {
         grid-template-columns: 1fr;
+        gap: 24px;
     }
 
     .form-grid {
@@ -2053,19 +2189,45 @@ footer {
 
     .about-stats {
         grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+
+    .about-image-main {
+        height: 320px;
+    }
+
+    .about-image-accent {
+        width: 150px;
+        height: 150px;
+        right: -15px;
+        bottom: -15px;
+    }
+    
+    .about-image-accent .accent-num {
+        font-size: 2.5rem;
     }
 
     .emi-breakdown {
         grid-template-columns: 1fr;
+        gap: 1px;
     }
 
     .testimonial-card {
-        flex: 0 0 300px;
-        min-width: 0;
+        flex: 0 0 calc(100% - 24px);
     }
 
-    .services-grid {
-        grid-template-columns: 1fr;
+    .testimonials-track-wrap {
+        overflow: visible;
+    }
+
+    .testimonials-track {
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+        padding-bottom: 20px; /* For scrollbar visibility */
+    }
+
+    .testimonial-card {
+        scroll-snap-align: start;
     }
 
     footer {
@@ -2074,13 +2236,37 @@ footer {
 
     footer .footer-main {
         grid-template-columns: 1fr;
-        gap: 32px;
+        gap: 40px;
     }
 
     .footer-bottom {
-        flex-direction: column;
-        gap: 16px;
+        flex-direction: column-reverse;
+        gap: 24px;
         text-align: center;
+    }
+    
+    input[type="text"],
+    input[type="tel"],
+    input[type="email"],
+    input[type="date"],
+    select,
+    textarea {
+        font-size: 16px; /* Prevents iOS auto-zoom */
+    }
+
+    input[type='range']::-webkit-slider-thumb {
+        width: 24px;
+        height: 24px;
+        margin-top: -10px;
+    }
+
+    input[type='range']::-moz-range-thumb {
+        width: 24px;
+        height: 24px;
+    }
+    
+    .test-ride-form, .emi-calculator {
+        padding: 32px 24px;
     }
 }
 
@@ -2102,109 +2288,6 @@ footer {
     z-index: 9999;
     pointer-events: none;
     box-shadow: 0 0 12px var(--gold-glow);
-}
-
-/* ── Hero Section — Cinematic Split Layout ── */
-#hero {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
-}
-
-/* Dark radial gradient bg — fades out on scroll via GSAP */
-.hero-bg-grad {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    background:
-        radial-gradient(ellipse 80% 100% at 55% 50%, rgba(20, 16, 8, 0.5) 0%, var(--black) 70%),
-        linear-gradient(180deg, var(--black) 0%, rgba(8, 8, 8, 0.55) 40%, var(--black) 100%);
-    pointer-events: none;
-}
-
-/* Spotlight — warm gold light from right side */
-.hero-spotlight {
-    position: absolute;
-    top: 5%;
-    right: 0;
-    width: 65%;
-    height: 90%;
-    z-index: 2;
-    background: radial-gradient(ellipse 55% 65% at 75% 50%,
-            rgba(201, 168, 76, 0.13) 0%,
-            rgba(201, 168, 76, 0.04) 45%,
-            transparent 72%);
-    pointer-events: none;
-    animation: spotlight-pulse 5s ease-in-out infinite;
-}
-
-@keyframes spotlight-pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.6;
-    }
-}
-
-/* ── Hero Bike — foreground cinematic element ── */
-.hero-bike-wrap {
-    position: absolute;
-    right: -2%;
-    top: 50%;
-    transform: translateY(-52%);
-    width: 58%;
-    z-index: 10;
-    pointer-events: none;
-}
-
-#hero-bike {
-    display: block;
-    width: 100%;
-    max-width: 880px;
-    height: auto;
-    object-fit: contain;
-    object-position: center;
-
-    /* 3D angle — slightly rotated for cinematic depth */
-    transform: perspective(1200px) rotateY(-14deg) rotateX(3deg);
-    transform-origin: center center;
-    transform-style: preserve-3d;
-
-    /* GSAP drives opacity on load; start hidden */
-    opacity: 0;
-
-    filter:
-        drop-shadow(-25px 20px 45px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 55px rgba(201, 168, 76, 0.18));
-
-    will-change: transform, opacity;
-}
-
-/* Ground shadow beneath bike */
-.hero-bike-shadow {
-    position: absolute;
-    bottom: -6%;
-    left: 50%;
-    transform: translateX(-45%);
-    width: 70%;
-    height: 36px;
-    background: radial-gradient(ellipse 80% 100% at 50% 100%,
-            rgba(0, 0, 0, 0.7) 0%, transparent 80%);
-    filter: blur(14px);
-    pointer-events: none;
-}
-
-/* ── Hero Content — left column ── */
-.hero-content {
-    position: relative;
-    z-index: 5;
-    padding: 0 60px;
-    max-width: 750px;
-    top: 50%;
-    transform: translateY(-50%);
 }
 
 /* ── Model Card — enhanced hover glow ── */
@@ -2231,27 +2314,24 @@ footer {
     border-color: var(--gold);
 }
 
-/* ── Low performance device overrides ── */
-body.low-perf #hero-bike {
-    transform: none;
-    filter: none;
-}
-
-body.low-perf .hero-spotlight,
-body.low-perf .hero-bike-shadow {
-    display: none;
-}
-
 /* ── Reduced motion override ── */
 @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+
     #hero-bike {
         opacity: 1 !important;
         transform: none !important;
-        animation: none !important;
     }
 
     .hero-spotlight {
-        animation: none !important;
+        display: none;
     }
 
     #scroll-progress {
@@ -2271,186 +2351,6 @@ body.low-perf .hero-bike-shadow {
     }
 }
 
-/* ── Responsive adjustments for cinematic hero bike ── */
-@media (max-width: 1100px) {
-    .hero-bike-wrap {
-        width: 70%;
-        right: -8%;
-        opacity: 0.6;
-        z-index: 2;
-    }
-}
-
-@media (max-width: 768px) {
-    #hero {
-        grid-template-columns: 1fr;
-        align-content: center;
-    }
-
-    .hero-bike-wrap {
-        width: 120%;
-        right: -10%;
-        top: auto;
-        bottom: -5%;
-        transform: none;
-        opacity: 0.85;
-        z-index: 2;
-    }
-
-    #hero-bike {
-        transform: none;
-        filter: drop-shadow(0 -5px 25px rgba(0, 0, 0, 0.9)) drop-shadow(0 0 15px rgba(201, 168, 76, 0.2));
-    }
-
-    .hero-content {
-        padding: 0 24px;
-        max-width: 100%;
-        text-align: center;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-top: -10vh;
-        z-index: 10;
-        position: relative;
-    }
-
-    .hero-badge {
-        margin: 0 auto 24px;
-    }
-
-    .hero-desc {
-        text-align: center;
-        margin-left: auto;
-        margin-right: auto;
-    }
-
-    .hero-cta {
-        justify-content: center;
-        width: 100%;
-    }
-
-    .hero-headline {
-        font-size: clamp(2.8rem, 10vw, 3.5rem);
-    }
-
-    .hero-headline .gold-text {
-        font-size: clamp(3rem, 11vw, 3.8rem);
-    }
-
-    /* Layout Enhancements */
-    .section-header {
-        margin-bottom: 40px;
-    }
-
-    .section-title {
-        font-size: 2.2rem;
-    }
-
-    .about-content,
-    .services-layout>div:not(.services-image),
-    .test-ride-info {
-        text-align: center;
-    }
-
-    .about-content .section-tag,
-    .services-layout>div>.section-tag,
-    .test-ride-info .section-tag {
-        justify-content: center;
-    }
-
-    .about-content .section-tag::before,
-    .services-layout>div>.section-tag::before,
-    .test-ride-info .section-tag::before {
-        display: none;
-    }
-
-    .about-content .section-tag::after,
-    .services-layout>div>.section-tag::after,
-    .test-ride-info .section-tag::after {
-        content: '';
-        display: inline-block;
-        width: 30px;
-        height: 1px;
-        background: var(--gold);
-    }
-
-    .test-ride-perks {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: flex-start;
-        text-align: left;
-        margin: 0 auto;
-    }
-}
-
-/* ── Section overflow guard for parallax children ── */
-#about,
-#services,
-#test-ride,
-#emi,
-#testimonials,
-#contact {
-    overflow: hidden;
-}
-
-/* Ensure hero bike is above canvas */
-.hero-bike-wrap {
-    z-index: 10;
-}
-
-/* Fix about-frame positioning */
-.about-frame {
-    position: absolute;
-    top: -15px;
-    left: -15px;
-    right: 15px;
-    bottom: 15px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    pointer-events: none;
-}
-
-/* Enhanced Mobile UX Details */
-@media (max-width: 640px) {
-    .about-image-main {
-        height: 320px;
-    }
-
-    .form-group.full textarea {
-        min-height: 120px;
-    }
-
-    .model-card-img {
-        height: 220px;
-    }
-
-    /* Force 16px to prevent iOS auto-zoom on forms */
-    input[type="text"],
-    input[type="tel"],
-    input[type="email"],
-    input[type="date"],
-    select,
-    textarea {
-        font-size: 16px;
-    }
-
-    /* Larger slider thumb for better mobile UX */
-    input[type="range"]::-webkit-slider-thumb {
-        width: 24px;
-        height: 24px;
-        margin-top: -10px;
-    }
-
-    input[type="range"]::-moz-range-thumb {
-        width: 24px;
-        height: 24px;
-    }
-}
-
-/* Ensure form success is centered */
-.form-success {
-    text-align: center;
-}
 
 /* ── ADMIN PANEL ── */
 .admin-container {
