@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch } from "firebase/firestore";
 import '../globals.css';
 
 const firebaseConfig = {
@@ -20,6 +20,15 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
+
+const seedData = [
+    { name: 'Hunter 350', engine: '349cc · Single-Cylinder · J-Series', price: '₹1.50 L', imageUrl: '/assets/images/hunter350.png', badge: 'Urban', specs: [{value: '20.2', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '181', label: 'KG Kerb'}] },
+    { name: 'Classic 350', engine: '349cc · Single-Cylinder · Air-Cooled', price: '₹1.93 L', imageUrl: '/assets/images/classic_350.png', badge: 'Bestseller', specs: [{value: '20.2', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '195', label: 'KG Kerb'}] },
+    { name: 'Himalayan', engine: '411cc · Single-Cylinder · Fuel Injected', price: '₹2.69 L', imageUrl: '/assets/images/himalayan.png', badge: 'Adventure', specs: [{value: '24.3', label: 'BHP'}, {value: '32', label: 'Nm Torque'}, {value: '199', label: 'KG Kerb'}] },
+    { name: 'Meteor 350', engine: '349cc · Single-Cylinder · SOHC', price: '₹2.09 L', imageUrl: '/assets/images/meteor_350.png', badge: 'Cruiser', specs: [{value: '20.2', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '191', label: 'KG Kerb'}] },
+    { name: 'Bullet 350', engine: '349cc · Single-Cylinder · J-Series', price: '₹1.74 L', imageUrl: '/assets/images/bullet_350.png', badge: 'Iconic', specs: [{value: '20.4', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '195', label: 'KG Kerb'}] },
+    { name: 'Super Meteor 650', engine: '648cc · Parallel Twin · Fuel Injected', price: '₹3.49 L', imageUrl: '/assets/images/super_meteor_650.png', badge: '650 Twin', specs: [{value: '47', label: 'BHP'}, {value: '52.3', label: 'Nm Torque'}, {value: '241', label: 'KG Kerb'}] },
+];
 
 const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -57,6 +66,25 @@ const AdminPage = () => {
     setLoading(false);
   };
 
+  const handleSeedDatabase = async () => {
+    if (products.length > 0 && !window.confirm("Products collection already has data. Do you want to overwrite it?")) {
+        return;
+    }
+    const batch = writeBatch(db);
+    seedData.forEach(product => {
+        const docRef = doc(collection(db, "products"));
+        batch.set(docRef, { ...product, createdAt: serverTimestamp() });
+    });
+    try {
+        await batch.commit();
+        fetchData();
+        alert('Database seeded successfully!');
+    } catch (e) {
+        console.error("Error seeding database: ", e);
+        alert('Error seeding database. Check console for details.');
+    }
+  };
+
   const handleSignIn = () => {
     signInWithPopup(auth, provider).catch(error => console.error(error));
   };
@@ -83,6 +111,9 @@ const AdminPage = () => {
       <div className="admin-content">
         <AdminHeader tab={activeTab} />
         <main>
+          <div style={{marginBottom: '24px'}}>
+            <button onClick={handleSeedDatabase} className="btn-outline">Seed Database</button>
+          </div>
           {loading ? <p>Loading data...</p> : (
             <>
               {activeTab === 'dashboard' && <Dashboard bookings={bookings} messages={messages} products={products} />}
