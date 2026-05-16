@@ -1,9 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
-import { auth } from '../firebase';
+import { useState, useEffect, useMemo } from 'react';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { 
+  getAuth,
   signInWithEmailAndPassword, 
   GoogleAuthProvider, 
   signInWithPopup,
@@ -13,35 +14,48 @@ import {
 } from 'firebase/auth';
 import '../globals.css';
 
+// Your web app's Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyDiG0SkbQ0X2HfbqW7W8ItZTvg4lBkWk9A",
+  authDomain: "reshowroom-28210251-f6ef0.firebaseapp.com",
+  projectId: "reshowroom-28210251-f6ef0",
+  storageBucket: "reshowroom-28210251-f6ef0.appspot.com",
+  messagingSenderId: "405365661255",
+  appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
+};
+
 const ADMIN_EMAIL = 'miftahulhussain43@gmail.com';
 
 const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+
+  // Initialize Firebase and Auth within the component and memoize it
+  const auth = useMemo(() => {
+    const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+    return getAuth(app);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setLoading(true);
-      if (currentUser) {
-        setUser(currentUser);
-        if (currentUser.email === ADMIN_EMAIL) {
-          setIsAdmin(true);
-        } else {
-          setIsAdmin(false);
-        }
-      } else {
-        setUser(null);
-        setIsAdmin(false);
-      }
+      console.log('Auth state changed:', currentUser);
+      setUser(currentUser);
       setLoading(false);
     });
-
     return () => unsubscribe();
-  }, []);
+  }, [auth]); // Dependency array ensures this runs once when auth is memoized
+
+  useEffect(() => {
+    if (user) {
+      setIsAdmin(user.email === ADMIN_EMAIL);
+    } else {
+      setIsAdmin(false);
+    }
+  }, [user]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,8 +87,9 @@ const AdminPage = () => {
 
   if (loading) {
     return (
-        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
-            <p>Loading...</p>
+        <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', height: '100vh', color: 'white' }}>
+            <h1>Loading...</h1>
+            <p>If this message persists, please check the browser console for errors.</p>
         </div>
     );
   }
@@ -108,7 +123,7 @@ const AdminPage = () => {
     } else {
       // Logged in but not admin
       return (
-        <div style={{ textAlign: 'center', padding: '50px' }}>
+        <div style={{ textAlign: 'center', padding: '50px', color: 'white' }}>
           <h1>Access Denied</h1>
           <p>You are logged in as {user.email}, which does not have admin privileges.</p>
           <button onClick={handleLogout} className="btn-primary" style={{marginTop: '20px'}}>Logout</button>
@@ -124,7 +139,7 @@ const AdminPage = () => {
         <div className="login-container">
           <div className="login-form glass-card">
             <h3 className="form-title">Admin Login</h3>
-            {error && <p style={{ color: 'var(--red)', marginBottom: '16px', textAlign: 'center' }}>{error}</p>}
+            {error && <p style={{ color: 'var(--red)', marginBottom: '16px', textAlign: 'center' }}>{error.replace("Firebase: ", "")}</p>}
             <form onSubmit={handleEmailLogin}>
               <div className="form-group">
                 <label htmlFor="email">Email</label>
