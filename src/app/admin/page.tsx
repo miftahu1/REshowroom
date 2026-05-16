@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp, writeBatch } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import '../globals.css';
 
 const firebaseConfig = {
@@ -20,15 +20,6 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
-
-const seedData = [
-    { name: 'Hunter 350', engine: '349cc · Single-Cylinder · J-Series', price: '₹1.50 L', imageUrl: '/assets/images/hunter350.png', badge: 'Urban', specs: [{value: '20.2', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '181', label: 'KG Kerb'}] },
-    { name: 'Classic 350', engine: '349cc · Single-Cylinder · Air-Cooled', price: '₹1.93 L', imageUrl: '/assets/images/classic_350.png', badge: 'Bestseller', specs: [{value: '20.2', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '195', label: 'KG Kerb'}] },
-    { name: 'Himalayan', engine: '411cc · Single-Cylinder · Fuel Injected', price: '₹2.69 L', imageUrl: '/assets/images/himalayan.png', badge: 'Adventure', specs: [{value: '24.3', label: 'BHP'}, {value: '32', label: 'Nm Torque'}, {value: '199', label: 'KG Kerb'}] },
-    { name: 'Meteor 350', engine: '349cc · Single-Cylinder · SOHC', price: '₹2.09 L', imageUrl: '/assets/images/meteor_350.png', badge: 'Cruiser', specs: [{value: '20.2', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '191', label: 'KG Kerb'}] },
-    { name: 'Bullet 350', engine: '349cc · Single-Cylinder · J-Series', price: '₹1.74 L', imageUrl: '/assets/images/bullet_350.png', badge: 'Iconic', specs: [{value: '20.4', label: 'BHP'}, {value: '27', label: 'Nm Torque'}, {value: '195', label: 'KG Kerb'}] },
-    { name: 'Super Meteor 650', engine: '648cc · Parallel Twin · Fuel Injected', price: '₹3.49 L', imageUrl: '/assets/images/super_meteor_650.png', badge: '650 Twin', specs: [{value: '47', label: 'BHP'}, {value: '52.3', label: 'Nm Torque'}, {value: '241', label: 'KG Kerb'}] },
-];
 
 const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -66,25 +57,6 @@ const AdminPage = () => {
     setLoading(false);
   };
 
-  const handleSeedDatabase = async () => {
-    if (products.length > 0 && !window.confirm("Products collection already has data. Do you want to overwrite it?")) {
-        return;
-    }
-    const batch = writeBatch(db);
-    seedData.forEach(product => {
-        const docRef = doc(collection(db, "products"));
-        batch.set(docRef, { ...product, createdAt: serverTimestamp() });
-    });
-    try {
-        await batch.commit();
-        fetchData();
-        alert('Database seeded successfully!');
-    } catch (e) {
-        console.error("Error seeding database: ", e);
-        alert('Error seeding database. Check console for details.');
-    }
-  };
-
   const handleSignIn = () => {
     signInWithPopup(auth, provider).catch(error => console.error(error));
   };
@@ -111,15 +83,12 @@ const AdminPage = () => {
       <div className="admin-content">
         <AdminHeader tab={activeTab} />
         <main>
-          <div style={{marginBottom: '24px'}}>
-            <button onClick={handleSeedDatabase} className="btn-outline">Seed Database</button>
-          </div>
           {loading ? <p>Loading data...</p> : (
             <>
               {activeTab === 'dashboard' && <Dashboard bookings={bookings} messages={messages} products={products} />}
               {activeTab === 'bookings' && <BookingsManagement bookings={bookings} />}
               {activeTab === 'messages' && <MessagesInbox messages={messages} />}
-              {activeTab === 'products' && <ProductManagement products={products} onProductAdded={fetchData} onProductDeleted={fetchData} />}
+              {activeTab === 'products' && <ProductManagement products={products} onDataChange={fetchData} />}
             </>
           )}
         </main>
@@ -189,20 +158,46 @@ const Dashboard = ({ bookings, messages, products }: { bookings: any[], messages
   </div>
 );
 
-const ProductManagement = ({ products, onProductAdded, onProductDeleted }: { products: any[], onProductAdded: () => void, onProductDeleted: () => void }) => {
-  const [newProduct, setNewProduct] = useState({ name: '', engine: '', price: '', imageUrl: '' });
+const ProductManagement = ({ products, onDataChange }: { products: any[], onDataChange: () => void }) => {
+  const getInitialFormState = () => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [{ value: '', label: '' }, { value: '', label: '' }, { value: '', label: '' }] });
+  const [formState, setFormState] = useState(getInitialFormState());
+  const [isEditing, setIsEditing] = useState<string | null>(null);
 
-  const handleAddProduct = async (e: React.FormEvent) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormState(prevState => ({ ...prevState, [name]: value }));
+  };
+
+  const handleSpecChange = (index: number, field: 'value' | 'label', value: string) => {
+    const newSpecs = [...formState.specs];
+    newSpecs[index] = { ...newSpecs[index], [field]: value };
+    setFormState(prevState => ({ ...prevState, specs: newSpecs }));
+  };
+
+  const handleEditClick = (product: any) => {
+    setIsEditing(product.id);
+    setFormState(product);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(null);
+    setFormState(getInitialFormState());
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await addDoc(collection(db, "products"), {
-        ...newProduct,
-        createdAt: serverTimestamp(),
-      });
-      setNewProduct({ name: '', engine: '', price: '', imageUrl: '' });
-      onProductAdded();
+      const productData = { ...formState, createdAt: serverTimestamp() };
+      if (isEditing) {
+        const productRef = doc(db, "products", isEditing);
+        await updateDoc(productRef, productData);
+      } else {
+        await addDoc(collection(db, "products"), productData);
+      }
+      handleCancelEdit();
+      onDataChange();
     } catch (error) {
-      console.error("Error adding product: ", error);
+      console.error("Error saving product: ", error);
     }
   };
 
@@ -210,7 +205,7 @@ const ProductManagement = ({ products, onProductAdded, onProductDeleted }: { pro
     if (window.confirm("Are you sure you want to delete this product?")) {
       try {
         await deleteDoc(doc(db, "products", id));
-        onProductDeleted();
+        onDataChange();
       } catch (error) {
         console.error("Error deleting product: ", error);
       }
@@ -224,33 +219,45 @@ const ProductManagement = ({ products, onProductAdded, onProductDeleted }: { pro
           <thead>
             <tr>
               <th>Model</th>
-              <th>Engine</th>
               <th>Price</th>
-              <th>Action</th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             {products.map(p => (
               <tr key={p.id}>
                 <td>{p.name}</td>
-                <td>{p.engine}</td>
                 <td>{p.price}</td>
-                <td><button onClick={() => handleDeleteProduct(p.id)} className="btn-delete"><i className="fa-solid fa-trash"></i></button></td>
+                <td style={{ display: 'flex', gap: '8px' }}>
+                  <button onClick={() => handleEditClick(p)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i></button>
+                  <button onClick={() => handleDeleteProduct(p.id)} className="btn-delete"><i className="fa-solid fa-trash"></i></button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <div className="product-form-card">
-        <h3>Add New Model</h3>
-        <form onSubmit={handleAddProduct}>
+        <h3>{isEditing ? 'Edit Model' : 'Add New Model'}</h3>
+        <form onSubmit={handleSubmit}>
           <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
-            <div className="form-group"><label>Model Name</label><input type="text" value={newProduct.name} onChange={e => setNewProduct({ ...newProduct, name: e.target.value })} placeholder="e.g., Classic 350" required /></div>
-            <div className="form-group"><label>Engine Spec</label><input type="text" value={newProduct.engine} onChange={e => setNewProduct({ ...newProduct, engine: e.target.value })} placeholder="e.g., 349cc Single-Cylinder" required /></div>
-            <div className="form-group"><label>Starting Price</label><input type="text" value={newProduct.price} onChange={e => setNewProduct({ ...newProduct, price: e.target.value })} placeholder="e.g., ₹1.93 L" required /></div>
-            <div className="form-group"><label>Image URL</label><input type="text" value={newProduct.imageUrl} onChange={e => setNewProduct({ ...newProduct, imageUrl: e.target.value })} placeholder="e.g., /assets/images/classic_350.png" required /></div>
+            <div className="form-group"><label>Model Name</label><input name="name" type="text" value={formState.name} onChange={handleInputChange} placeholder="e.g., Classic 350" required /></div>
+            <div className="form-group"><label>Engine Spec</label><input name="engine" type="text" value={formState.engine} onChange={handleInputChange} placeholder="e.g., 349cc Single-Cylinder" required /></div>
+            <div className="form-group"><label>Starting Price</label><input name="price" type="text" value={formState.price} onChange={handleInputChange} placeholder="e.g., ₹1.93 L" required /></div>
+            <div className="form-group"><label>Image URL</label><input name="imageUrl" type="text" value={formState.imageUrl} onChange={handleInputChange} placeholder="e.g., /assets/images/classic_350.png" required /></div>
+            <div className="form-group"><label>Badge</label><input name="badge" type="text" value={formState.badge} onChange={handleInputChange} placeholder="e.g., Bestseller" /></div>
+            <p style={{color: 'var(--text-secondary)', marginTop: '12px', fontSize: '0.9rem'}}>Specifications:</p>
+            {formState.specs.map((spec, index) => (
+                <div key={index} className="form-grid" style={{gridTemplateColumns: '1fr 1fr', gap: '12px', alignItems: 'center'}}>
+                    <div className="form-group"><label>Spec {index + 1} Value</label><input type="text" value={spec.value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
+                    <div className="form-group"><label>Spec {index + 1} Label</label><input type="text" value={spec.label} onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
+                </div>
+            ))}
           </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '16px' }}>Add Product</button>
+          <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+             <button type="submit" className="btn-primary" style={{ width: '100%' }}>{isEditing ? 'Update Product' : 'Add Product'}</button>
+             {isEditing && <button type="button" onClick={handleCancelEdit} className="btn-outline" style={{ width: '100%' }}>Cancel</button>}
+          </div>
         </form>
       </div>
     </div>

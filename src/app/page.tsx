@@ -2,11 +2,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import './globals.css';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy } from "firebase/firestore";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -27,6 +28,7 @@ const db = getFirestore(app);
 export default function Home() {
   const main = useRef(null);
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [products, setProducts] = useState<any[]>([]);
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -45,6 +47,15 @@ export default function Home() {
   const [emi, setEmi] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalInterest, setTotalInterest] = useState(0);
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
+      const productsSnapshot = await getDocs(productsQuery);
+      setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    };
+    fetchProducts();
+  }, []);
 
   const toggleMenu = () => {
     setMenuOpen(!isMenuOpen);
@@ -309,178 +320,37 @@ export default function Home() {
         <div className="section-header">
           <span className="section-tag">Our Fleet</span>
           <h2 className="section-title" id="models-title">Featured Models</h2>
-          <p className="section-subtitle">Each machine handcrafted to inspire — discover the motorcycle that speaks your
-            language.</p>
+          <p className="section-subtitle">Each machine handcrafted to inspire — discover the motorcycle that speaks your language.</p>
         </div>
         <div className="models-grid">
-          <article className="model-card" id="hunter-card" role="article">
-            <div className="model-card-img">
-              <img src="/assets/images/hunter350.png" alt="Royal Enfield Hunter 350" loading="eager" />
-              <span className="model-card-badge">Urban</span>
-            </div>
-            <div className="model-card-body">
-              <h3 className="model-card-name">Hunter 350</h3>
-              <p className="model-card-engine">349cc · Single-Cylinder · J-Series</p>
-              <div className="model-card-specs">
-                <div className="model-spec">
-                  <span className="model-spec-val">20.2</span>
-                  <span className="model-spec-label">BHP</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">27</span>
-                  <span className="model-spec-label">Nm Torque</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">181</span>
-                  <span className="model-spec-label">KG Kerb</span>
-                </div>
-              </div>
-              <div className="model-card-footer">
-                <div className="model-price">₹1.50 L <span>onwards</span></div>
-                <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
-              </div>
-            </div>
-          </article>
-          <article className="model-card" role="article">
-            <div className="model-card-img">
-              <img src="/assets/images/classic_350.png" alt="Royal Enfield Classic 350" loading="lazy" />
-              <span className="model-card-badge">Bestseller</span>
-            </div>
-            <div className="model-card-body">
-              <h3 className="model-card-name">Classic 350</h3>
-              <p className="model-card-engine">349cc · Single-Cylinder · Air-Cooled</p>
-              <div className="model-card-specs">
-                <div className="model-spec">
-                  <span className="model-spec-val">20.2</span>
-                  <span className="model-spec-label">BHP</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">27</span>
-                  <span className="model-spec-label">Nm Torque</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">195</span>
-                  <span className="model-spec-label">KG Kerb</span>
-                </div>
-              </div>
-              <div className="model-card-footer">
-                <div className="model-price">₹1.93 L <span>onwards</span></div>
-                <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
-              </div>
-            </div>
-          </article>
-          <article className="model-card" role="article">
-            <div className="model-card-img">
-              <img src="/assets/images/himalayan.png" alt="Royal Enfield Himalayan" loading="lazy" />
-              <span className="model-card-badge">Adventure</span>
-            </div>
-            <div className="model-card-body">
-              <h3 className="model-card-name">Himalayan</h3>
-              <p className="model-card-engine">411cc · Single-Cylinder · Fuel Injected</p>
-              <div className="model-card-specs">
-                <div className="model-spec">
-                  <span className="model-spec-val">24.3</span>
-                  <span className="model-spec-label">BHP</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">32</span>
-                  <span className="model-spec-label">Nm Torque</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">199</span>
-                  <span className="model-spec-label">KG Kerb</span>
-                </div>
-              </div>
-              <div className="model-card-footer">
-                <div className="model-price">₹2.69 L <span>onwards</span></div>
-                <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
-              </div>
-            </div>
-          </article>
-          <article className="model-card" role="article">
-            <div className="model-card-img">
-              <img src="/assets/images/meteor_350.png" alt="Royal Enfield Meteor 350" loading="lazy" />
-              <span className="model-card-badge">Cruiser</span>
-            </div>
-            <div className="model-card-body">
-              <h3 className="model-card-name">Meteor 350</h3>
-              <p className="model-card-engine">349cc · Single-Cylinder · SOHC</p>
-              <div className="model-card-specs">
-                <div className="model-spec">
-                  <span className="model-spec-val">20.2</span>
-                  <span className="model-spec-label">BHP</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">27</span>
-                  <span className="model-spec-label">Nm Torque</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">191</span>
-                  <span className="model-spec-label">KG Kerb</span>
-                </div>
-              </div>
-              <div className="model-card-footer">
-                <div className="model-price">₹2.09 L <span>onwards</span></div>
-                <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
-              </div>
-            </div>
-          </article>
-          <article className="model-card" role="article">
-            <div className="model-card-img">
-              <img src="/assets/images/meteor_350.png" alt="Royal Enfield Bullet 350" loading="lazy" style={{filter: 'sepia(0.3) contrast(1.1)'}} />
-              <span className="model-card-badge">Iconic</span>
-            </div>
-            <div className="model-card-body">
-              <h3 className="model-card-name">Bullet 350</h3>
-              <p className="model-card-engine">349cc · Single-Cylinder · J-Series</p>
-              <div className="model-card-specs">
-                <div className="model-spec">
-                  <span className="model-spec-val">20.4</span>
-                  <span className="model-spec-label">BHP</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">27</span>
-                  <span className="model-spec-label">Nm Torque</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">195</span>
-                  <span className="model-spec-label">KG Kerb</span>
-                </div>
-              </div>
-              <div className="model-card-footer">
-                <div className="model-price">₹1.74 L <span>onwards</span></div>
-                <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
-              </div>
-            </div>
-          </article>
-          <article className="model-card" role="article">
-            <div className="model-card-img">
-              <img src="/assets/images/himalayan.png" alt="Royal Enfield Super Meteor 650" loading="lazy" style={{filter: 'brightness(0.8) saturate(0.6)'}} />
-              <span className="model-card-badge">650 Twin</span>
-            </div>
-            <div className="model-card-body">
-              <h3 className="model-card-name">Super Meteor 650</h3>
-              <p className="model-card-engine">648cc · Parallel Twin · Fuel Injected</p>
-              <div className="model-card-specs">
-                <div className="model-spec">
-                  <span className="model-spec-val">47</span>
-                  <span className="model-spec-label">BHP</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">52.3</span>
-                  <span className="model-spec-label">Nm Torque</span>
-                </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">241</span>
-                  <span className="model-spec-label">KG Kerb</span>
-                </div>
-              </div>
-              <div className="model-card-footer">
-                <div className="model-price">₹3.49 L <span>onwards</span></div>
-                <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
-              </div>
-            </div>
-          </article>
+            {products.map(product => (
+                 <Link key={product.id} href={`/product/${product.id}`} passHref>
+                    <article className="model-card" role="article">
+                    <div className="model-card-img">
+                        <img src={product.imageUrl} alt={`Royal Enfield ${product.name}`} loading="lazy" />
+                        {product.badge && <span className="model-card-badge">{product.badge}</span>}
+                    </div>
+                    <div className="model-card-body">
+                        <h3 className="model-card-name">{product.name}</h3>
+                        <p className="model-card-engine">{product.engine}</p>
+                        {product.specs && (
+                            <div className="model-card-specs">
+                                {product.specs.map((spec: any, index: number) => spec.value && spec.label && (
+                                    <div key={index} className="model-spec">
+                                        <span className="model-spec-val">{spec.value}</span>
+                                        <span className="model-spec-label">{spec.label}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                        <div className="model-card-footer">
+                        <div className="model-price">{product.price} <span>onwards</span></div>
+                        <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
+                        </div>
+                    </div>
+                    </article>
+              </Link>
+            ))}
         </div>
       </section>
       <section id="about" aria-labelledby="about-title">
@@ -608,12 +478,7 @@ export default function Home() {
                   <label htmlFor="f-model">Preferred Model</label>
                   <select id="f-model" name="model" required value={formData.model} onChange={handleInputChange}>
                     <option value="" disabled>Select a model</option>
-                    <option>Classic 350</option>
-                    <option>Himalayan</option>
-                    <option>Meteor 350</option>
-                    <option>Hunter 350</option>
-                    <option>Bullet 350</option>
-                    <option>Super Meteor 650</option>
+                    {products.map(p => <option key={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
@@ -864,12 +729,8 @@ export default function Home() {
           <div className="footer-col">
             <h4>Models</h4>
             <ul>
-              <li><a href="#models">Classic 350</a></li>
-              <li><a href="#models">Himalayan</a></li>
-              <li><a href="#models">Meteor 350</a></li>
-              <li><a href="#models">Hunter 350</a></li>
-              <li><a href="#models">Bullet 350</a></li>
-              <li><a href="#models">Super Meteor 650</a></li>
+              <li><a href="/products">All Models</a></li>
+              {products.slice(0, 5).map(p => <li key={p.id}><Link href={`/product/${p.id}`}>{p.name}</Link></li>)}
             </ul>
           </div>
           <div className="footer-col">
