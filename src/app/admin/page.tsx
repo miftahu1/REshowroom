@@ -99,7 +99,7 @@ const AdminPage = () => {
           {loading ? <p>Loading data...</p> : (
             <>
               {activeTab === 'dashboard' && <Dashboard bookings={bookings} messages={messages} products={products} />}
-              {activeTab === 'bookings' && <BookingsManagement bookings={bookings} />}
+              {activeTab === 'bookings' && <BookingsManagement bookings={bookings} onDataChange={fetchData} />}
               {activeTab === 'messages' && <MessagesInbox messages={messages} />}
               {activeTab === 'products' && <ProductManagement products={products} onDataChange={fetchData} />}
             </>
@@ -171,10 +171,20 @@ const Dashboard = ({ bookings, messages, products }: { bookings: any[], messages
   </div>
 );
 
-const ProductManagement = ({ products, onDataChange }: { products: any[], onDataChange: () => void }) => {
-  const getInitialFormState = (): Omit<ProductData, 'id' | 'createdAt'> => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
+const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
+  const getInitialFormState = (): ProductData => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
   const [formState, setFormState] = useState<ProductData>(getInitialFormState());
-  const [isEditing, setIsEditing] = useState<string | null>(null);
+  const isEditing = product?.id;
+
+  useEffect(() => {
+    if(isOpen) {
+        if (product) {
+            setFormState({ ...getInitialFormState(), ...product });
+        } else {
+            setFormState(getInitialFormState());
+        }
+    }
+  }, [isOpen, product]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -197,32 +207,77 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
     setFormState(prevState => ({ ...prevState, specs: newSpecs }));
   };
 
-  const handleEditClick = (product: ProductData) => {
-    setIsEditing(product.id || null);
-    setFormState({ ...getInitialFormState(), ...product });
-  };
-
-  const handleCancelEdit = () => {
-    setIsEditing(null);
-    setFormState(getInitialFormState());
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isEditing) {
-        const productRef = doc(db, "products", isEditing);
+        const productRef = doc(db, "products", product.id!);
         const { createdAt, id, ...productData } = formState;
         await updateDoc(productRef, productData);
       } else {
         const productData = { ...formState, createdAt: serverTimestamp() };
         await addDoc(collection(db, "products"), productData);
       }
-      handleCancelEdit();
-      onDataChange();
+      onClose();
+      onSave();
     } catch (error) {
       console.error("Error saving product: ", error);
     }
+  };
+
+  return (
+    <div className={`modal-overlay ${isOpen ? 'open' : ''}`}>
+      <div className="modal-content">
+        <div className="modal-header">
+            <h3>{isEditing ? 'Edit Model' : 'Add New Model'}</h3>
+            <button onClick={onClose} className="modal-close-btn">&times;</button>
+        </div>
+        <div className="modal-body">
+            <form onSubmit={handleSubmit}>
+            <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
+                <div className="form-group"><label>Model Name</label><input name="name" type="text" value={formState.name} onChange={handleInputChange} placeholder="e.g., Classic 350" required /></div>
+                <div className="form-group"><label>Engine Spec</label><input name="engine" type="text" value={formState.engine} onChange={handleInputChange} placeholder="e.g., 349cc Single-Cylinder" required /></div>
+                <div className="form-group"><label>Starting Price</label><input name="price" type="text" value={formState.price} onChange={handleInputChange} placeholder="e.g., ₹1.93 L" required /></div>
+                <div className="form-group"><label>Image URL</label><input name="imageUrl" type="text" value={formState.imageUrl} onChange={handleInputChange} placeholder="e.g., /assets/images/classic_350.png" required /></div>
+                <div className="form-group"><label>Badge</label><input name="badge" type="text" value={formState.badge} onChange={handleInputChange} placeholder="e.g., Bestseller" /></div>
+                
+                <div style={{borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop:'10px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+                        <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0}}>Specifications</p>
+                        <button type="button" onClick={addSpecField} className="btn-outline" style={{fontSize: '0.7rem', padding: '6px 10px'}}><i className="fa-solid fa-plus"></i> Add Spec</button>
+                    </div>
+                    {formState.specs.map((spec, index) => (
+                        <div key={index} style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px'}}>
+                            <div className="form-group" style={{margin:0}}><input type="text" value={spec.value} placeholder="Value (e.g. 20.2)" onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
+                            <div className="form-group" style={{margin:0}}><input type="text" value={spec.label} placeholder="Label (e.g. BHP)" onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
+                            <button type="button" onClick={() => removeSpecField(index)} className="btn-delete" style={{padding: '10px 12px'}}><i className="fa-solid fa-trash"></i></button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                <button type="submit" className="btn-primary" style={{ width: '100%' }}>{isEditing ? 'Update Product' : 'Add Product'}</button>
+                <button type="button" onClick={onClose} className="btn-outline" style={{ width: '100%' }}>Cancel</button>
+            </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProductManagement = ({ products, onDataChange }: { products: ProductData[], onDataChange: () => void }) => {
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductData | null>(null);
+
+  const handleAddClick = () => {
+    setEditingProduct(null);
+    setModalOpen(true);
+  };
+
+  const handleEditClick = (product: ProductData) => {
+    setEditingProduct(product);
+    setModalOpen(true);
   };
 
   const handleDeleteProduct = async (id: string) => {
@@ -236,15 +291,23 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
     }
   };
 
+  const handleCloseModal = () => {
+      setModalOpen(false);
+      setEditingProduct(null);
+  }
+
   return (
-    <div className="product-management-grid">
+    <div>
+        <div className="product-management-header">
+            <button onClick={handleAddClick} className="btn-primary"><i className="fa-solid fa-plus"></i> Add New Model</button>
+        </div>
       <div className="admin-table-container">
         <table className="admin-table">
           <thead>
             <tr>
               <th>Model</th>
               <th>Price</th>
-              <th>Actions</th>
+              <th style={{textAlign: 'right'}}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -252,76 +315,71 @@ const ProductManagement = ({ products, onDataChange }: { products: any[], onData
               <tr key={p.id}>
                 <td>{p.name}</td>
                 <td>{p.price}</td>
-                <td style={{ display: 'flex', gap: '8px' }}>
-                  <button onClick={() => handleEditClick(p)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i></button>
-                  <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i></button>
+                <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => handleEditClick(p)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i> Edit</button>
+                  <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      <div className="product-form-card">
-        <h3>{isEditing ? 'Edit Model' : 'Add New Model'}</h3>
-        <form onSubmit={handleSubmit}>
-          <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
-            <div className="form-group"><label>Model Name</label><input name="name" type="text" value={formState.name} onChange={handleInputChange} placeholder="e.g., Classic 350" required /></div>
-            <div className="form-group"><label>Engine Spec</label><input name="engine" type="text" value={formState.engine} onChange={handleInputChange} placeholder="e.g., 349cc Single-Cylinder" required /></div>
-            <div className="form-group"><label>Starting Price</label><input name="price" type="text" value={formState.price} onChange={handleInputChange} placeholder="e.g., ₹1.93 L" required /></div>
-            <div className="form-group"><label>Image URL</label><input name="imageUrl" type="text" value={formState.imageUrl} onChange={handleInputChange} placeholder="e.g., /assets/images/classic_350.png" required /></div>
-            <div className="form-group"><label>Badge</label><input name="badge" type="text" value={formState.badge} onChange={handleInputChange} placeholder="e.g., Bestseller" /></div>
-            
-            <div style={{borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop:'10px'}}>
-                <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
-                    <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0}}>Specifications</p>
-                    <button type="button" onClick={addSpecField} className="btn-outline" style={{fontSize: '0.7rem', padding: '6px 10px'}}><i className="fa-solid fa-plus"></i> Add Spec</button>
-                </div>
-                {formState.specs.map((spec, index) => (
-                    <div key={index} style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px'}}>
-                        <div className="form-group" style={{margin:0}}><input type="text" value={spec.value} placeholder="Value (e.g. 20.2)" onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
-                        <div className="form-group" style={{margin:0}}><input type="text" value={spec.label} placeholder="Label (e.g. BHP)" onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
-                        <button type="button" onClick={() => removeSpecField(index)} className="btn-delete" style={{padding: '10px 12px'}}><i className="fa-solid fa-trash"></i></button>
-                    </div>
-                ))}
-            </div>
-
-          </div>
-          <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-             <button type="submit" className="btn-primary" style={{ width: '100%' }}>{isEditing ? 'Update Product' : 'Add Product'}</button>
-             {isEditing && <button type="button" onClick={handleCancelEdit} className="btn-outline" style={{ width: '100%' }}>Cancel</button>}
-          </div>
-        </form>
-      </div>
+      <ProductModal isOpen={isModalOpen} onClose={handleCloseModal} product={editingProduct} onSave={onDataChange} />
     </div>
   );
 };
 
-const BookingsManagement = ({ bookings }: { bookings: any[] }) => (
-  <div className="admin-table-container">
-    <table className="admin-table">
-      <thead>
-        <tr>
-          <th>Name</th>
-          <th>Phone</th>
-          <th>Model</th>
-          <th>Date</th>
-          <th>Email</th>
-        </tr>
-      </thead>
-      <tbody>
-        {bookings.map(booking => (
-          <tr key={booking.id}>
-            <td>{booking.name}</td>
-            <td>{booking.phone}</td>
-            <td>{booking.model}</td>
-            <td>{booking.date}</td>
-            <td>{booking.email}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
-  </div>
-);
+const BookingsManagement = ({ bookings, onDataChange }: { bookings: any[], onDataChange: () => void }) => {
+    const handleStatusChange = async (id: string, status: 'Approved' | 'Disapproved') => {
+        const bookingRef = doc(db, "bookings", id);
+        try {
+            await updateDoc(bookingRef, { status: status });
+            onDataChange(); // Re-fetch data to update the UI
+        } catch (error) {
+            console.error("Error updating booking status: ", error);
+        }
+    };
+
+    return (
+        <div className="admin-table-container">
+            <table className="admin-table">
+            <thead>
+                <tr>
+                <th>Name</th>
+                <th>Phone</th>
+                <th>Model</th>
+                <th>Date</th>
+                <th>Status</th>
+                <th style={{textAlign: 'right'}}>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {bookings.map(booking => (
+                <tr key={booking.id}>
+                    <td>{booking.name}</td>
+                    <td>{booking.phone}</td>
+                    <td>{booking.model}</td>
+                    <td>{booking.date}</td>
+                    <td>
+                        <span className={`status-badge status-${(booking.status || 'Pending').toLowerCase()}`}>
+                            {booking.status || 'Pending'}
+                        </span>
+                    </td>
+                    <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                        {(!booking.status || booking.status === 'Pending') && (
+                            <>
+                                <button onClick={() => handleStatusChange(booking.id, 'Approved')} className="btn-primary" style={{padding: '8px 12px', fontSize: '0.8rem', background: 'var(--green)', borderColor: 'var(--green)'}}><i className="fa-solid fa-check"></i> Approve</button>
+                                <button onClick={() => handleStatusChange(booking.id, 'Disapproved')} className="btn-delete" style={{padding: '8px 12px', fontSize: '0.8rem'}}><i className="fa-solid fa-times"></i> Disapprove</button>
+                            </>
+                        )}
+                    </td>
+                </tr>
+                ))}
+            </tbody>
+            </table>
+        </div>
+    );
+};
 
 const MessagesInbox = ({ messages }: { messages: any[] }) => (
   <div className="messages-list">
