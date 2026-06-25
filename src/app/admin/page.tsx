@@ -24,8 +24,9 @@ const provider = new GoogleAuthProvider();
 
 // --- IMPORTANT: ADD YOUR EMAILJS DETAILS HERE ---
 const EMAILJS_SERVICE_ID = 'service_t3duf0c';
-const EMAILJS_TEMPLATE_ID_USER_UPDATE = 'template_5rlszxk'; // The new dynamic template
+const EMAILJS_TEMPLATE_ID_USER_UPDATE = 'template_5rlszxk'; // 👈 YOU MUST ADD YOUR USER UPDATE TEMPLATE ID HERE
 const EMAILJS_PUBLIC_KEY = 'M3_6Bw_vnhrbf900W';
+
 
 // Define a type for the product data to prevent build errors
 type Spec = { value: string; label: string };
@@ -326,7 +327,7 @@ const ProductManagement = ({ products, onDataChange }: { products: ProductData[]
                   <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
                 </td>
               </tr>
-            ))}
+            ))}\
           </tbody>
         </table>
       </div>
@@ -464,7 +465,7 @@ const BookingsManagement = ({ bookings, onDataChange }: { bookings: any[], onDat
                         )}
                     </td>
                 </tr>
-                ))}
+                ))}\
             </tbody>
             </table>
         </div>
@@ -481,7 +482,7 @@ const MessagesInbox = ({ messages }: { messages: any[] }) => (
         </div>
         <p>{message.message}</p>
       </div>
-    ))}
+    ))}\
   </div>
 );
 
