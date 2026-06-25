@@ -47,6 +47,9 @@ export default function Home() {
   });
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
+  const [captchaNum1, setCaptchaNum1] = useState(0);
+  const [captchaNum2, setCaptchaNum2] = useState(0);
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
 
   const [loanAmount, setLoanAmount] = useState(150000);
   const [loanTenure, setLoanTenure] = useState(36);
@@ -62,7 +65,14 @@ export default function Home() {
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
     fetchProducts();
+    generateCaptcha();
   }, []);
+
+  const generateCaptcha = () => {
+    setCaptchaNum1(Math.floor(Math.random() * 10) + 1);
+    setCaptchaNum2(Math.floor(Math.random() * 10) + 1);
+    setCaptchaAnswer('');
+  };
 
   const toggleMenu = () => {
     setMenuOpen(!isMenuOpen);
@@ -75,22 +85,78 @@ export default function Home() {
     });
   };
 
+  const getManagerEmailBody = (data: any) => {
+      const currentYear = new Date().getFullYear();
+      return `
+          <!DOCTYPE html>
+          <html>
+          <head>
+              <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+          </head>
+          <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;">
+              <table border="0" cellpadding="0" cellspacing="0" width="100%">
+                  <tr>
+                      <td style="padding: 20px 0;">
+                          <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                              <tr>
+                                  <td align="center" style="padding: 30px 20px; background-color: #121212;">
+                                      <h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">New Test Ride Request</h1>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td style="padding: 40px 30px;">
+                                      <p style="font-size: 18px; color: #333; margin: 0 0 25px 0;">A new test ride has been requested. Details are below:</p>
+                                      <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0;">
+                                          ${Object.entries(data).map(([key, value]) => `
+                                              <tr>
+                                                  <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; text-transform: capitalize; font-weight: bold; color: #555;">${key}</td>
+                                                  <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0;">${value as string}</td>
+                                              </tr>
+                                          `).join('')}
+                                      </table>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td style="padding: 30px; text-align: center; background-color: #f9f9f9;">
+                                      <a href="https://reshowroom-28210251.web.app/admin" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
+                                  </td>
+                              </tr>
+                              <tr>
+                                  <td style="padding: 20px 30px; background-color: #121212;">
+                                      <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.</p>
+                                  </td>
+                              </tr>
+                          </table>
+                      </td>
+                  </tr>
+              </table>
+          </body>
+          </html>
+      `;
+  };
+
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
     setFormSuccess(false);
 
-    // Save to Firebase
+    if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
+        setFormError('Incorrect CAPTCHA answer. Please try again.');
+        generateCaptcha();
+        return;
+    }
+
     try {
       await addDoc(collection(db, "bookings"), {
         ...formData,
         timestamp: serverTimestamp()
       });
       
-      // Send Manager Notification Email via EmailJS
+      const emailBody = getManagerEmailBody(formData);
       const templateParams = {
-        ...formData, // Send all form data to the template
-        manager_email: MANAGER_EMAIL, // Send the manager's email to the template
+          manager_email: MANAGER_EMAIL,
+          subject: `New Test Ride Request: ${formData.model}`,
+          email_body: emailBody,
       };
 
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
@@ -102,10 +168,12 @@ export default function Home() {
 
       setFormSuccess(true);
       setFormData({ name: '', phone: '', email: '', model: '', date: '', city: '', message: '' });
+      generateCaptcha();
 
     } catch (error) {
       console.error("Error submitting booking: ", error);
       setFormError("There's something wrong booking the test drive, try again after some time");
+      generateCaptcha();
     }
   };
 
@@ -450,6 +518,10 @@ export default function Home() {
                   <label htmlFor="f-msg">Message (Optional)</label>
                   <textarea id="f-msg" name="message" placeholder="Any specific queries or requirements..." value={formData.message} onChange={handleInputChange}></textarea>
                 </div>
+                 <div className="form-group full">
+                    <label htmlFor="f-captcha">Human Verification: What is {captchaNum1} + {captchaNum2}?</label>
+                    <input type="number" id="f-captcha" name="captcha" value={captchaAnswer} onChange={(e) => setCaptchaAnswer(e.target.value)} required />
+                </div>
               </div>
               <button type="submit" className="form-submit">
                 <i className="fa-solid fa-paper-plane"></i> &nbsp; Submit Request
@@ -590,7 +662,6 @@ export default function Home() {
             </div>
             <div className="testimonial-card">
               <div className="testimonial-quote">"</div>
-              <div className="testimonial-stars">★★★★★</div>
               <p className="testimonial-text">Bought my Super Meteor 650 six months ago — it's a beast. The
                 dealership's showroom experience is as premium as the bike itself. Highly recommend to every
                 Royal Enfield enthusiast.</p>
