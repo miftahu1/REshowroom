@@ -32,6 +32,8 @@ const MANAGER_EMAIL = 'miftahulhussain0@gmail.com'; // The email you want to sen
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
+const getRandomNum = () => Math.floor(Math.random() * 10) + 1;
+
 export default function Home() {
   const main = useRef(null);
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -47,8 +49,8 @@ export default function Home() {
   });
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
-  const [captchaNum1, setCaptchaNum1] = useState(0);
-  const [captchaNum2, setCaptchaNum2] = useState(0);
+  const [captchaNum1, setCaptchaNum1] = useState(getRandomNum());
+  const [captchaNum2, setCaptchaNum2] = useState(getRandomNum());
   const [captchaAnswer, setCaptchaAnswer] = useState('');
 
   const [loanAmount, setLoanAmount] = useState(150000);
@@ -65,12 +67,11 @@ export default function Home() {
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
     fetchProducts();
-    generateCaptcha();
   }, []);
 
   const generateCaptcha = () => {
-    setCaptchaNum1(Math.floor(Math.random() * 10) + 1);
-    setCaptchaNum2(Math.floor(Math.random() * 10) + 1);
+    setCaptchaNum1(getRandomNum());
+    setCaptchaNum2(getRandomNum());
     setCaptchaAnswer('');
   };
 
