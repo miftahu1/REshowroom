@@ -13,6 +13,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@types/node": "^25.8.0",
     "@types/react": "^19.2.14",
     "express": "^5.2.1",

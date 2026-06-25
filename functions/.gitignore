@@ -1,2 +1,11 @@
-node_modules/
-*.local
+# Firebase Emulator logs
+*.log
+
+# Environment variables
+.env
+
+# NPM dependencies
+node_modules
+
+# Build output
+lib

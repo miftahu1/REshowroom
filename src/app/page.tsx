@@ -8,6 +8,7 @@ import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy } from "firebase/firestore";
+import emailjs from '@emailjs/browser';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -20,6 +21,12 @@ const firebaseConfig = {
   messagingSenderId: "405365661255",
   appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
 };
+
+// --- IMPORTANT: ADD YOUR EMAILJS DETAILS HERE ---
+const EMAILJS_SERVICE_ID = 'service_t3duf0c';
+const EMAILJS_TEMPLATE_ID_MANAGER = 'template_o4ytkz8'; // For new bookings
+const EMAILJS_PUBLIC_KEY = 'M3_6Bw_vnhrbf900W';
+const MANAGER_EMAIL = 'miftahulhussain0@gmail.com'; // The email you want to send notifications to
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -72,26 +79,36 @@ export default function Home() {
     e.preventDefault();
     setFormError('');
     setFormSuccess(false);
+
+    // Save to Firebase
     try {
       await addDoc(collection(db, "bookings"), {
         ...formData,
         timestamp: serverTimestamp()
       });
+      
+      // Send Manager Notification Email via EmailJS
+      const templateParams = {
+        ...formData, // Send all form data to the template
+        manager_email: MANAGER_EMAIL, // Send the manager's email to the template
+      };
+
+      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
+        .then((response) => {
+            console.log('Manager notification SUCCESS!', response.status, response.text);
+        }, (err) => {
+            console.log('Manager notification FAILED...', err);
+        });
+
       setFormSuccess(true);
-      setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        model: '',
-        date: '',
-        city: '',
-        message: ''
-      });
+      setFormData({ name: '', phone: '', email: '', model: '', date: '', city: '', message: '' });
+
     } catch (error) {
-      console.error("Error adding document: ", error);
+      console.error("Error submitting booking: ", error);
       setFormError("There's something wrong booking the test drive, try again after some time");
     }
   };
+
 
   useEffect(() => {
     if (isMenuOpen) {
