@@ -216,57 +216,46 @@ export default function Home() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-      const progressBar = document.getElementById('scroll-progress');
-      if (progressBar) {
-        gsap.to(progressBar, {
-          scaleX: 1,
-          ease: 'none',
-          scrollTrigger: {
-            trigger: document.documentElement,
-            start: 'top top',
-            end: 'bottom bottom',
-            scrub: 0,
-            onUpdate: self => {
-              progressBar.style.transform = `scaleX(${self.progress})`;
+        // --- Global Scroll Progress --- 
+        gsap.to("#scroll-progress", {
+            scaleX: 1,
+            ease: "none",
+            scrollTrigger: { 
+                scrub: 0.3, 
+                trigger: "body",
+                start: "top top",
+                end: "bottom bottom"
             }
-          }
         });
-      }
 
-      const heroBike = document.getElementById('hero-bike');
-      const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (prefersReduced) return; // Respect user's motion preference
 
-      if (!prefersReduced) {
-        const heroLoadTL = gsap.timeline({ delay: 0.3 });
-        heroLoadTL
-          .fromTo('.hero-badge', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' })
-          .fromTo('.hero-headline', { opacity: 0, y: 50 }, { opacity: 1, y: 0, duration: 1.0, ease: 'power3.out' }, '-=0.4')
-          .fromTo('.hero-sub', { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.5')
-          .fromTo('.hero-desc', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.7, ease: 'power2.out' }, '-=0.4')
-          .fromTo('.hero-cta', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out' }, '-=0.35')
-          .fromTo('.hero-stat', { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.6, stagger: 0.12, ease: 'power2.out' }, '-=0.3')
-          .fromTo('.hero-scroll-indicator', { opacity: 0 }, { opacity: 1, duration: 0.5 }, '-=0.2');
-        if (heroBike) {
-          heroLoadTL.fromTo(heroBike,
-            { opacity: 0, x: 80, scale: 0.88 },
-            { opacity: 1, x: 0, scale: 1, duration: 1.2, ease: 'power3.out' }, '-=1.1'
-          );
-        }
-        heroLoadTL.play();
-      } else {
-        gsap.set(['.hero-badge', '.hero-headline', '.hero-sub', '.hero-desc', '.hero-cta', '.hero-stat', '.hero-scroll-indicator', heroBike], { opacity: 1, y: 0 });
-      }
+        // --- Hero Animations --- 
+        const heroTL = gsap.timeline({ scrollTrigger: { 
+            trigger: "#hero", 
+            start: "top top", 
+            end: "bottom top", 
+            scrub: true 
+        }});
 
-      if (heroBike && !prefersReduced) {
-        gsap.to(heroBike, {
-          y: -16,
-          duration: 3,
-          ease: 'sine.inOut',
-          yoyo: true,
-          repeat: -1,
-          delay: 1.5
-        });
-      }
+        heroTL
+            .to(".hero-content", { y: -100, opacity: 0, ease: 'power2.out' }, 0)
+            .to("#hero-bike", { y: -200, x: 200, scale: 1.2, opacity: 0.5, ease: 'power2.out' }, 0)
+            .to(".hero-spotlight", { scale: 1.5, opacity: 0, ease: 'power2.out' }, 0)
+            .to(".hero-stats", { opacity: 0, y: 50 }, 0);
+        
+        // --- Hero Intro Animation ---
+        const introTL = gsap.timeline({delay: 0.5});
+        introTL
+            .from(".hero-badge", {opacity: 0, y: -20, duration: 0.5})
+            .from(".hero-headline", {opacity: 0, y: -20, duration: 0.7}, "-=0.3")
+            .from(".hero-sub", {opacity: 0, y: -20, duration: 0.6}, "-=0.4")
+            .from(".hero-desc", {opacity: 0, y: -20, duration: 0.6}, "-=0.4")
+            .from(".hero-cta", {opacity: 0, y: -20, duration: 0.6}, "-=0.4")
+            .from(".hero-stats", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
+            .from("#hero-bike", {opacity: 0, x: 100, scale: 0.9, duration: 1.2, ease: 'power3.out'}, "<0.2")
+            .from(".hero-scroll-indicator", {opacity: 0, y: 20}, "-0.5");
 
     }, main);
 
@@ -453,7 +442,7 @@ export default function Home() {
               <div className="service-card">
                 <div className="service-icon"><i className="fa-solid fa-gear"></i></div>
                 <h4>Genuine Parts</h4>
-                <p>OEM spare parts with factory warranty. No counterfeits, no compromises.</p>
+                <p>OEM spare partswith factory warranty. No counterfeits, no compromises.</p>
               </div>
               <div className="service-card">
                 <div className="service-icon"><i className="fa-solid fa-road"></i></div>
