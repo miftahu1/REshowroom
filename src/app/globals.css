@@ -333,12 +333,11 @@ ul {
 #hero {
     height: 100vh;
     min-height: 700px;
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    align-items: center;
     position: relative;
     overflow: hidden;
     background: var(--bg-primary);
+    display: flex;
+    align-items: center;
 }
 
 .hero-bg-grad {
@@ -369,14 +368,12 @@ ul {
     transform: translateY(-50%);
     width: 55%;
     z-index: 3;
-    will-change: transform, opacity;
 }
 
 #hero-bike {
     width: 100%;
     filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.7));
     transform: rotate3d(0, -1, 0, 20deg) translateX(10%);
-    will-change: transform, opacity;
 }
 
 .hero-bike-shadow {
@@ -396,7 +393,7 @@ ul {
     padding-left: 80px;
     z-index: 5;
     position: relative;
-    will-change: transform, opacity;
+    width: 50%;
 }
 
 .hero-badge {
@@ -468,7 +465,6 @@ ul {
     display: flex;
     gap: 64px;
     z-index: 5;
-    will-change: opacity;
 }
 
 .hero-stat {
@@ -1536,12 +1532,6 @@ footer {
 
 
 /* ----- Responsive Styles ----- */
-@media (max-width: 1200px) {
-    .about-grid, .services-layout {
-        gap: 32px;
-    }
-}
-
 @media (max-width: 1024px) {
     .nav-links, .nav-cta {
         display: none;
@@ -1552,12 +1542,28 @@ footer {
     }
 
     .hero-content {
-        padding-left: 40px;
+        width: 100%;
+        padding: 0 40px;
+        text-align: center;
     }
 
     .hero-bike-wrap {
-        width: 65%;
-        right: -5%;
+        width: 80%;
+        right: -10%;
+    }
+
+    .hero-desc {
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .hero-cta {
+        justify-content: center;
+    }
+
+    .hero-stats {
+        left: 50%;
+        transform: translateX(-50%);
     }
 
     .about-grid, .services-layout, .test-ride-layout, .emi-calculator, .contact-layout {
@@ -1605,32 +1611,26 @@ footer {
 
 @media (max-width: 768px) {
     #hero {
-        grid-template-columns: 1fr;
-        align-content: center;
-        text-align: center;
-    }
-
-    .hero-content {
-        grid-row: 1;
-        padding: 0 24px;
-        margin-top: -10vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
+        align-items: flex-start;
+        padding-top: 120px; /* Space for navbar */
     }
     
-    .hero-desc {
-        margin: 24px auto 36px;
+    .hero-content {
+        margin-top: 5vh;
+        position: static;
+        width: 100%;
+        padding: 0 24px;
     }
 
     .hero-bike-wrap {
-        width: 120%;
+        width: 100%;
         position: absolute;
         top: auto;
         bottom: 5%;
         left: 50%;
         transform: translateX(-50%);
         opacity: 0.8;
+        right: auto;
     }
 
     #hero-bike {
@@ -1643,12 +1643,10 @@ footer {
     }
     
     .hero-stats {
-        left: 50%;
-        transform: translateX(-50%);
-        bottom: 5%;
-        gap: 32px;
+        bottom: 3%;
+        gap: 24px;
         background: rgba(18,18,18,0.5);
-        padding: 10px 20px;
+        padding: 8px 16px;
         border-radius: 12px;
     }
     
@@ -1684,7 +1682,7 @@ footer {
         z-index: 100;
         transition: left 0.3s ease;
     }
-    /* A class to show the sidebar */
+
     .admin-sidebar.open {
         left: 0;
     }

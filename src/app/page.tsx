@@ -228,34 +228,45 @@ export default function Home() {
             }
         });
 
-        const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-        if (prefersReduced) return; // Respect user's motion preference
+        // Create a matchMedia instance
+        let mm = gsap.matchMedia();
 
-        // --- Hero Animations --- 
-        const heroTL = gsap.timeline({ scrollTrigger: { 
-            trigger: "#hero", 
-            start: "top top", 
-            end: "bottom top", 
-            scrub: true 
-        }});
+        // --- DESKTOP ANIMATIONS --- 
+        mm.add("(min-width: 769px)", () => {
+            const heroTL = gsap.timeline({ scrollTrigger: { 
+                trigger: "#hero", 
+                start: "top top", 
+                end: "bottom top", 
+                scrub: true 
+            }});
 
-        heroTL
-            .to(".hero-content", { y: -100, opacity: 0, ease: 'power2.out' }, 0)
-            .to("#hero-bike", { y: -200, x: 200, scale: 1.2, opacity: 0.5, ease: 'power2.out' }, 0)
-            .to(".hero-spotlight", { scale: 1.5, opacity: 0, ease: 'power2.out' }, 0)
-            .to(".hero-stats", { opacity: 0, y: 50 }, 0);
-        
-        // --- Hero Intro Animation ---
-        const introTL = gsap.timeline({delay: 0.5});
-        introTL
-            .from(".hero-badge", {opacity: 0, y: -20, duration: 0.5})
-            .from(".hero-headline", {opacity: 0, y: -20, duration: 0.7}, "-=0.3")
-            .from(".hero-sub", {opacity: 0, y: -20, duration: 0.6}, "-=0.4")
-            .from(".hero-desc", {opacity: 0, y: -20, duration: 0.6}, "-=0.4")
-            .from(".hero-cta", {opacity: 0, y: -20, duration: 0.6}, "-=0.4")
-            .from(".hero-stats", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
-            .from("#hero-bike", {opacity: 0, x: 100, scale: 0.9, duration: 1.2, ease: 'power3.out'}, "<0.2")
-            .from(".hero-scroll-indicator", {opacity: 0, y: 20}, "-0.5");
+            heroTL
+                .to(".hero-content", { y: -100, opacity: 0, ease: 'power2.out' }, 0)
+                .to("#hero-bike", { y: -200, x: 200, scale: 1.2, opacity: 0.5, ease: 'power2.out' }, 0)
+                .to(".hero-spotlight", { scale: 1.5, opacity: 0, ease: 'power2.out' }, 0);
+
+            const introTL = gsap.timeline({delay: 0.5});
+            introTL
+                .from(".hero-badge", {opacity: 0, y: 20, duration: 0.5})
+                .from(".hero-headline", {opacity: 0, y: 20, duration: 0.7}, "-=0.3")
+                .from(".hero-sub", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
+                .from(".hero-desc", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
+                .from(".hero-cta", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
+                .from(".hero-stats", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
+                .from("#hero-bike", {opacity: 0, x: 100, scale: 0.9, duration: 1.2, ease: 'power3.out'}, "<0.2")
+                .from(".hero-scroll-indicator", {opacity: 0, y: 20}, "-0.5");
+        });
+
+        // --- MOBILE ANIMATIONS --- 
+        mm.add("(max-width: 768px)", () => {
+            const introTL = gsap.timeline({delay: 0.3});
+            introTL
+                .from(".hero-badge", {opacity: 0, y: 20})
+                .from(".hero-headline", {opacity: 0, y: 20}, "-=0.3")
+                .from(".hero-sub", {opacity: 0, y: 20}, "-=0.4")
+                .from(".hero-cta", {opacity: 0, y: 20}, "-=0.4")
+                .from("#hero-bike", {opacity: 0, y: 50, scale: 0.9, duration: 1.0, ease: 'power3.out'}, "<0.2");
+        });
 
     }, main);
 
