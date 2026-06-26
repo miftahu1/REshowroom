@@ -49,8 +49,8 @@ export default function Home() {
   });
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
-  const [captchaNum1, setCaptchaNum1] = useState(getRandomNum());
-  const [captchaNum2, setCaptchaNum2] = useState(getRandomNum());
+  const [captchaNum1, setCaptchaNum1] = useState(1);
+  const [captchaNum2, setCaptchaNum2] = useState(1);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
 
   const [loanAmount, setLoanAmount] = useState(150000);
@@ -67,6 +67,11 @@ export default function Home() {
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
     fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    setCaptchaNum1(getRandomNum());
+    setCaptchaNum2(getRandomNum());
   }, []);
 
   const generateCaptcha = () => {
@@ -216,58 +221,63 @@ export default function Home() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-        // --- Global Scroll Progress --- 
         gsap.to("#scroll-progress", {
             scaleX: 1,
             ease: "none",
-            scrollTrigger: { 
-                scrub: 0.3, 
+            scrollTrigger: {
+                scrub: 0.3,
                 trigger: "body",
                 start: "top top",
                 end: "bottom bottom"
             }
         });
 
-        // Create a matchMedia instance
-        let mm = gsap.matchMedia();
+        const mm = gsap.matchMedia();
 
-        // --- DESKTOP ANIMATIONS --- 
         mm.add("(min-width: 769px)", () => {
-            const heroTL = gsap.timeline({ scrollTrigger: { 
-                trigger: "#hero", 
-                start: "top top", 
-                end: "bottom top", 
-                scrub: true 
-            }});
+            const heroTL = gsap.timeline({
+                scrollTrigger: {
+                    trigger: "#hero",
+                    start: "top top",
+                    end: "bottom top",
+                    scrub: 1.1,
+                    invalidateOnRefresh: true
+                }
+            });
 
             heroTL
-                .to(".hero-content", { y: -100, opacity: 0, ease: 'power2.out' }, 0)
-                .to("#hero-bike", { y: -200, x: 200, scale: 1.2, opacity: 0.5, ease: 'power2.out' }, 0)
-                .to(".hero-spotlight", { scale: 1.5, opacity: 0, ease: 'power2.out' }, 0);
+                .to(".hero-content", { y: -90, opacity: 0.25, rotateX: 12, rotateY: -8, ease: 'power2.out' }, 0)
+                .to(".hero-visual", { y: -100, scale: 1.04, rotateX: 12, rotateY: -8, ease: 'power2.out' }, 0)
+                .to("#hero-bike", { y: -220, x: 180, scale: 1.16, opacity: 0.55, rotateY: -18, ease: 'power2.out' }, 0)
+                .to(".hero-spotlight", { scale: 1.55, opacity: 0, ease: 'power2.out' }, 0)
+                .to(".hero-card-left", { x: -40, y: -50, rotate: -14, opacity: 0.8, ease: 'power2.out' }, 0)
+                .to(".hero-card-right", { x: 40, y: 60, rotate: 14, opacity: 0.8, ease: 'power2.out' }, 0)
+                .to(".hero-stats", { y: 40, opacity: 0.75, ease: 'power2.out' }, 0)
+                .to(".hero-scroll-indicator", { opacity: 0, y: 24, ease: 'power2.out' }, 0);
 
-            const introTL = gsap.timeline({delay: 0.5});
+            const introTL = gsap.timeline({ delay: 0.35 });
             introTL
-                .from(".hero-badge", {opacity: 0, y: 20, duration: 0.5})
-                .from(".hero-headline", {opacity: 0, y: 20, duration: 0.7}, "-=0.3")
-                .from(".hero-sub", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
-                .from(".hero-desc", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
-                .from(".hero-cta", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
-                .from(".hero-stats", {opacity: 0, y: 20, duration: 0.6}, "-=0.4")
-                .from("#hero-bike", {opacity: 0, x: 100, scale: 0.9, duration: 1.2, ease: 'power3.out'}, "<0.2")
-                .from(".hero-scroll-indicator", {opacity: 0, y: 20}, "-0.5");
+                .from(".hero-badge", { opacity: 0, y: 24, duration: 0.55 })
+                .from(".hero-headline", { opacity: 0, y: 18, duration: 0.7 }, "-=0.3")
+                .from(".hero-sub", { opacity: 0, y: 18, duration: 0.55 }, "-=0.25")
+                .from(".hero-desc", { opacity: 0, y: 18, duration: 0.6 }, "-=0.25")
+                .from(".hero-cta", { opacity: 0, y: 18, duration: 0.55 }, "-=0.25")
+                .from(".hero-stats", { opacity: 0, y: 20, duration: 0.55 }, "-=0.25")
+                .from(".hero-3d-card", { opacity: 0, y: 30, scale: 0.9, duration: 0.7, stagger: 0.15, ease: 'power3.out' }, "-=0.4")
+                .from("#hero-bike", { opacity: 0, x: 100, scale: 0.92, duration: 1.1, ease: 'power3.out' }, "<0.2")
+                .from(".hero-scroll-indicator", { opacity: 0, y: 20 }, "-0.4");
         });
 
-        // --- MOBILE ANIMATIONS --- 
         mm.add("(max-width: 768px)", () => {
-            const introTL = gsap.timeline({delay: 0.3});
-            introTL
-                .from(".hero-badge", {opacity: 0, y: 20})
-                .from(".hero-headline", {opacity: 0, y: 20}, "-=0.3")
-                .from(".hero-sub", {opacity: 0, y: 20}, "-=0.4")
-                .from(".hero-cta", {opacity: 0, y: 20}, "-=0.4")
-                .from("#hero-bike", {opacity: 0, y: 50, scale: 0.9, duration: 1.0, ease: 'power3.out'}, "<0.2");
+            gsap.from(".hero-badge", { opacity: 0, y: 20, duration: 0.55 });
+            gsap.from(".hero-headline", { opacity: 0, y: 20, duration: 0.65, delay: 0.1 });
+            gsap.from(".hero-sub", { opacity: 0, y: 20, duration: 0.5, delay: 0.15 });
+            gsap.from(".hero-desc", { opacity: 0, y: 20, duration: 0.55, delay: 0.2 });
+            gsap.from(".hero-cta", { opacity: 0, y: 20, duration: 0.55, delay: 0.25 });
+            gsap.from(".hero-3d-card", { opacity: 0, y: 20, duration: 0.7, delay: 0.3, stagger: 0.12 });
+            gsap.from("#hero-bike", { opacity: 0, y: 50, scale: 0.9, duration: 0.95, ease: 'power3.out', delay: 0.25 });
+            gsap.from(".hero-stats", { opacity: 0, y: 20, duration: 0.55, delay: 0.35 });
         });
-
     }, main);
 
     return () => ctx.revert();
@@ -305,31 +315,45 @@ export default function Home() {
         <canvas id="hero-canvas" aria-hidden="true"></canvas>
         <div className="hero-bg-grad" aria-hidden="true"></div>
         <div className="hero-spotlight" aria-hidden="true"></div>
-        <div className="hero-bike-wrap" aria-hidden="true">
-          <img id="hero-bike" src="/assets/images/hunter350.png" alt="Royal Enfield Hunter 350 — hero showcase" loading="eager" />
-          <div className="hero-bike-shadow"></div>
-        </div>
-        <div className="hero-content">
-          <div className="hero-badge">
-            <span className="hero-badge-dot"></span>
-            Authorized Dealership &nbsp;|&nbsp; Est. 2005
+        <div className="hero-grid">
+          <div className="hero-content">
+            <div className="hero-badge">
+              <span className="hero-badge-dot"></span>
+              Authorized Dealership &nbsp;|&nbsp; Est. 2005
+            </div>
+            <h1 className="hero-headline">
+              Pure <span className="gold-text">Motorcycling.</span><br />
+              Timeless Legacy.
+            </h1>
+            <p className="hero-sub">Feel the thunder &nbsp;·&nbsp; Own the road</p>
+            <p className="hero-desc">
+              Step into a world where machines are more than metal — they are a statement of character. Explore our
+              full range of Royal Enfield motorcycles at your trusted authorized dealership.
+            </p>
+            <div className="hero-cta">
+              <a href="#models" className="btn-primary">
+                <i className="fa-solid fa-motorcycle"></i> Explore Models
+              </a>
+              <a href="#test-ride" className="btn-outline">
+                <i className="fa-regular fa-calendar-check"></i> Book a Test Ride
+              </a>
+            </div>
           </div>
-          <h1 className="hero-headline">
-            Pure <span className="gold-text">Motorcycling.</span><br />
-            Timeless Legacy.
-          </h1>
-          <p className="hero-sub">Feel the thunder &nbsp;·&nbsp; Own the road</p>
-          <p className="hero-desc">
-            Step into a world where machines are more than metal — they are a statement of character. Explore our
-            full range of Royal Enfield motorcycles at your trusted authorized dealership.
-          </p>
-          <div className="hero-cta">
-            <a href="#models" className="btn-primary">
-              <i className="fa-solid fa-motorcycle"></i> Explore Models
-            </a>
-            <a href="#test-ride" className="btn-outline">
-              <i className="fa-regular fa-calendar-check"></i> Book a Test Ride
-            </a>
+          <div className="hero-visual" aria-hidden="true">
+            <div className="hero-3d-card hero-card-left">
+              <span className="hero-card-label">New Arrival</span>
+              <strong>Hunter 350</strong>
+              <span>Built for the city</span>
+            </div>
+            <div className="hero-3d-card hero-card-right">
+              <span className="hero-card-label">Launch Offer</span>
+              <strong>0% EMI</strong>
+              <span>Flexible finance</span>
+            </div>
+            <div className="hero-bike-wrap">
+              <img id="hero-bike" src="/assets/images/hunter350.png" alt="Royal Enfield Hunter 350 — hero showcase" loading="eager" />
+              <div className="hero-bike-shadow"></div>
+            </div>
           </div>
         </div>
         <div className="hero-stats">
