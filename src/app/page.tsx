@@ -170,8 +170,23 @@ export default function Home() {
       const emailBody = getManagerEmailBody(formData);
       const templateParams = {
           manager_email: MANAGER_EMAIL,
-          subject: `New Test Ride Request: ${formData.model}`,
-          email_body: emailBody
+          to_email: MANAGER_EMAIL,
+          from_name: 'Royal Enfield Amguri',
+          reply_to: formData.email,
+          subject: `New Test Ride Request: ${formData.model || 'Test Ride'}`,
+          email_body: emailBody,
+          email_html: emailBody,
+          html_message: emailBody,
+          message_html: emailBody,
+          message: `New booking request from ${formData.name || 'Unknown'} (${formData.email || 'no email provided'}). Model: ${formData.model || 'N/A'}. Date: ${formData.date || 'N/A'}. City: ${formData.city || 'N/A'}. Message: ${formData.message || 'None'}`,
+          booking_name: formData.name,
+          booking_phone: formData.phone,
+          booking_email: formData.email,
+          booking_model: formData.model,
+          booking_date: formData.date,
+          booking_city: formData.city,
+          booking_message: formData.message,
+          booking_details_html: emailBody
       };
 
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
