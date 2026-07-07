@@ -208,7 +208,7 @@ const Settings = () => {
             }
             const promoDoc = await getDoc(doc(db, 'settings', 'promoBanner'));
             if (promoDoc.exists()) {
-                setPromoBanner(promoDoc.data());
+                setPromoBanner(promoDoc.data() as { enabled: boolean; text: string; link: string; });
             }
             setLoading(false);
         };
@@ -735,7 +735,7 @@ const BookingsManagement = ({ bookings, onDataChange }: { bookings: any[], onDat
                                 <>
                                     <button onClick={() => handleStatusChange(booking.id, 'Approved', booking)} className="btn-primary" style={{padding: '8px 12px', fontSize: '0.8rem', background: 'var(--green)', borderColor: 'var(--green)'}}><i className="fa-solid fa-check"></i> Approve</button>
                                     <button onClick={() => handleStatusChange(booking.id, 'Disapproved', booking)} className="btn-delete" style={{padding: '8px 12px', fontSize: '0.8rem'}}><i className="fa-solid fa-times"></i> Disapprove</button>
-                                <>
+                                </>
                             )}
                         </td>
                     </tr>
