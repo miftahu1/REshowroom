@@ -107,7 +107,6 @@ const AdminPage = () => {
 };
 
 const LoginScreen = () => {
-    const [isRegistering, setIsRegistering] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -116,11 +115,7 @@ const LoginScreen = () => {
         e.preventDefault();
         setError('');
         try {
-            if (isRegistering) {
-                await createUserWithEmailAndPassword(auth, email, password);
-            } else {
-                await signInWithEmailAndPassword(auth, email, password);
-            }
+            await signInWithEmailAndPassword(auth, email, password);
         } catch (err: any) {
             setError(err.message);
         }
@@ -133,7 +128,7 @@ const LoginScreen = () => {
     return (
         <div className="login-container">
             <div className="login-form glass-card">
-                <h1 className="form-title">{isRegistering ? 'Create Account' : 'Admin Login'}</h1>
+                <h1 className="form-title">Admin Login</h1>
                 <form onSubmit={handleAuthAction}>
                     <div className="form-group">
                         <label htmlFor="email">Email</label>
@@ -143,16 +138,12 @@ const LoginScreen = () => {
                         <label htmlFor="password">Password</label>
                         <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                     </div>
-                    <button type="submit" className="btn-primary" style={{width: '100%', marginBottom: '16px'}}>{isRegistering ? 'Register' : 'Sign In'}</button>
+                    <button type="submit" className="btn-primary" style={{width: '100%', marginBottom: '16px'}}>Sign In</button>
                 </form>
                 <button onClick={handleGoogleSignIn} className="btn-outline google-login" style={{width: '100%'}}>
                     <i className="fa-brands fa-google"></i> &nbsp; Sign in with Google
                 </button>
                 {error && <p className="error-message">{error}</p>}
-                <p style={{textAlign: 'center', marginTop: '20px'}}>
-                    {isRegistering ? 'Already have an account? ' : 'Need an account? '}
-                    <a href="#" onClick={() => setIsRegistering(!isRegistering)}>{isRegistering ? 'Sign In' : 'Register'}</a>
-                </p>
             </div>
         </div>
     );
