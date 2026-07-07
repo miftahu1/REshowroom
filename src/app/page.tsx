@@ -58,8 +58,6 @@ export default function Home() {
   const [emi, setEmi] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalInterest, setTotalInterest] = useState(0);
-  const [managerEmail, setManagerEmail] = useState('');
-
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -67,14 +65,7 @@ export default function Home() {
       const productsSnapshot = await getDocs(productsQuery);
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
-    const fetchManagerEmail = async () => {
-        const settingDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
-        if (settingDoc.exists()) {
-            setManagerEmail(settingDoc.data().email);
-        }
-    };
     fetchProducts();
-    fetchManagerEmail();
   }, []);
 
   useEffect(() => {
@@ -170,32 +161,35 @@ export default function Home() {
     }
 
     try {
-      await addDoc(collection(db, "bookings"), {
-        ...formData,
-        timestamp: serverTimestamp()
-      });
+        const settingDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
+        const managerEmailAddress = settingDoc.exists() ? settingDoc.data().email : '';
+
+        if (!managerEmailAddress) {
+            console.error("Manager email is not set in the database.");
+            setFormError("Could not send notification; administrator has not configured a manager email.");
+            return;
+        }
+
+        await addDoc(collection(db, "bookings"), {
+            ...formData,
+            timestamp: serverTimestamp()
+        });
       
-      const emailBody = getManagerEmailBody(formData);
-      const templateParams = {
-          manager_email: managerEmail,
-          to_email: managerEmail,
-          from_name: 'Royal Enfield Amguri',
-          reply_to: formData.email,
-          subject: `New Test Ride Request: ${formData.model || 'Test Ride'}`,
-          email_body: emailBody,
-          email_html: emailBody,
-          html_message: emailBody,
-          message_html: emailBody,
-          message: `New booking request from ${formData.name || 'Unknown'} (${formData.email || 'no email provided'}). Model: ${formData.model || 'N/A'}. Date: ${formData.date || 'N/A'}. City: ${formData.city || 'N/A'}. Message: ${formData.message || 'None'}`,
-          booking_name: formData.name,
-          booking_phone: formData.phone,
-          booking_email: formData.email,
-          booking_model: formData.model,
-          booking_date: formData.date,
-          booking_city: formData.city,
-          booking_message: formData.message,
-          booking_details_html: emailBody
-      };
+        const emailBody = getManagerEmailBody(formData);
+        const templateParams = {
+            manager_email: managerEmailAddress,
+            from_name: 'Royal Enfield Amguri',
+            reply_to: formData.email,
+            subject: `New Test Ride Request: ${formData.model || 'Test Ride'}`,
+            email_body: emailBody,
+            booking_name: formData.name,
+            booking_phone: formData.phone,
+            booking_email: formData.email,
+            booking_model: formData.model,
+            booking_date: formData.date,
+            booking_city: formData.city,
+            booking_message: formData.message,
+        };
 
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
         .then((response) => {
