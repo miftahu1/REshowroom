@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, getDoc, doc } from "firebase/firestore";
+import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, where, getDoc, doc } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -49,7 +49,8 @@ export default function Home() {
   const main = useRef(null);
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
-  const [formData, setFormData] = useState({
+  const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
+  const [bookingFormData, setBookingFormData] = useState({
     name: '',
     phone: '',
     email: '',
@@ -58,8 +59,8 @@ export default function Home() {
     city: '',
     message: ''
   });
-  const [formSuccess, setFormSuccess] = useState(false);
-  const [formError, setFormError] = useState('');
+  const [bookingFormSuccess, setBookingFormSuccess] = useState(false);
+  const [bookingFormError, setBookingFormError] = useState('');
   const [captchaNum1, setCaptchaNum1] = useState(1);
   const [captchaNum2, setCaptchaNum2] = useState(1);
   const [captchaAnswer, setCaptchaAnswer] = useState('');
@@ -75,7 +76,7 @@ export default function Home() {
 
 
   useEffect(() => {
-    const fetchSiteSettings = async () => {
+    const fetchSiteData = async () => {
       const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
       const productsSnapshot = await getDocs(productsQuery);
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
@@ -88,8 +89,12 @@ export default function Home() {
             setShowPromoBanner(true);
           }
       }
+
+      const featuredReviewsQuery = query(collection(db, "reviews"), where("featured", "==", true), orderBy("timestamp", "desc"));
+      const featuredReviewsSnapshot = await getDocs(featuredReviewsQuery);
+      setFeaturedReviews(featuredReviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
     };
-    fetchSiteSettings();
+    fetchSiteData();
   }, []);
 
   useEffect(() => {
@@ -107,20 +112,19 @@ export default function Home() {
     setMenuOpen(!isMenuOpen);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    setFormData({
-      ...formData,
+  const handleBookingInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    setBookingFormData({
+      ...bookingFormData,
       [e.target.name]: e.target.value
     });
   };
 
- const getManagerEmailBody = (data: any) => {
+ const getManagerEmailBody = (title: string, data: any) => {
     const currentYear = new Date().getFullYear();
-    // Format data into a styled HTML table
-    const bookingDetails = Object.entries(data)
+    const details = Object.entries(data)
         .map(([key, value]) => {
-            if (!value) return ''; // Don't show empty fields
-            const formattedKey = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize key
+            if (!value) return '';
+            const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
             return `
                 <tr>
                     <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; text-transform: capitalize; font-weight: bold; color: #555; width: 30%;">${formattedKey}</td>
@@ -131,55 +135,16 @@ export default function Home() {
         .join('');
 
     return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-        </head>
-        <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;">
-            <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                <tr>
-                    <td style="padding: 20px 0;">
-                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                            <tr>
-                                <td align="center" style="padding: 30px 20px; background-color: #121212;">
-                                    <h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">New Test Ride Request</h1>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 40px 30px;">
-                                    <p style="font-size: 18px; color: #333; margin: 0 0 25px 0;">A new test ride has been requested. Details are below:</p>
-                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">
-                                        ${bookingDetails}
-                                    </table>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 30px; text-align: center; background-color: #f9f9f9;">
-                                    <a href="https://reshowroom.vercel.app" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 20px 30px; background-color: #121212;">
-                                    <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.</p>
-                                </td>
-                            </tr>
-                        </table>
-                    </td>
-                </tr>
-            </table>
-        </body>
-        </html>
-    `;
+        <!DOCTYPE html><html><head><link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet"></head><body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;"><table border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding: 20px 0;"><table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"><tr><td align="center" style="padding: 30px 20px; background-color: #121212;"><h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">${title}</h1></td></tr><tr><td style="padding: 40px 30px;"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">${details}</table></td></tr><tr><td style="padding: 20px 30px; background-color: #121212;"><p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.</p></td></tr></table></td></tr></table></body></html>`;
 };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setFormError('');
-    setFormSuccess(false);
+    setBookingFormError('');
+    setBookingFormSuccess(false);
 
     if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
-        setFormError('Incorrect CAPTCHA answer. Please try again.');
+        setBookingFormError('Incorrect CAPTCHA answer. Please try again.');
         generateCaptcha();
         return;
     }
@@ -190,30 +155,13 @@ export default function Home() {
 
         if (!managerEmailAddress) {
             console.error("Manager email is not set in the database.");
-            setFormError("Could not send notification; administrator has not configured a manager email.");
+            setBookingFormError("Could not send notification; administrator has not configured a manager email.");
             return;
         }
 
-        await addDoc(collection(db, "bookings"), {
-            ...formData,
-            timestamp: serverTimestamp()
-        });
-      
-        const emailBody = getManagerEmailBody(formData);
-        const templateParams = {
-            manager_email: managerEmailAddress,
-            from_name: 'Royal Enfield Amguri',
-            reply_to: formData.email,
-            subject: `New Test Ride Request: ${formData.model || 'Test Ride'}`,
-            email_body: emailBody,
-            booking_name: formData.name,
-            booking_phone: formData.phone,
-            booking_email: formData.email,
-            booking_model: formData.model,
-            booking_date: formData.date,
-            booking_city: formData.city,
-            booking_message: formData.message,
-        };
+        await addDoc(collection(db, "bookings"), { ...bookingFormData, timestamp: serverTimestamp() });
+        const emailBody = getManagerEmailBody('New Test Ride Request', bookingFormData);
+        const templateParams = { manager_email: managerEmailAddress, from_name: 'Royal Enfield Amguri', reply_to: bookingFormData.email, subject: `New Test Ride Request: ${bookingFormData.model || 'Test Ride'}`, email_body: emailBody };
 
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
         .then((response) => {
@@ -222,17 +170,16 @@ export default function Home() {
             console.log('Manager notification FAILED...', err);
         });
 
-      setFormSuccess(true);
-      setFormData({ name: '', phone: '', email: '', model: '', date: '', city: '', message: '' });
+      setBookingFormSuccess(true);
+      setBookingFormData({ name: '', phone: '', email: '', model: '', date: '', city: '', message: '' });
       generateCaptcha();
 
     } catch (error) {
       console.error("Error submitting booking: ", error);
-      setFormError("There's something wrong booking the test drive, try again after some time");
+      setBookingFormError("There's something wrong booking the test drive, try again after some time");
       generateCaptcha();
     }
   };
-
 
   useEffect(() => {
     if (isMenuOpen) {
@@ -262,38 +209,15 @@ export default function Home() {
 
   useEffect(() => {
     const ctx = gsap.context(() => {
-        gsap.to("#scroll-progress", {
-            scaleX: 1,
-            ease: "none",
-            scrollTrigger: {
-                scrub: 0.3,
-                trigger: "body",
-                start: "top top",
-                end: "bottom bottom"
-            }
-        });
-
+        gsap.to("#scroll-progress", { scaleX: 1, ease: "none", scrollTrigger: { scrub: 0.3, trigger: "body", start: "top top", end: "bottom bottom" } });
         const mm = gsap.matchMedia();
-
-        gsap.set([".hero-content", ".hero-visual", "#hero-bike"], {
-            clearProps: "transform,opacity"
-        });
-
+        gsap.set([".hero-content", ".hero-visual", "#hero-bike"], { clearProps: "transform,opacity" });
         gsap.set(".hero-content", { y: 0, opacity: 1, rotateX: 0, rotateY: 0 });
         gsap.set(".hero-visual", { y: 0, scale: 1, rotateX: 0, rotateY: 0, opacity: 1 });
         gsap.set("#hero-bike", { y: 0, x: 0, scale: 1, opacity: 1, rotateY: 0 });
 
         mm.add("(min-width: 769px)", () => {
-            const heroTL = gsap.timeline({
-                scrollTrigger: {
-                    trigger: "#hero",
-                    start: "top top",
-                    end: "bottom top",
-                    scrub: 1.1,
-                    invalidateOnRefresh: true
-                }
-            });
-
+            const heroTL = gsap.timeline({ scrollTrigger: { trigger: "#hero", start: "top top", end: "bottom top", scrub: 1.1, invalidateOnRefresh: true } });
             heroTL
                 .to(".hero-content", { y: -90, opacity: 0.25, rotateX: 12, rotateY: -8, ease: 'power2.out' }, 0)
                 .to(".hero-visual", { y: -100, scale: 1.04, rotateX: 12, rotateY: -8, ease: 'power2.out' }, 0)
@@ -547,34 +471,34 @@ export default function Home() {
               <div className="form-grid">
                 <div className="form-group">
                   <label htmlFor="f-name">Full Name</label>
-                  <input type="text" id="f-name" name="name" placeholder="Rajiv Mehta" required value={formData.name} onChange={handleInputChange} />
+                  <input type="text" id="f-name" name="name" placeholder="Rajiv Mehta" required value={bookingFormData.name} onChange={handleBookingInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-phone">Phone Number</label>
-                  <input type="tel" id="f-phone" name="phone" placeholder="+91 98765 43210" required value={formData.phone} onChange={handleInputChange} />
+                  <input type="tel" id="f-phone" name="phone" placeholder="+91 98765 43210" required value={bookingFormData.phone} onChange={handleBookingInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-email">Email Address</label>
-                  <input type="email" id="f-email" name="email" placeholder="rajiv@mail.com" value={formData.email} onChange={handleInputChange} />
+                  <input type="email" id="f-email" name="email" placeholder="rajiv@mail.com" value={bookingFormData.email} onChange={handleBookingInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-model">Preferred Model</label>
-                  <select id="f-model" name="model" required value={formData.model} onChange={handleInputChange}>
+                  <select id="f-model" name="model" required value={bookingFormData.model} onChange={handleBookingInputChange}>
                     <option value="" disabled>Select a model</option>
                     {products.map(p => <option key={p.id}>{p.name}</option>)}
                   </select>
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-date">Preferred Date</label>
-                  <input type="date" id="f-date" name="date" value={formData.date} onChange={handleInputChange} />
+                  <input type="date" id="f-date" name="date" value={bookingFormData.date} onChange={handleBookingInputChange} />
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-city">Your City</label>
-                  <input type="text" id="f-city" name="city" placeholder="Mumbai" value={formData.city} onChange={handleInputChange} />
+                  <input type="text" id="f-city" name="city" placeholder="Mumbai" value={bookingFormData.city} onChange={handleBookingInputChange} />
                 </div>
                 <div className="form-group full">
                   <label htmlFor="f-msg">Message (Optional)</label>
-                  <textarea id="f-msg" name="message" placeholder="Any specific queries or requirements..." value={formData.message} onChange={handleInputChange}></textarea>
+                  <textarea id="f-msg" name="message" placeholder="Any specific queries or requirements..." value={bookingFormData.message} onChange={handleBookingInputChange}></textarea>
                 </div>
                  <div className="form-group full">
                     <label htmlFor="f-captcha">Human Verification: What is {captchaNum1} + {captchaNum2}?</label>
@@ -585,8 +509,8 @@ export default function Home() {
                 <i className="fa-solid fa-paper-plane"></i> &nbsp; Submit Request
               </button>
             </form>
-            {formError && <p style={{ color: 'var(--red)', marginTop: '15px', textAlign: 'center' }}>{formError}</p>}
-            <div className="form-success" aria-live="polite" style={{ display: formSuccess ? 'block' : 'none' }}>
+            {bookingFormError && <p style={{ color: 'var(--red)', marginTop: '15px', textAlign: 'center' }}>{bookingFormError}</p>}
+            <div className="form-success" aria-live="polite" style={{ display: bookingFormSuccess ? 'block' : 'none' }}>
               <i className="fa-solid fa-circle-check"></i>
               <h3>Request Received!</h3>
               <p>Our team will contact you within 24 hours to confirm your test ride slot. Thank you for choosing
@@ -662,83 +586,23 @@ export default function Home() {
         </div>
         <div className="testimonials-track-wrap">
           <div className="testimonials-track" id="testimonials-track">
-            <div className="testimonial-card">
-              <div className="testimonial-quote">"</div>
-              <div className="testimonial-stars">★★★★★</div>
-              <p className="testimonial-text">Walked in looking for a Himalayan and walked out with a smile that
-                hasn't left since. The team here truly understands riders. The test ride experience was
-                absolutely phenomenal — no pressure, pure passion.</p>
-              <div className="testimonial-author">
-                <div className="testimonial-avatar">AM</div>
-                <div>
-                  <div className="testimonial-name">Arjun Mehta</div>
-                  <div className="testimonial-city">Mumbai, MH · Himalayan Owner</div>
+            {featuredReviews.length > 0 ? featuredReviews.map(review => (
+                <div className="testimonial-card" key={review.id}>
+                    <div className="testimonial-quote">"</div>
+                    <div className="testimonial-stars">{'★'.repeat(review.rating)}</div>
+                    <p className="testimonial-text">{review.text}</p>
+                    <div className="testimonial-author">
+                        <div className="testimonial-avatar">{review.name.substring(0,2)}</div>
+                        <div>
+                        <div className="testimonial-name">{review.name}</div>
+                        </div>
+                    </div>
                 </div>
-              </div>
-            </div>
-            <div className="testimonial-card">
-              <div className="testimonial-quote">"</div>
-              <div className="testimonial-stars">★★★★★</div>
-              <p className="testimonial-text">My Classic 350 is the best purchase I've ever made. The dealership team
-                was knowledgeable, honest, and made the whole process seamless. Delivery was on time and the
-                bike was spotless.</p>
-              <div className="testimonial-author">
-                <div className="testimonial-avatar">PK</div>
-                <div>
-                  <div className="testimonial-name">Priya Krishanan</div>
-                  <div className="testimonial-city">Bangalore, KA · Classic 350 Owner</div>
-                </div>
-              </div>
-            </div>
-            <div className="testimonial-card">
-              <div className="testimonial-quote">"</div>
-              <div className="testimonial-stars">★★★★★</div>
-              <p className="testimonial-text">The service center here is outstanding. Transparent pricing, quick
-                turnaround, and the bike always comes back feeling brand new. I won't trust any other workshop
-                with my Meteor 350.</p>
-              <div className="testimonial-author">
-                <div className="testimonial-avatar">RV</div>
-                <div>
-                  <div className="testimonial-name">Rohit Varma</div>
-                  <div className="testimonial-city">Hyderabad, TS · Meteor 350 Owner</div>
-                </div>
-              </div>
-            </div>
-            <div className="testimonial-card">
-              <div className="testimonial-quote">"</div>
-              <div className="testimonial-stars">★★★★★</div>
-              <p className="testimonial-text">Finance was sorted in under 2 hours and I was riding my new Hunter 350
-                the same week. The staff guided me through every option patiently. This is how luxury bike
-                buying should feel.</p>
-              <div className="testimonial-author">
-                <div className="testimonial-avatar">SK</div>
-                <div>
-                  <div className="testimonial-name">Sameer Khanna</div>
-                  <div className="testimonial-city">Delhi, DL · Hunter 350 Owner</div>
-                </div>
-              </div>
-            </div>
-            <div className="testimonial-card">
-              <div className="testimonial-quote">"</div>
-              <p className="testimonial-text">Bought my Super Meteor 650 six months ago — it's a beast. The
-                dealership's showroom experience is as premium as the bike itself. Highly recommend to every
-                Royal Enfield enthusiast.</p>
-              <div className="testimonial-author">
-                <div className="testimonial-avatar">NC</div>
-                <div>
-                  <div className="testimonial-name">Nishant Chawla</div>
-                  <div className="testimonial-city">Pune, MH · Super Meteor 650 Owner</div>
-                </div>
-              </div>
-            </div>
+            )) : <p>No featured reviews yet.</p>}
           </div>
         </div>
         <div className="testimonials-dots">
-          <button className="dot active" aria-label="Testimonial 1"></button>
-          <button className="dot" aria-label="Testimonial 2"></button>
-          <button className="dot" aria-label="Testimonial 3"></button>
-          <button className="dot" aria-label="Testimonial 4"></button>
-          <button className="dot" aria-label="Testimonial 5"></button>
+          {/* Dots can be dynamically generated based on the number of reviews */}
         </div>
       </section>
       <section id="contact" aria-labelledby="contact-title">

@@ -179,7 +179,7 @@ const AdminHeader = ({ tab }: { tab: string }) => {
     products: { title: "Product Management", subtitle: "Add, edit, or remove motorcycle models." },
     bookings: { title: "Test Ride Bookings", subtitle: "View and manage all test ride requests." },
     messages: { title: "Contact Messages", subtitle: "Read and archive incoming messages." },
-    reviews: { title: "Customer Reviews", subtitle: "Approve or delete customer reviews." },
+    reviews: { title: "Customer Reviews", subtitle: "Approve, delete, or feature customer reviews." },
     settings: { title: "Settings", subtitle: "Configure dealership settings." },
   }
   const { title, subtitle } = titles[tab] || { title: "Admin", subtitle: "" };
@@ -192,39 +192,99 @@ const AdminHeader = ({ tab }: { tab: string }) => {
   );
 }
 
+const EmailUpdateModal = ({ isOpen, onClose, currentEmail, onSave }: { isOpen: boolean, onClose: () => void, currentEmail: string, onSave: (newEmail: string) => Promise<void> }) => {
+    const [formState, setFormState] = useState({ current: '', new: '' });
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormState({ ...formState, [e.target.name]: e.target.value });
+    };
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        if (formState.current !== currentEmail) {
+            setError('The current email address does not match.');
+            return;
+        }
+        if (!formState.new) {
+            setError('Please enter a new email address.');
+            return;
+        }
+        try {
+            await onSave(formState.new);
+            setSuccess('Manager email updated successfully! You can now close this window.');
+            setFormState({ current: '', new: '' });
+        } catch (err) {
+            setError('Failed to update the email. Please try again.');
+        }
+    };
+
+    return (
+        <div className={`modal-overlay ${isOpen ? 'open' : ''}`}>
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h3>Update Manager Email</h3>
+                    <button onClick={onClose} className="modal-close-btn">&times;</button>
+                </div>
+                <div className="modal-body">
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="current-email">Current Email</label>
+                            <input type="email" id="current-email" name="current" value={formState.current} onChange={handleInputChange} required />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="new-email">New Email</label>
+                            <input type="email" id="new-email" name="new" value={formState.new} onChange={handleInputChange} required />
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                            <button type="submit" className="btn-primary" style={{ width: '100%' }}>Save Changes</button>
+                            <button type="button" onClick={onClose} className="btn-outline" style={{ width: '100%' }}>Cancel</button>
+                        </div>
+                        {error && <p className="error-message" style={{marginTop: '15px'}}>{error}</p>}
+                        {success && <p className="success-message" style={{marginTop: '15px'}}>{success}</p>}
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
+};
+
 const Settings = () => {
     const [managerEmail, setManagerEmail] = useState('');
-    const [newManagerEmail, setNewManagerEmail] = useState('');
+    const [isEmailModalOpen, setEmailModalOpen] = useState(false);
     const [promoBanner, setPromoBanner] = useState({ enabled: false, text: '', link: '' });
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
 
     useEffect(() => {
-        const fetchSettings = async () => {
-            const managerDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
-            if (managerDoc.exists()) {
-                setManagerEmail(managerDoc.data().email);
-                setNewManagerEmail(managerDoc.data().email);
-            }
-            const promoDoc = await getDoc(doc(db, 'settings', 'promoBanner'));
-            if (promoDoc.exists()) {
-                setPromoBanner(promoDoc.data() as { enabled: boolean; text: string; link: string; });
-            }
-            setLoading(false);
-        };
         fetchSettings();
     }, []);
 
-    const handleUpdateEmail = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const fetchSettings = async () => {
+        setLoading(true);
+        const managerDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
+        if (managerDoc.exists()) {
+            setManagerEmail(managerDoc.data().email);
+        }
+        const promoDoc = await getDoc(doc(db, 'settings', 'promoBanner'));
+        if (promoDoc.exists()) {
+            setPromoBanner(promoDoc.data() as { enabled: boolean; text: string; link: string; });
+        }
+        setLoading(false);
+    };
+
+    const handleUpdateEmail = async (newEmail: string) => {
         setMessage('');
         try {
-            await setDoc(doc(db, 'settings', 'managerDetails'), { email: newManagerEmail });
-            setManagerEmail(newManagerEmail);
-            setMessage('Manager email updated successfully!');
+            await setDoc(doc(db, 'settings', 'managerDetails'), { email: newEmail });
+            setManagerEmail(newEmail);
+            fetchSettings(); // Re-fetch to confirm
         } catch (error) {
-            setMessage('Failed to update email. Please try again.');
             console.error(error);
+            throw error; // Re-throw to be caught in the modal
         }
     };
 
@@ -248,14 +308,11 @@ const Settings = () => {
         <div>
             <div className="glass-card" style={{padding: '30px', marginBottom: '30px'}}>
                 <h3>Manager Notification Email</h3>
-                <p>This is the email address that receives notifications for new test ride bookings.</p>
-                <form onSubmit={handleUpdateEmail}>
-                    <div className="form-group">
-                        <label htmlFor="managerEmail">Email Address</label>
-                        <input type="email" id="managerEmail" value={newManagerEmail} onChange={(e) => setNewManagerEmail(e.target.value)} required />
-                    </div>
-                    <button type="submit" className="btn-primary">Save Changes</button>
-                </form>
+                <p>This is the email address that receives notifications for new test ride bookings and contact messages.</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px' }}>
+                    <p style={{ margin: 0, fontSize: '1.1rem' }}><strong>{managerEmail || "Not Set"}</strong></p>
+                    <button onClick={() => setEmailModalOpen(true)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i></button>
+                </div>
             </div>
 
             <div className="glass-card" style={{padding: '30px'}}>
@@ -279,8 +336,8 @@ const Settings = () => {
                     <button type="submit" className="btn-primary">Save Banner Settings</button>
                 </form>
             </div>
-
-            {message && <p style={{marginTop: '15px'}}>{message}</p>}
+            {message && <p className="success-message" style={{marginTop: '15px'}}>{message}</p>}
+            <EmailUpdateModal isOpen={isEmailModalOpen} onClose={() => setEmailModalOpen(false)} currentEmail={managerEmail} onSave={handleUpdateEmail} />
         </div>
     );
 };
@@ -300,26 +357,36 @@ const Dashboard = ({ bookings, messages, products, reviews }: { bookings: any[],
       <p className="dashboard-stat">{products.length}</p>
     </div>
     <div className="dashboard-card glass-card">
-      <h3>Pending Reviews</h3>
-      <p className="dashboard-stat">{reviews.filter(r => !r.approved).length}</p>
+      <h3>Featured Reviews</h3>
+      <p className="dashboard-stat">{reviews.filter(r => r.featured).length}</p>
     </div>
   </div>
 );
 
 const ReviewsManagement = ({ reviews, onDataChange }: { reviews: any[], onDataChange: () => void }) => {
 
-    const handleApprove = async (id: string) => {
+    const handleApproval = async (id: string, isApproved: boolean) => {
         const reviewRef = doc(db, "reviews", id);
         try {
-            await updateDoc(reviewRef, { approved: true });
+            await updateDoc(reviewRef, { approved: isApproved });
             onDataChange();
         } catch (error) {
-            console.error("Error approving review: ", error);
+            console.error("Error updating review approval: ", error);
+        }
+    };
+
+    const handleFeatured = async (id: string, isFeatured: boolean) => {
+        const reviewRef = doc(db, "reviews", id);
+        try {
+            await updateDoc(reviewRef, { featured: isFeatured });
+            onDataChange();
+        } catch (error) {
+            console.error("Error updating review feature status: ", error);
         }
     };
 
     const handleDelete = async (id: string) => {
-        if (window.confirm("Are you sure you want to delete this review?")) {
+        if (window.confirm("Are you sure you want to permanently delete this review?")) {
             const reviewRef = doc(db, "reviews", id);
             try {
                 await deleteDoc(reviewRef);
@@ -335,8 +402,7 @@ const ReviewsManagement = ({ reviews, onDataChange }: { reviews: any[], onDataCh
             <table className="admin-table">
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Rating</th>
+                        <th>Customer</th>
                         <th>Review</th>
                         <th>Status</th>
                         <th style={{textAlign: 'right'}}>Actions</th>
@@ -345,19 +411,32 @@ const ReviewsManagement = ({ reviews, onDataChange }: { reviews: any[], onDataCh
                 <tbody>
                     {reviews.map(review => (
                         <tr key={review.id}>
-                            <td>{review.name}</td>
-                            <td>{review.rating}</td>
-                            <td style={{maxWidth: '300px'}}>{review.text}</td>
+                            <td>
+                                <strong>{review.name}</strong><br />
+                                <span style={{fontSize: '0.8rem', color: 'var(--text-muted)'}}>Rating: {review.rating}/5</span>
+                            </td>
+                            <td style={{maxWidth: '400px', whiteSpace: 'pre-wrap'}}>{review.text}</td>
                             <td>
                                 <span className={`status-badge ${review.approved ? 'status-approved' : 'status-pending'}`}>
                                     {review.approved ? 'Approved' : 'Pending'}
                                 </span>
+                                {review.featured && 
+                                    <span className={`status-badge status-featured`} style={{marginLeft: '8px', background: 'var(--gold)', color: 'var(--dark-blue)'}}>
+                                        Featured
+                                    </span>
+                                }
                             </td>
-                            <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                {!review.approved && (
-                                    <button onClick={() => handleApprove(review.id)} className="btn-primary" style={{padding: '8px 12px', fontSize: '0.8rem', background: 'var(--green)', borderColor: 'var(--green)'}}><i className="fa-solid fa-check"></i> Approve</button>
+                            <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', alignItems: 'center' }}>
+                                {review.approved ? (
+                                    <button onClick={() => handleFeatured(review.id, !review.featured)} className="btn-outline" style={{padding: '8px 12px', fontSize: '0.8rem'}}>
+                                        <i className={`fa-solid ${review.featured ? 'fa-times' : 'fa-star'}`}></i> {review.featured ? 'Un-feature' : 'Feature'}
+                                    </button>
+                                ) : (
+                                    <button onClick={() => handleApproval(review.id, true)} className="btn-primary" style={{padding: '8px 12px', fontSize: '0.8rem', background: 'var(--green)', borderColor: 'var(--green)'}}>
+                                        <i className="fa-solid fa-check"></i> Approve
+                                    </button>
                                 )}
-                                <button onClick={() => handleDelete(review.id)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
+                                <button onClick={() => handleDelete(review.id)} className="btn-delete"><i className="fa-solid fa-trash"></i></button>
                             </td>
                         </tr>
                     ))}
