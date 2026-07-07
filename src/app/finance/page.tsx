@@ -1,96 +1,80 @@
-'use client'
-
-import { useState, useEffect } from 'react';
 
 export const metadata = {
   title: 'Finance | Royal Enfield',
   description: 'Explore premium finance options for owning your Royal Enfield comfortably.',
 };
 
-export default function FinancePage() {
-    const [loanAmount, setLoanAmount] = useState(150000);
-    const [loanTenure, setLoanTenure] = useState(36);
-    const [interestRate, setInterestRate] = useState(9.0);
-    const [emi, setEmi] = useState(0);
-    const [totalAmount, setTotalAmount] = useState(0);
-    const [totalInterest, setTotalInterest] = useState(0);
-
-    useEffect(() => {
-        const calculateEmi = () => {
-        const p = loanAmount;
-        const r = interestRate / 12 / 100;
-        const n = loanTenure;
-        if (p > 0 && r > 0 && n > 0) {
-            const emiValue = (p * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
-            const totalAmountValue = emiValue * n;
-            const totalInterestValue = totalAmountValue - p;
-            setEmi(Math.round(emiValue));
-            setTotalAmount(Math.round(totalAmountValue));
-            setTotalInterest(Math.round(totalInterestValue));
-        }
-        };
-        calculateEmi();
-    }, [loanAmount, loanTenure, interestRate]);
-
+const FinancePage = () => {
   return (
-     <section id="emi" aria-labelledby="emi-title" style={{paddingTop: '120px', paddingBottom: '120px'}}>
-        <div className="emi-layout">
-          <div className="section-header">
-            <span className="section-tag">Easy Finance</span>
-            <h2 className="section-title" id="emi-title">Calculate Your EMI</h2>
-            <p className="section-subtitle">Custom financing options starting at 8.5% p.a. with flexible tenure up to 60
-              months. Low down payment, fast approval.</p>
-          </div>
-          <div className="emi-calculator glass-card">
-            <div className="emi-sliders">
-              <div className="emi-slider-group">
-                <div className="emi-slider-header">
-                  <span className="emi-slider-label">Loan Amount</span>
-                  <span className="emi-slider-value" id="loan-display">₹{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(loanAmount)}</span>
-                </div>
-                <input type="range" id="loan-amount" min="50000" max="700000" step="5000" value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value))} aria-label="Loan Amount" />
+    <div className="bg-gray-900 text-white min-h-screen">
+      <div className="container mx-auto px-6 py-24">
+        <h1 className="text-5xl font-bold text-center mb-12">Finance Your Ride</h1>
+        <div className="max-w-4xl mx-auto bg-gray-800 p-8 rounded-lg shadow-xl">
+          <h2 className="text-3xl font-bold mb-6">Easy & Flexible Loan Options</h2>
+          <p className="text-lg mb-8">
+            Owning a Royal Enfield is easier than ever with our tailored finance plans. We partner with leading financial institutions to offer you competitive rates and flexible repayment terms.
+          </p>
+
+          <form className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <label htmlFor="name" className="block text-lg font-medium">Full Name</label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  className="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-3 mt-2 focus:outline-none focus:border-red-600"
+                />
               </div>
-              <div className="emi-slider-group">
-                <div className="emi-slider-header">
-                  <span className="emi-slider-label">Loan Tenure</span>
-                  <span className="emi-slider-value" id="tenure-display">{loanTenure} mo</span>
-                </div>
-                <input type="range" id="loan-tenure" min="12" max="60" step="6" value={loanTenure} onChange={e => setLoanTenure(Number(e.target.value))} aria-label="Loan Tenure" />
-              </div>
-              <div className="emi-slider-group">
-                <div className="emi-slider-header">
-                  <span className="emi-slider-label">Interest Rate (p.a.)</span>
-                  <span className="emi-slider-value" id="rate-display">{interestRate.toFixed(1)}%</span>
-                </div>
-                <input type="range" id="loan-rate" min="8.5" max="16" step="0.1" value={interestRate} onChange={e => setInterestRate(Number(e.target.value))} aria-label="Interest Rate" />
+              <div>
+                <label htmlFor="email" className="block text-lg font-medium">Email Address</label>
+                <input
+                  type="email"
+                  id="email"
+                  name="email"
+                  className="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-3 mt-2 focus:outline-none focus:border-red-600"
+                />
               </div>
             </div>
-            <div className="emi-result">
-              <div className="emi-result-label">Monthly EMI</div>
-              <div className="emi-result-amount" id="emi-display">₹{new Intl.NumberFormat('en-IN').format(emi)}</div>
-              <div className="emi-result-sub">Estimated — subject to credit approval</div>
-              <div className="emi-breakdown">
-                <div className="emi-break-item">
-                  <div className="emi-break-val" id="total-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalAmount / 1000)}K</div>
-                  <div className="emi-break-label">Total Amount</div>
-                </div>
-                <div className="emi-break-item">
-                  <div className="emi-break-val" id="interest-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalInterest / 1000)}K</div>
-                  <div className="emi-break-label">Interest Payable</div>
-                </div>
-                <div className="emi-break-item">
-                  <div className="emi-break-val">Instant</div>
-                  <div className="emi-break-label">Approval</div>
-                </div>
-              </div>
+
+            <div>
+              <label htmlFor="phone" className="block text-lg font-medium">Phone Number</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                className="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-3 mt-2 focus:outline-none focus:border-red-600"
+              />
             </div>
-            <div style={{textAlign: 'center',marginTop:'36px'}}>
-              <a href="#test-ride" className="btn-primary">
-                <i className="fa-solid fa-indian-rupee-sign"></i> Apply for Finance
-              </a>
+
+            <div>
+              <label htmlFor="model" className="block text-lg font-medium">Select Model</label>
+              <select
+                id="model"
+                name="model"
+                className="w-full bg-gray-700 border-2 border-gray-600 rounded-lg px-4 py-3 mt-2 focus:outline-none focus:border-red-600"
+              >
+                <option>Classic 350</option>
+                <option>Meteor 350</option>
+                <option>Himalayan</option>
+                <option>Interceptor 650</option>
+                <option>Continental GT 650</option>
+              </select>
             </div>
-          </div>
+
+            <div className="text-center">
+              <button
+                type="submit"
+                className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-lg transition-colors duration-300"
+              >
+                Apply for Loan
+              </button>
+            </div>
+          </form>
         </div>
-      </section>
+      </div>
+    </div>
   );
-}
+};
+
+export default FinancePage;
