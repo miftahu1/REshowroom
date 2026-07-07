@@ -249,6 +249,14 @@ export default function Home() {
 
         const mm = gsap.matchMedia();
 
+        gsap.set([".hero-content", ".hero-visual", "#hero-bike"], {
+            clearProps: "transform,opacity"
+        });
+
+        gsap.set(".hero-content", { y: 0, opacity: 1, rotateX: 0, rotateY: 0 });
+        gsap.set(".hero-visual", { y: 0, scale: 1, rotateX: 0, rotateY: 0, opacity: 1 });
+        gsap.set("#hero-bike", { y: 0, x: 0, scale: 1, opacity: 1, rotateY: 0 });
+
         mm.add("(min-width: 769px)", () => {
             const heroTL = gsap.timeline({
                 scrollTrigger: {
@@ -307,24 +315,24 @@ export default function Home() {
           <span className="logo-sub">Authorized Dealership</span>
         </a>
         <ul className="nav-links">
-          <li><a href="#models">Models</a></li>
-          <li><a href="#about">About</a></li>
-          <li><a href="#services">Services</a></li>
-          <li><a href="#emi">Finance</a></li>
-          <li><a href="#contact">Contact</a></li>
+          <li><Link href="/models">Models</Link></li>
+          <li><Link href="/about">About</Link></li>
+          <li><Link href="/services">Services</Link></li>
+          <li><Link href="/finance">Finance</Link></li>
+          <li><Link href="/contact">Contact</Link></li>
         </ul>
-        <a href="#test-ride" className="nav-cta">Book Test Ride</a>
+        <Link href="/test-ride" className="nav-cta">Book Test Ride</Link>
         <button className={`nav-hamburger ${isMenuOpen ? 'open' : ''}`} aria-label="Toggle menu" id="hamburger" onClick={toggleMenu}>
           <span></span><span></span><span></span>
         </button>
       </nav>
       <div className={`mobile-menu ${isMenuOpen ? 'open' : ''}`} id="mobile-menu">
-        <a href="#models" onClick={toggleMenu}>Models</a>
-        <a href="#about" onClick={toggleMenu}>About</a>
-        <a href="#services" onClick={toggleMenu}>Services</a>
-        <a href="#test-ride" onClick={toggleMenu}>Test Ride</a>
-        <a href="#emi" onClick={toggleMenu}>Finance</a>
-        <a href="#contact" onClick={toggleMenu}>Contact</a>
+        <Link href="/models" onClick={toggleMenu}>Models</Link>
+        <Link href="/about" onClick={toggleMenu}>About</Link>
+        <Link href="/services" onClick={toggleMenu}>Services</Link>
+        <Link href="/test-ride" onClick={toggleMenu}>Test Ride</Link>
+        <Link href="/finance" onClick={toggleMenu}>Finance</Link>
+        <Link href="/contact" onClick={toggleMenu}>Contact</Link>
       </div>
       <section id="hero" aria-label="Hero">
         <canvas id="hero-canvas" aria-hidden="true"></canvas>
@@ -768,7 +776,7 @@ export default function Home() {
               <div className="contact-icon"><i className="fa-solid fa-envelope"></i></div>
               <div className="contact-item-body">
                 <h4>Email Us</h4>
-                <a href="mailto:hello@re-gurugram.in">hello@re-gurugram.in</a>
+                <a href="mailto:hello@re-amguri.in">hello@re-amguri.in</a>
               </div>
             </div>
             <div className="contact-socials">
