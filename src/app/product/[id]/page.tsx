@@ -9,12 +9,12 @@ import { getFirestore, doc, getDoc } from "firebase/firestore";
 import '../../globals.css';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDiG0SkbQ0X2HfbqW7W8ItZTvg4lBkWk9A",
-  authDomain: "reshowroom-28210251-f6ef0.firebaseapp.com",
-  projectId: "reshowroom-28210251-f6ef0",
-  storageBucket: "reshowroom-28210251-f6ef0.appspot.com",
-  messagingSenderId: "405365661255",
-  appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
