@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy } from "firebase/firestore";
+import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, getDoc } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
 import '../globals.css';
 
