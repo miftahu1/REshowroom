@@ -4,258 +4,140 @@ import { useEffect, useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
+import '../globals.css';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
-  apiKey: "AIzaSyDiG0SkbQ0X2HfbqW7W8ItZTvg4lBkWk9A",
-  authDomain: "reshowroom-28210251-f6ef0.firebaseapp.com",
-  projectId: "reshowroom-28210251-f6ef0",
-  storageBucket: "reshowroom-28210251-f6ef0.appspot.com",
-  messagingSenderId: "405365661255",
-  appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 // --- IMPORTANT: ADD YOUR EMAILJS DETAILS HERE ---
-const EMAILJS_SERVICE_ID = 'service_t3duf0c';
-const EMAILJS_TEMPLATE_ID_MANAGER = 'template_o4ytkz8'; // For new bookings
-const EMAILJS_PUBLIC_KEY = 'M3_6Bw_vnhrbf900W';
-const MANAGER_EMAIL = 'miftahulhussain0@gmail.com'; // The email you want to send notifications to
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID as string;
+const EMAILJS_TEMPLATE_ID_MANAGER = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID_MANAGER as string;
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY as string;
 
 // Initialize Firebase
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-const getRandomNum = () => Math.floor(Math.random() * 10) + 1;
-
-export default function TestRidePage() {
-
-    const [products, setProducts] = useState<any[]>([]);
-    const [formData, setFormData] = useState({
-        name: '',
-        phone: '',
-        email: '',
-        model: '',
-        date: '',
-        city: '',
-        message: ''
-    });
-    const [formSuccess, setFormSuccess] = useState(false);
-    const [formError, setFormError] = useState('');
-    const [captchaNum1, setCaptchaNum1] = useState(1);
-    const [captchaNum2, setCaptchaNum2] = useState(1);
-    const [captchaAnswer, setCaptchaAnswer] = useState('');
+const TestRidePage = () => {
+    const [models, setModels] = useState<any[]>([]);
+    const [formData, setFormData] = useState({ name: '', phone: '', email: '', model: '', date: '' });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitStatus, setSubmitStatus] = useState<'success' | 'error' | null>(null);
 
     useEffect(() => {
-        const fetchProducts = async () => {
-        const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
-        const productsSnapshot = await getDocs(productsQuery);
-        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const fetchModels = async () => {
+            const modelsQuery = query(collection(db, "products"), orderBy("name"));
+            const modelsSnapshot = await getDocs(modelsQuery);
+            setModels(modelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         };
-        fetchProducts();
+        fetchModels();
     }, []);
 
-    useEffect(() => {
-        setCaptchaNum1(getRandomNum());
-        setCaptchaNum2(getRandomNum());
-    }, []);
-
-    const generateCaptcha = () => {
-        setCaptchaNum1(getRandomNum());
-        setCaptchaNum2(getRandomNum());
-        setCaptchaAnswer('');
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-        setFormData({
-        ...formData,
-        [e.target.name]: e.target.value
-        });
+    const getManagerEmail = async () => {
+        try {
+            const docRef = doc(db, 'settings', 'managerDetails');
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return docSnap.data().email;
+            } else {
+                console.warn("Manager email not set in settings, using fallback.");
+                return "miftahulhussain0@gmail.com"; // Fallback email
+            }
+        } catch (error) {
+            console.error("Error fetching manager email:", error);
+            return "miftahulhussain0@gmail.com"; // Fallback on error
+        }
     };
 
-    const getManagerEmailBody = (data: any) => {
-        const currentYear = new Date().getFullYear();
-        // Format data into a styled HTML table
-        const bookingDetails = Object.entries(data)
-            .map(([key, value]) => {
-                if (!value) return ''; // Don't show empty fields
-                const formattedKey = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize key
-                return `
-                    <tr>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; text-transform: capitalize; font-weight: bold; color: #555; width: 30%;">${formattedKey}</td>
-                        <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; color: #333;">${value as string}</td>
-                    </tr>
-                `;
-            })
-            .join('');
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        setSubmitStatus(null);
 
-        return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-            </head>
-            <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;">
-                <table border="0" cellpadding="0" cellspacing="0" width="100%">
-                    <tr>
-                        <td style="padding: 20px 0;">
-                            <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                                <tr>
-                                    <td align="center" style="padding: 30px 20px; background-color: #121212;">
-                                        <h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">New Test Ride Request</h1>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 40px 30px;">
-                                        <p style="font-size: 18px; color: #333; margin: 0 0 25px 0;">A new test ride has been requested. Details are below:</p>
-                                        <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">
-                                            ${bookingDetails}
-                                        </table>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 30px; text-align: center; background-color: #f9f9f9;">
-                                        <a href="https://reshowroom.vercel.app/admin" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 20px 30px; background-color: #121212;">
-                                        <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.</p>
-                                    </td>
-                                </tr>
-                            </table>
-                        </td>
-                    </tr>
-                </table>
-            </body>
-            </html>
-        `;
+        const managerEmail = await getManagerEmail();
+
+        const templateParams = {
+            ...formData,
+            to_email: managerEmail,
+            from_name: formData.name,
+            message: `New test ride booking from ${formData.name}. Model: ${formData.model}, Date: ${formData.date}, Phone: ${formData.phone}, Email: ${formData.email}`
+        };
+
+        try {
+            // Save to Firestore
+            await addDoc(collection(db, "bookings"), {
+                ...formData,
+                timestamp: serverTimestamp(),
+                status: 'Pending'
+            });
+
+            // Send Email Notification
+            await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY);
+
+            setSubmitStatus('success');
+            setFormData({ name: '', phone: '', email: '', model: '', date: '' });
+
+        } catch (error) {
+            console.error("Submission failed:", error);
+            setSubmitStatus('error');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
-  const handleBookingSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setFormError('');
-    setFormSuccess(false);
-
-    if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
-        setFormError('Incorrect CAPTCHA answer. Please try again.');
-        generateCaptcha();
-        return;
-    }
-
-    try {
-      await addDoc(collection(db, "bookings"), {
-        ...formData,
-        timestamp: serverTimestamp()
-      });
-      
-      const emailBody = getManagerEmailBody(formData);
-      const templateParams = {
-          manager_email: MANAGER_EMAIL,
-          to_email: MANAGER_EMAIL,
-          from_name: 'Royal Enfield Amguri',
-          reply_to: formData.email,
-          subject: `New Test Ride Request: ${formData.model || 'Test Ride'}`,
-          email_body: emailBody,
-          email_html: emailBody,
-          html_message: emailBody,
-          message_html: emailBody,
-          message: `New booking request from ${formData.name || 'Unknown'} (${formData.email || 'no email provided'}). Model: ${formData.model || 'N/A'}. Date: ${formData.date || 'N/A'}. City: ${formData.city || 'N/A'}. Message: ${formData.message || 'None'}`,
-          booking_name: formData.name,
-          booking_phone: formData.phone,
-          booking_email: formData.email,
-          booking_model: formData.model,
-          booking_date: formData.date,
-          booking_city: formData.city,
-          booking_message: formData.message,
-          booking_details_html: emailBody
-      };
-
-      emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
-        .then((response) => {
-            console.log('Manager notification SUCCESS!', response.status, response.text);
-        }, (err) => {
-            console.log('Manager notification FAILED...', err);
-        });
-
-      setFormSuccess(true);
-      setFormData({ name: '', phone: '', email: '', model: '', date: '', city: '', message: '' });
-      generateCaptcha();
-
-    } catch (error) {
-      console.error("Error submitting booking: ", error);
-      setFormError("There's something wrong booking the test drive, try again after some time");
-      generateCaptcha();
-    }
-  };
-
-  return (
-    <section id="test-ride" aria-labelledby="test-ride-title" style={{paddingTop: '120px', paddingBottom: '120px'}}>
-        <div className="test-ride-layout">
-          <div className="test-ride-info">
-            <span className="section-tag">Experience It</span>
-            <h2 className="section-title" id="test-ride-title">Book a<br />Test Ride</h2>
-            <p>Words can't describe the thrum of a Royal Enfield engine beneath you. Fill in the form and one of our
-              brand specialists will reach out to schedule your personal test ride experience.</p>
-            <div className="test-ride-perks">
-              <div className="perk-item"><i className="fa-solid fa-check"></i> No commitment required</div>
-              <div className="perk-item"><i className="fa-solid fa-check"></i> Personal riding expert assigned</div>
-              <div className="perk-item"><i className="fa-solid fa-check"></i> Rides available 7 days a week</div>
-              <div className="perk-item"><i className="fa-solid fa-check"></i> Full model range available</div>
+    return (
+        <div className="container" style={{ paddingTop: '50px', paddingBottom: '50px' }}>
+            <div className="form-container glass-card" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                <h1 className="form-title">Book a Test Ride</h1>
+                <p>Fill out the form below and we'll get in touch to confirm your test ride.</p>
+                <form onSubmit={handleSubmit}>
+                    <div className="form-group">
+                        <label htmlFor="name">Full Name</label>
+                        <input type="text" id="name" name="name" value={formData.name} onChange={handleInputChange} required />
+                    </div>
+                    <div className="form-grid">
+                        <div className="form-group">
+                            <label htmlFor="phone">Phone Number</label>
+                            <input type="tel" id="phone" name="phone" value={formData.phone} onChange={handleInputChange} required />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="email">Email Address</label>
+                            <input type="email" id="email" name="email" value={formData.email} onChange={handleInputChange} required />
+                        </div>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="model">Select Model</label>
+                        <select id="model" name="model" value={formData.model} onChange={handleInputChange} required>
+                            <option value="">-- Choose a Motorcycle --</option>
+                            {models.map(m => (
+                                <option key={m.id} value={m.name}>{m.name}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="date">Preferred Date</label>
+                        <input type="date" id="date" name="date" value={formData.date} onChange={handleInputChange} required />
+                    </div>
+                    <button type="submit" className="btn-primary" disabled={isSubmitting} style={{ width: '100%' }}>
+                        {isSubmitting ? 'Submitting...' : 'Request Ride'}
+                    </button>
+                    {submitStatus === 'success' && <p className="success-message">Your request has been sent! We will contact you shortly.</p>}
+                    {submitStatus === 'error' && <p className="error-message">Something went wrong. Please try again.</p>}
+                </form>
             </div>
-          </div>
-          <div className="test-ride-form glass-card">
-            <h3 className="form-title">Reserve Your Slot</h3>
-            <form id="booking-form" noValidate onSubmit={handleBookingSubmit}>
-              <div className="form-grid">
-                <div className="form-group">
-                  <label htmlFor="f-name">Full Name</label>
-                  <input type="text" id="f-name" name="name" placeholder="Rajiv Mehta" required value={formData.name} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="f-phone">Phone Number</label>
-                  <input type="tel" id="f-phone" name="phone" placeholder="+91 98765 43210" required value={formData.phone} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="f-email">Email Address</label>
-                  <input type="email" id="f-email" name="email" placeholder="rajiv@mail.com" value={formData.email} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="f-model">Preferred Model</label>
-                  <select id="f-model" name="model" required value={formData.model} onChange={handleInputChange}>
-                    <option value="" disabled>Select a model</option>
-                    {products.map(p => <option key={p.id}>{p.name}</option>)}
-                  </select>
-                </div>
-                <div className="form-group">
-                  <label htmlFor="f-date">Preferred Date</label>
-                  <input type="date" id="f-date" name="date" value={formData.date} onChange={handleInputChange} />
-                </div>
-                <div className="form-group">
-                  <label htmlFor="f-city">Your City</label>
-                  <input type="text" id="f-city" name="city" placeholder="Mumbai" value={formData.city} onChange={handleInputChange} />
-                </div>
-                <div className="form-group full">
-                  <label htmlFor="f-msg">Message (Optional)</label>
-                  <textarea id="f-msg" name="message" placeholder="Any specific queries or requirements..." value={formData.message} onChange={handleInputChange}></textarea>
-                </div>
-                 <div className="form-group full">
-                    <label htmlFor="f-captcha">Human Verification: What is {captchaNum1} + {captchaNum2}?</label>
-                    <input type="number" id="f-captcha" name="captcha" value={captchaAnswer} onChange={(e) => setCaptchaAnswer(e.target.value)} required />
-                </div>
-              </div>
-              <button type="submit" className="form-submit">
-                <i className="fa-solid fa-paper-plane"></i> &nbsp; Submit Request
-              </button>
-            </form>
-            {formError && <p style={{ color: 'var(--red)', marginTop: '15px', textAlign: 'center' }}>{formError}</p>}
-            <div className="form-success" aria-live="polite" style={{ display: formSuccess ? 'block' : 'none' }}>
-              <i className="fa-solid fa-circle-check"></i>
-              <h3>Request Received!</h3>
-              <p>Our team will contact you within 24 hours to confirm your test ride slot. Thank you for choosing
-                Royal Enfield.</p>
-            </div>
-          </div>
         </div>
-      </section>
-  );
+    );
 }
+
+export default TestRidePage;

@@ -26,6 +26,27 @@ const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID as string;
 const EMAILJS_TEMPLATE_ID_USER_UPDATE = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID_USER_UPDATE as string;
 const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY as string;
 
+// This function handles creating a user document in Firestore after sign-in.
+const createUserDocument = async (user: User) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+        // If the user document doesn't exist, create it.
+        try {
+            await setDoc(userDocRef, {
+                email: user.email,
+                displayName: user.displayName || user.email,
+                createdAt: serverTimestamp(),
+                // By default, a new user is NOT an admin.
+                isAdmin: false 
+            });
+        } catch (error) {
+            console.error("Error creating user document: ", error);
+        }
+    }
+};
+
 type Spec = { value: string; label: string };
 interface ProductData {
     name: string;
@@ -41,6 +62,7 @@ interface ProductData {
 const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [bookings, setBookings] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
@@ -48,34 +70,50 @@ const AdminPage = () => {
   const [reviews, setReviews] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        fetchData();
-      }
-      setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+        if (currentUser) {
+            await createUserDocument(currentUser);
+            const userDocRef = doc(db, 'users', currentUser.uid);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists() && userDoc.data().isAdmin) {
+                setIsAdmin(true);
+                setUser(currentUser);
+                fetchData();
+            } else {
+                setIsAdmin(false);
+                setUser(currentUser); // User is logged in, but not an admin
+            }
+        } else {
+            setUser(null);
+            setIsAdmin(false);
+        }
+        setLoading(false);
     });
     return () => unsubscribe();
   }, []);
 
   const fetchData = async () => {
     setLoading(true);
-    const bookingsQuery = query(collection(db, "bookings"), orderBy("timestamp", "desc"));
-    const bookingsSnapshot = await getDocs(bookingsQuery);
-    setBookings(bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    try {
+        const bookingsQuery = query(collection(db, "bookings"), orderBy("timestamp", "desc"));
+        const bookingsSnapshot = await getDocs(bookingsQuery);
+        setBookings(bookingsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    const messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "desc"));
-    const messagesSnapshot = await getDocs(messagesQuery);
-    setMessages(messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "desc"));
+        const messagesSnapshot = await getDocs(messagesQuery);
+        setMessages(messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    const productsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"));
-    const productsSnapshot = await getDocs(productsQuery);
-    setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        const productsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"));
+        const productsSnapshot = await getDocs(productsQuery);
+        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
-    const reviewsQuery = query(collection(db, "reviews"), orderBy("timestamp", "desc"));
-    const reviewsSnapshot = await getDocs(reviewsQuery);
-    setReviews(reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-
+        const reviewsQuery = query(collection(db, "reviews"), orderBy("timestamp", "desc"));
+        const reviewsSnapshot = await getDocs(reviewsQuery);
+        setReviews(reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    } catch (error) {
+        console.error("Error fetching data: ", error);
+        // This is where you would see the permission error if not an admin
+    }
     setLoading(false);
   };
 
@@ -89,6 +127,18 @@ const AdminPage = () => {
 
   if (!user) {
     return <LoginScreen />;
+  }
+
+  if (!isAdmin) {
+      return (
+          <div className="login-container">
+              <div className="login-form glass-card" style={{textAlign: 'center'}}>
+                  <h1 className="form-title">Access Denied</h1>
+                  <p style={{marginBottom: '20px'}}>You do not have permission to access the admin panel.</p>
+                  <button onClick={handleSignOut} className="btn-outline" style={{width: '100%'}}>Sign Out</button>
+              </div>
+          </div>
+      );
   }
 
   return (
@@ -155,6 +205,8 @@ const LoginScreen = () => {
         </div>
     );
 };
+
+// ... The rest of your components (AdminSidebar, AdminHeader, etc.) remain unchanged ...
 
 const AdminSidebar = ({ activeTab, setActiveTab, onSignOut }: { activeTab: string, setActiveTab: (tab: string) => void, onSignOut: () => void }) => (
   <div className="admin-sidebar">
