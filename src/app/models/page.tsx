@@ -1,16 +1,32 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, query, orderBy } from "firebase/firestore";
+
+// Your web app's Firebase configuration
+const firebaseConfig = {
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
+};
+
+// Initialize Firebase
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+const db = getFirestore(app);
 
 interface Model {
   id: string;
   name: string;
   engine: string;
-  power: string;
-  torque: string;
   price: string;
   imageUrl: string;
   category: string;
+  badge?: string;
+  specs?: { label: string; value: string }[];
 }
 
 const ModelsPage = () => {
@@ -19,72 +35,14 @@ const ModelsPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
 
   useEffect(() => {
-    // Normally, you'd fetch this from an API
-    const allModels: Model[] = [
-      {
-        id: '1',
-        name: 'Classic 350',
-        engine: '349cc, Single-Cylinder, 4-stroke',
-        power: '20.2 BHP @ 6100 RPM',
-        torque: '27 Nm @ 4000 RPM',
-        price: '₹ 1.93 Lakh onwards',
-        imageUrl: '/assets/images/motor-1.png',
-        category: 'Cruiser'
-      },
-      {
-        id: '2',
-        name: 'Meteor 350',
-        engine: '349cc, Single-Cylinder, 4-stroke',
-        power: '20.2 BHP @ 6100 RPM',
-        torque: '27 Nm @ 4000 RPM',
-        price: '₹ 2.03 Lakh onwards',
-        imageUrl: '/assets/images/motor-2.png',
-        category: 'Cruiser'
-      },
-      {
-        id: '3',
-        name: 'Himalayan',
-        engine: '411cc, Single-Cylinder, 4-stroke',
-        power: '24.3 BHP @ 6500 RPM',
-        torque: '32 Nm @ 4000-4500 RPM',
-        price: '₹ 2.16 Lakh onwards',
-        imageUrl: '/assets/images/motor-3.png',
-        category: 'Adventure'
-      },
-      {
-        id: '4',
-        name: 'Interceptor 650',
-        engine: '648cc, Parallel-Twin, 4-stroke',
-        power: '47 BHP @ 7150 RPM',
-        torque: '52 Nm @ 5250 RPM',
-        price: '₹ 3.03 Lakh onwards',
-        imageUrl: '/assets/images/motor-4.png',
-        category: 'Roadster'
-      },
-      {
-        id: '5',
-        name: 'Continental GT 650',
-        engine: '648cc, Parallel-Twin, 4-stroke',
-        power: '47 BHP @ 7150 RPM',
-        torque: '52 Nm @ 5250 RPM',
-        price: '₹ 3.19 Lakh onwards',
-        imageUrl: '/assets/images/motor-5.png',
-        category: 'Cafe Racer'
-      },
-      {
-        id: '6',
-        name: 'Scram 411',
-        engine: '411cc, Single-Cylinder, 4-stroke',
-        power: '24.3 BHP @ 6500 RPM',
-        torque: '32 Nm @ 4000-4500 RPM',
-        price: '₹ 2.06 Lakh onwards',
-        imageUrl: '/assets/images/motor-6.png',
-        category: 'Scrambler'
-      },
-    ];
-
-    setModels(allModels);
-    setFilteredModels(allModels);
+    const fetchModels = async () => {
+      const modelsQuery = query(collection(db, "products"), orderBy("createdAt"));
+      const modelsSnapshot = await getDocs(modelsQuery);
+      const allModels = modelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Model));
+      setModels(allModels);
+      setFilteredModels(allModels);
+    };
+    fetchModels();
   }, []);
 
   const handleFilter = (category: string) => {
@@ -100,7 +58,7 @@ const ModelsPage = () => {
   const filterOptions = ['All', 'Cruiser', 'Adventure', 'Roadster', 'Cafe Racer', 'Scrambler'];
 
   return (
-    <div id="models">
+    <div id="models" className="page-shell">
       <div className="section-header">
         <h2 className="section-title">Our Legendary Lineup</h2>
         <p className="section-subtitle">Explore the complete range of Royal Enfield motorcycles. Each machine is a piece of history, built to rule the road.</p>
@@ -139,16 +97,16 @@ const ModelsPage = () => {
             <div className="model-card-body">
               <h3 className="model-card-name">{model.name}</h3>
               <p className="model-card-engine">{model.engine}</p>
-              <div className="model-card-specs">
-                <div className="model-spec">
-                  <span className="model-spec-val">{model.power}</span>
-                  <span className="model-spec-label">Power</span>
+              {model.specs && (
+                <div className="model-card-specs">
+                    {model.specs.map((spec, index) => spec.value && spec.label && (
+                        <div key={index} className="model-spec">
+                            <span className="model-spec-val">{spec.value}</span>
+                            <span className="model-spec-label">{spec.label}</span>
+                        </div>
+                    ))}
                 </div>
-                <div className="model-spec">
-                  <span className="model-spec-val">{model.torque}</span>
-                  <span className="model-spec-label">Torque</span>
-                </div>
-              </div>
+              )}
               <div className="model-card-footer">
                 <div className="model-price">{model.price}</div>
                 <a href={`/product/${model.id}`} className="model-explore-btn">Explore &rarr;</a>
@@ -161,4 +119,4 @@ const ModelsPage = () => {
   );
 };
 
-export default ModelsPage; 
+export default ModelsPage;

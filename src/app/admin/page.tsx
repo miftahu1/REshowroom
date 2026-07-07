@@ -3,31 +3,29 @@
 
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue } from "firebase/firestore";
+import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue, getDoc, setDoc } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
 import '../globals.css';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyDiG0SkbQ0X2HfbqW7W8ItZTvg4lBkWk9A",
-  authDomain: "reshowroom-28210251-f6ef0.firebaseapp.com",
-  projectId: "reshowroom-28210251-f6ef0",
-  storageBucket: "reshowroom-28210251-f6ef0.appspot.com",
-  messagingSenderId: "405365661255",
-  appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
+    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
+const googleProvider = new GoogleAuthProvider();
 
-const EMAILJS_SERVICE_ID = 'service_t3duf0c';
-const EMAILJS_TEMPLATE_ID_USER_UPDATE = 'template_5rlszxk';
-const EMAILJS_PUBLIC_KEY = 'M3_6Bw_vnhrbf900W';
+const EMAILJS_SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID as string;
+const EMAILJS_TEMPLATE_ID_USER_UPDATE = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID_USER_UPDATE as string;
+const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY as string;
 
-
-// Define a type for the product data to prevent build errors
 type Spec = { value: string; label: string };
 interface ProductData {
     name: string;
@@ -44,7 +42,6 @@ const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
-
   const [bookings, setBookings] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -76,24 +73,16 @@ const AdminPage = () => {
     setLoading(false);
   };
 
-  const handleSignIn = () => {
-    signInWithPopup(auth, provider).catch(error => console.error(error));
-  };
-
   const handleSignOut = () => {
     signOut(auth).catch(error => console.error(error));
   };
 
-  if (loading && !user) {
-    return (
-      <div className="login-container">
-        <h1>Loading...</h1>
-      </div>
-    );
+  if (loading) {
+    return <div className="login-container"><h1>Loading...</h1></div>;
   }
 
   if (!user) {
-    return <LoginScreen onSignIn={handleSignIn} />;
+    return <LoginScreen />;
   }
 
   return (
@@ -108,6 +97,7 @@ const AdminPage = () => {
               {activeTab === 'bookings' && <BookingsManagement bookings={bookings} onDataChange={fetchData} />}
               {activeTab === 'messages' && <MessagesInbox messages={messages} />}
               {activeTab === 'products' && <ProductManagement products={products} onDataChange={fetchData} />}
+              {activeTab === 'settings' && <Settings />}
             </>
           )}
         </main>
@@ -116,17 +106,57 @@ const AdminPage = () => {
   );
 };
 
-const LoginScreen = ({ onSignIn }: { onSignIn: () => void }) => (
-  <div className="login-container">
-    <div className="login-form glass-card">
-      <h1 className="form-title">Admin Login</h1>
-      <p style={{ textAlign: 'center', color: 'var(--text-secondary)', marginBottom: '24px' }}>Please sign in to access the dashboard.</p>
-      <button onClick={onSignIn} className="btn-primary google-login">
-        <i className="fa-brands fa-google"></i> &nbsp; Sign in with Google
-      </button>
-    </div>
-  </div>
-);
+const LoginScreen = () => {
+    const [isRegistering, setIsRegistering] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+
+    const handleAuthAction = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        try {
+            if (isRegistering) {
+                await createUserWithEmailAndPassword(auth, email, password);
+            } else {
+                await signInWithEmailAndPassword(auth, email, password);
+            }
+        } catch (err: any) {
+            setError(err.message);
+        }
+    };
+
+    const handleGoogleSignIn = () => {
+        signInWithPopup(auth, googleProvider).catch(err => setError(err.message));
+    };
+
+    return (
+        <div className="login-container">
+            <div className="login-form glass-card">
+                <h1 className="form-title">{isRegistering ? 'Create Account' : 'Admin Login'}</h1>
+                <form onSubmit={handleAuthAction}>
+                    <div className="form-group">
+                        <label htmlFor="email">Email</label>
+                        <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="password">Password</label>
+                        <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                    </div>
+                    <button type="submit" className="btn-primary" style={{width: '100%', marginBottom: '16px'}}>{isRegistering ? 'Register' : 'Sign In'}</button>
+                </form>
+                <button onClick={handleGoogleSignIn} className="btn-outline google-login" style={{width: '100%'}}>
+                    <i className="fa-brands fa-google"></i> &nbsp; Sign in with Google
+                </button>
+                {error && <p className="error-message">{error}</p>}
+                <p style={{textAlign: 'center', marginTop: '20px'}}>
+                    {isRegistering ? 'Already have an account? ' : 'Need an account? '}
+                    <a href="#" onClick={() => setIsRegistering(!isRegistering)}>{isRegistering ? 'Sign In' : 'Register'}</a>
+                </p>
+            </div>
+        </div>
+    );
+};
 
 const AdminSidebar = ({ activeTab, setActiveTab, onSignOut }: { activeTab: string, setActiveTab: (tab: string) => void, onSignOut: () => void }) => (
   <div className="admin-sidebar">
@@ -136,6 +166,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onSignOut }: { activeTab: strin
       <li><a href="#" onClick={() => setActiveTab('products')} className={activeTab === 'products' ? 'active' : ''}><i className="fa-solid fa-motorcycle"></i> Products</a></li>
       <li><a href="#" onClick={() => setActiveTab('bookings')} className={activeTab === 'bookings' ? 'active' : ''}><i className="fa-solid fa-calendar-check"></i> Bookings</a></li>
       <li><a href="#" onClick={() => setActiveTab('messages')} className={activeTab === 'messages' ? 'active' : ''}><i className="fa-solid fa-envelope"></i> Messages</a></li>
+      <li><a href="#" onClick={() => setActiveTab('settings')} className={activeTab === 'settings' ? 'active' : ''}><i className="fa-solid fa-cog"></i> Settings</a></li>
     </ul>
     <div style={{ marginTop: 'auto' }}>
       <button onClick={onSignOut} className="btn-outline" style={{ width: '100%' }}><i className="fa-solid fa-right-from-bracket"></i> Sign Out</button>
@@ -149,6 +180,7 @@ const AdminHeader = ({ tab }: { tab: string }) => {
     products: { title: "Product Management", subtitle: "Add, edit, or remove motorcycle models." },
     bookings: { title: "Test Ride Bookings", subtitle: "View and manage all test ride requests." },
     messages: { title: "Contact Messages", subtitle: "Read and archive incoming messages." },
+    settings: { title: "Settings", subtitle: "Configure dealership settings." },
   }
   const { title, subtitle } = titles[tab] || { title: "Admin", subtitle: "" };
 
@@ -159,6 +191,57 @@ const AdminHeader = ({ tab }: { tab: string }) => {
     </header>
   );
 }
+
+const Settings = () => {
+    const [managerEmail, setManagerEmail] = useState('');
+    const [newManagerEmail, setNewManagerEmail] = useState('');
+    const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        const fetchManagerEmail = async () => {
+            const settingDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
+            if (settingDoc.exists()) {
+                setManagerEmail(settingDoc.data().email);
+                setNewManagerEmail(settingDoc.data().email);
+            }
+            setLoading(false);
+        };
+        fetchManagerEmail();
+    }, []);
+
+    const handleUpdateEmail = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMessage('');
+        try {
+            await setDoc(doc(db, 'settings', 'managerDetails'), { email: newManagerEmail });
+            setManagerEmail(newManagerEmail);
+            setMessage('Manager email updated successfully!');
+        } catch (error) {
+            setMessage('Failed to update email. Please try again.');
+            console.error(error);
+        }
+    };
+
+    if (loading) {
+        return <p>Loading settings...</p>
+    }
+
+    return (
+        <div className="glass-card" style={{padding: '30px'}}>
+            <h3>Manager Notification Email</h3>
+            <p>This is the email address that receives notifications for new test ride bookings.</p>
+            <form onSubmit={handleUpdateEmail}>
+                <div className="form-group">
+                    <label htmlFor="managerEmail">Email Address</label>
+                    <input type="email" id="managerEmail" value={newManagerEmail} onChange={(e) => setNewManagerEmail(e.target.value)} required />
+                </div>
+                <button type="submit" className="btn-primary">Save Changes</button>
+            </form>
+            {message && <p style={{marginTop: '15px'}}>{message}</p>}
+        </div>
+    );
+};
 
 const Dashboard = ({ bookings, messages, products }: { bookings: any[], messages: any[], products: any[] }) => (
   <div className="dashboard-grid">
@@ -326,7 +409,7 @@ const ProductManagement = ({ products, onDataChange }: { products: ProductData[]
                   <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
                 </td>
               </tr>
-            ))}\
+            ))}
           </tbody>
         </table>
       </div>
@@ -473,7 +556,7 @@ const BookingsManagement = ({ bookings, onDataChange }: { bookings: any[], onDat
                                 </tr>
                                 <tr>
                                     <td style="padding: 20px 30px; background-color: #121212;">
-                                        <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.<br>Amguri, Assam, India</p>
+                                        <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${new Date().getFullYear()} Royal Enfield Amguri. All rights reserved.<br>Amguri, Assam, India</p>
                                     </td>
                                 </tr>
                             </table>
@@ -548,7 +631,7 @@ const BookingsManagement = ({ bookings, onDataChange }: { bookings: any[], onDat
                             )}
                         </td>
                     </tr>
-                    ))}\
+                    ))}
                 </tbody>
                 </table>
             </div>
@@ -567,7 +650,7 @@ const MessagesInbox = ({ messages }: { messages: any[] }) => (
         </div>
         <p>{message.message}</p>
       </div>
-    ))}\
+    ))}
   </div>
 );
 
