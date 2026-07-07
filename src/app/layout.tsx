@@ -1,6 +1,6 @@
-
 import './globals.css';
 import type { Metadata } from 'next';
+import SectionPageShell from '@/components/SectionPageShell';
 
 export const metadata: Metadata = {
   title: 'Royal Enfield Dealership',
@@ -23,7 +23,9 @@ export default function RootLayout({
           referrerPolicy="no-referrer" 
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <SectionPageShell>{children}</SectionPageShell>
+      </body>
     </html>
   );
 }

@@ -1,12 +1,8 @@
-
-export const metadata = {
-  title: 'About | Royal Enfield',
-  description: 'Learn about the Royal Enfield experience and the craftsmanship behind every ride.',
-};
+'use client';
 
 const AboutPage = () => {
   return (
-    <div className="bg-gray-900 text-white min-h-screen">
+    <div id="about">
       {/* Hero Section */}
       <div className="container mx-auto px-6 py-24 text-center">
         <h1 className="text-5xl font-bold mb-4">About Royal Enfield</h1>

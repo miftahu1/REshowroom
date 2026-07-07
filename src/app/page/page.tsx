@@ -99,8 +99,8 @@ export default function Home() {
             const formattedKey = key.charAt(0).toUpperCase() + key.slice(1); // Capitalize key
             return `
                 <tr>
-                    <td style={{padding: "12px 15px", borderBottom: "1px solid #e0e0e0", textTransform: "capitalize", fontWeight: "bold", color: "#555", width: "30%"}}>${formattedKey}</td>
-                    <td style={{padding: "12px 15px", borderBottom: "1px solid #e0e0e0", color: "#333"}}>${value as string}</td>
+                    <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; text-transform: capitalize; font-weight: bold; color: #555; width: 30%;">${formattedKey}</td>
+                    <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; color: #333;">${value as string}</td>
                 </tr>
             `;
         })
@@ -112,32 +112,32 @@ export default function Home() {
         <head>
             <link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
         </head>
-        <body style={{margin: 0, padding: 0, backgroundColor: "#f4f4f4", fontFamily: "'Roboto', sans-serif"}}>
-            <table border="0" cellPadding="0" cellSpacing="0" width="100%">
+        <body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;">
+            <table border="0" cellpadding="0" cellspacing="0" width="100%">
                 <tr>
-                    <td style={{padding: "20px 0"}}>
-                        <table align="center" border="0" cellPadding="0" cellSpacing="0" width="600" style={{borderCollapse: "collapse", backgroundColor: "#ffffff", borderRadius: "12px", overflow: "hidden", boxShadow: "0 4px 15px rgba(0,0,0,0.1)"}}>
+                    <td style="padding: 20px 0;">
+                        <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
                             <tr>
-                                <td align="center" style={{padding: "30px 20px", backgroundColor: "#121212"}}>
-                                    <h1 style={{color: "#c9a84c", fontFamily: "'Teko', sans-serif", fontSize: "32px", textTransform: "uppercase", letterSpacing: "0.1em", margin: 0}}>New Test Ride Request</h1>
+                                <td align="center" style="padding: 30px 20px; background-color: #121212;">
+                                    <h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">New Test Ride Request</h1>
                                 </td>
                             </tr>
                             <tr>
-                                <td style={{padding: "40px 30px"}}>
-                                    <p style={{fontSize: "18px", color: "#333", margin: "0 0 25px 0"}}>A new test ride has been requested. Details are below:</p>
-                                    <table border="0" cellPadding="0" cellSpacing="0" width="100%" style={{borderCollapse: "collapse", border: "1px solid #e0e0e0", borderRadius: "8px"}}>
+                                <td style="padding: 40px 30px;">
+                                    <p style="font-size: 18px; color: #333; margin: 0 0 25px 0;">A new test ride has been requested. Details are below:</p>
+                                    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">
                                         ${bookingDetails}
                                     </table>
                                 </td>
                             </tr>
                             <tr>
-                                <td style={{padding: "30px", textAlign: "center", backgroundColor: "#f9f9f9"}}>
-                                    <a href="https://reshowroom-28210251.web.app/admin" target="_blank" style={{backgroundColor: "#c9a84c", color: "#ffffff", padding: "15px 25px", textDecoration: "none", borderRadius: "8px", fontWeight: "bold", fontFamily: "'Roboto', sans-serif", fontSize: "16px"}}>Go to Admin Dashboard</a>
+                                <td style="padding: 30px; text-align: center; background-color: #f9f9f9;">
+                                    <a href="https://reshowroom-28210251.web.app/admin" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
                                 </td>
                             </tr>
                             <tr>
-                                <td style={{padding: "20px 30px", backgroundColor: "#121212"}}>
-                                    <p style={{margin: 0, color: "#888888", textAlign: "center", fontSize: "12px"}}>&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.</p>
+                                <td style="padding: 20px 30px; background-color: #121212;">
+                                    <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.</p>
                                 </td>
                             </tr>
                         </table>

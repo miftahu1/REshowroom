@@ -1,12 +1,8 @@
-
-export const metadata = {
-  title: 'Contact | Royal Enfield',
-  description: 'Reach out to the Royal Enfield showroom for test rides, service, and support.',
-};
+'use client';
 
 const ContactPage = () => {
   return (
-    <div className="bg-gray-900 text-white min-h-screen">
+    <div id="contact">
       <div className="container mx-auto px-6 py-24">
         <h1 className="text-5xl font-bold text-center mb-12">Contact Us</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">

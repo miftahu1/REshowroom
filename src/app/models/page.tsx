@@ -1,74 +1,164 @@
-'use client'
+'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { getFirestore, collection, getDocs, query, orderBy } from "firebase/firestore";
-import { initializeApp, getApps, getApp } from 'firebase/app';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyDiG0SkbQ0X2HfbqW7W8ItZTvg4lBkWk9A",
-  authDomain: "reshowroom-28210251-f6ef0.firebaseapp.com",
-  projectId: "reshowroom-28210251-f6ef0",
-  storageBucket: "reshowroom-28210251-f6ef0.appspot.com",
-  messagingSenderId: "405365661255",
-  appId: "1:405365661255:web:7d0dddf1caf5dcb0a9db62"
-};
+interface Model {
+  id: string;
+  name: string;
+  engine: string;
+  power: string;
+  torque: string;
+  price: string;
+  imageUrl: string;
+  category: string;
+}
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
+const ModelsPage = () => {
+  const [models, setModels] = useState<Model[]>([]);
+  const [filteredModels, setFilteredModels] = useState<Model[]>([]);
+  const [activeFilter, setActiveFilter] = useState('All');
 
+  useEffect(() => {
+    // Normally, you'd fetch this from an API
+    const allModels: Model[] = [
+      {
+        id: '1',
+        name: 'Classic 350',
+        engine: '349cc, Single-Cylinder, 4-stroke',
+        power: '20.2 BHP @ 6100 RPM',
+        torque: '27 Nm @ 4000 RPM',
+        price: '₹ 1.93 Lakh onwards',
+        imageUrl: '/assets/images/motor-1.png',
+        category: 'Cruiser'
+      },
+      {
+        id: '2',
+        name: 'Meteor 350',
+        engine: '349cc, Single-Cylinder, 4-stroke',
+        power: '20.2 BHP @ 6100 RPM',
+        torque: '27 Nm @ 4000 RPM',
+        price: '₹ 2.03 Lakh onwards',
+        imageUrl: '/assets/images/motor-2.png',
+        category: 'Cruiser'
+      },
+      {
+        id: '3',
+        name: 'Himalayan',
+        engine: '411cc, Single-Cylinder, 4-stroke',
+        power: '24.3 BHP @ 6500 RPM',
+        torque: '32 Nm @ 4000-4500 RPM',
+        price: '₹ 2.16 Lakh onwards',
+        imageUrl: '/assets/images/motor-3.png',
+        category: 'Adventure'
+      },
+      {
+        id: '4',
+        name: 'Interceptor 650',
+        engine: '648cc, Parallel-Twin, 4-stroke',
+        power: '47 BHP @ 7150 RPM',
+        torque: '52 Nm @ 5250 RPM',
+        price: '₹ 3.03 Lakh onwards',
+        imageUrl: '/assets/images/motor-4.png',
+        category: 'Roadster'
+      },
+      {
+        id: '5',
+        name: 'Continental GT 650',
+        engine: '648cc, Parallel-Twin, 4-stroke',
+        power: '47 BHP @ 7150 RPM',
+        torque: '52 Nm @ 5250 RPM',
+        price: '₹ 3.19 Lakh onwards',
+        imageUrl: '/assets/images/motor-5.png',
+        category: 'Cafe Racer'
+      },
+      {
+        id: '6',
+        name: 'Scram 411',
+        engine: '411cc, Single-Cylinder, 4-stroke',
+        power: '24.3 BHP @ 6500 RPM',
+        torque: '32 Nm @ 4000-4500 RPM',
+        price: '₹ 2.06 Lakh onwards',
+        imageUrl: '/assets/images/motor-6.png',
+        category: 'Scrambler'
+      },
+    ];
 
-export default function ModelsPage() {
-    const [products, setProducts] = useState<any[]>([]);
+    setModels(allModels);
+    setFilteredModels(allModels);
+  }, []);
 
-    useEffect(() => {
-        const fetchProducts = async () => {
-        const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
-        const productsSnapshot = await getDocs(productsQuery);
-        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-        };
-        fetchProducts();
-    }, []);
+  const handleFilter = (category: string) => {
+    setActiveFilter(category);
+    if (category === 'All') {
+      setFilteredModels(models);
+    } else {
+      const filtered = models.filter(model => model.category === category);
+      setFilteredModels(filtered);
+    }
+  };
+
+  const filterOptions = ['All', 'Cruiser', 'Adventure', 'Roadster', 'Cafe Racer', 'Scrambler'];
 
   return (
-    <section id="models" aria-labelledby="models-title" style={{paddingTop: '120px', paddingBottom: '120px'}}>
-        <div className="section-header">
-          <span className="section-tag">Our Fleet</span>
-          <h2 className="section-title" id="models-title">Featured Models</h2>
-          <p className="section-subtitle">Each machine handcrafted to inspire — discover the motorcycle that speaks your language.</p>
+    <div id="models">
+      <div className="section-header">
+        <h2 className="section-title">Our Legendary Lineup</h2>
+        <p className="section-subtitle">Explore the complete range of Royal Enfield motorcycles. Each machine is a piece of history, built to rule the road.</p>
+      </div>
+
+      <div className="filter-bar-container" style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
+        <div className="filter-bar" style={{ display: 'flex', gap: '10px', background: 'rgba(255, 255, 255, 0.05)', padding: '10px', borderRadius: '999px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+          {filterOptions.map(option => (
+            <button 
+              key={option} 
+              onClick={() => handleFilter(option)} 
+              className={`filter-btn ${activeFilter === option ? 'active' : ''}`}
+              style={{
+                padding: '10px 20px',
+                borderRadius: '999px',
+                border: 'none',
+                background: activeFilter === option ? 'var(--gold)' : 'transparent',
+                color: activeFilter === option ? 'var(--text-inverted)' : 'var(--text-primary)',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease'
+              }}
+            >
+              {option}
+            </button>
+          ))}
         </div>
-        <div className="models-grid">
-            {products.map(product => (
-                 <Link key={product.id} href={`/product/${product.id}`} passHref>
-                    <article className="model-card" role="article" id={product.name === 'Hunter 350' ? 'hunter-card' : undefined}>
-                    <div className="model-card-img">
-                        <img src={product.imageUrl} alt={`Royal Enfield ${product.name}`} loading="lazy" />
-                        {product.badge && <span className="model-card-badge">{product.badge}</span>}
-                    </div>
-                    <div className="model-card-body">
-                        <h3 className="model-card-name">{product.name}</h3>
-                        <p className="model-card-engine">{product.engine}</p>
-                        {product.specs && (
-                            <div className="model-card-specs">
-                                {product.specs.map((spec: any, index: number) => spec.value && spec.label && (
-                                    <div key={index} className="model-spec">
-                                        <span className="model-spec-val">{spec.value}</span>
-                                        <span className="model-spec-label">{spec.label}</span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                        <div className="model-card-footer">
-                        <div className="model-price">{product.price} <span>onwards</span></div>
-                        <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
-                        </div>
-                    </div>
-                    </article>
-              </Link>
-            ))}
-        </div>
-      </section>
+      </div>
+
+      <div className="models-grid">
+        {filteredModels.map(model => (
+          <div className="model-card" key={model.id}>
+            <div className="model-card-img">
+              <img src={model.imageUrl} alt={model.name} />
+              {model.category && <div className="model-card-badge">{model.category}</div>}
+            </div>
+            <div className="model-card-body">
+              <h3 className="model-card-name">{model.name}</h3>
+              <p className="model-card-engine">{model.engine}</p>
+              <div className="model-card-specs">
+                <div className="model-spec">
+                  <span className="model-spec-val">{model.power}</span>
+                  <span className="model-spec-label">Power</span>
+                </div>
+                <div className="model-spec">
+                  <span className="model-spec-val">{model.torque}</span>
+                  <span className="model-spec-label">Torque</span>
+                </div>
+              </div>
+              <div className="model-card-footer">
+                <div className="model-price">{model.price}</div>
+                <a href={`/product/${model.id}`} className="model-explore-btn">Explore &rarr;</a>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
-}
+};
+
+export default ModelsPage; 
