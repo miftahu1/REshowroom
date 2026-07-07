@@ -45,6 +45,7 @@ const AdminPage = () => {
   const [bookings, setBookings] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -70,6 +71,11 @@ const AdminPage = () => {
     const productsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"));
     const productsSnapshot = await getDocs(productsQuery);
     setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+    const reviewsQuery = query(collection(db, "reviews"), orderBy("timestamp", "desc"));
+    const reviewsSnapshot = await getDocs(reviewsQuery);
+    setReviews(reviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
     setLoading(false);
   };
 
@@ -93,10 +99,11 @@ const AdminPage = () => {
         <main>
           {loading ? <p>Loading data...</p> : (
             <>
-              {activeTab === 'dashboard' && <Dashboard bookings={bookings} messages={messages} products={products} />}
+              {activeTab === 'dashboard' && <Dashboard bookings={bookings} messages={messages} products={products} reviews={reviews} />}
               {activeTab === 'bookings' && <BookingsManagement bookings={bookings} onDataChange={fetchData} />}
               {activeTab === 'messages' && <MessagesInbox messages={messages} />}
               {activeTab === 'products' && <ProductManagement products={products} onDataChange={fetchData} />}
+              {activeTab === 'reviews' && <ReviewsManagement reviews={reviews} onDataChange={fetchData} />}
               {activeTab === 'settings' && <Settings />}
             </>
           )}
@@ -157,6 +164,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onSignOut }: { activeTab: strin
       <li><a href="#" onClick={() => setActiveTab('products')} className={activeTab === 'products' ? 'active' : ''}><i className="fa-solid fa-motorcycle"></i> Products</a></li>
       <li><a href="#" onClick={() => setActiveTab('bookings')} className={activeTab === 'bookings' ? 'active' : ''}><i className="fa-solid fa-calendar-check"></i> Bookings</a></li>
       <li><a href="#" onClick={() => setActiveTab('messages')} className={activeTab === 'messages' ? 'active' : ''}><i className="fa-solid fa-envelope"></i> Messages</a></li>
+      <li><a href="#" onClick={() => setActiveTab('reviews')} className={activeTab === 'reviews' ? 'active' : ''}><i className="fa-solid fa-star"></i> Reviews</a></li>
       <li><a href="#" onClick={() => setActiveTab('settings')} className={activeTab === 'settings' ? 'active' : ''}><i className="fa-solid fa-cog"></i> Settings</a></li>
     </ul>
     <div style={{ marginTop: 'auto' }}>
@@ -171,6 +179,7 @@ const AdminHeader = ({ tab }: { tab: string }) => {
     products: { title: "Product Management", subtitle: "Add, edit, or remove motorcycle models." },
     bookings: { title: "Test Ride Bookings", subtitle: "View and manage all test ride requests." },
     messages: { title: "Contact Messages", subtitle: "Read and archive incoming messages." },
+    reviews: { title: "Customer Reviews", subtitle: "Approve or delete customer reviews." },
     settings: { title: "Settings", subtitle: "Configure dealership settings." },
   }
   const { title, subtitle } = titles[tab] || { title: "Admin", subtitle: "" };
@@ -186,19 +195,24 @@ const AdminHeader = ({ tab }: { tab: string }) => {
 const Settings = () => {
     const [managerEmail, setManagerEmail] = useState('');
     const [newManagerEmail, setNewManagerEmail] = useState('');
+    const [promoBanner, setPromoBanner] = useState({ enabled: false, text: '', link: '' });
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
 
     useEffect(() => {
-        const fetchManagerEmail = async () => {
-            const settingDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
-            if (settingDoc.exists()) {
-                setManagerEmail(settingDoc.data().email);
-                setNewManagerEmail(settingDoc.data().email);
+        const fetchSettings = async () => {
+            const managerDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
+            if (managerDoc.exists()) {
+                setManagerEmail(managerDoc.data().email);
+                setNewManagerEmail(managerDoc.data().email);
+            }
+            const promoDoc = await getDoc(doc(db, 'settings', 'promoBanner'));
+            if (promoDoc.exists()) {
+                setPromoBanner(promoDoc.data());
             }
             setLoading(false);
         };
-        fetchManagerEmail();
+        fetchSettings();
     }, []);
 
     const handleUpdateEmail = async (e: React.FormEvent) => {
@@ -214,27 +228,64 @@ const Settings = () => {
         }
     };
 
+    const handleUpdateBanner = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMessage('');
+        try {
+            await setDoc(doc(db, 'settings', 'promoBanner'), promoBanner);
+            setMessage('Promotional banner updated successfully!');
+        } catch (error) {
+            setMessage('Failed to update promotional banner. Please try again.');
+            console.error(error);
+        }
+    };
+
     if (loading) {
         return <p>Loading settings...</p>
     }
 
     return (
-        <div className="glass-card" style={{padding: '30px'}}>
-            <h3>Manager Notification Email</h3>
-            <p>This is the email address that receives notifications for new test ride bookings.</p>
-            <form onSubmit={handleUpdateEmail}>
-                <div className="form-group">
-                    <label htmlFor="managerEmail">Email Address</label>
-                    <input type="email" id="managerEmail" value={newManagerEmail} onChange={(e) => setNewManagerEmail(e.target.value)} required />
-                </div>
-                <button type="submit" className="btn-primary">Save Changes</button>
-            </form>
+        <div>
+            <div className="glass-card" style={{padding: '30px', marginBottom: '30px'}}>
+                <h3>Manager Notification Email</h3>
+                <p>This is the email address that receives notifications for new test ride bookings.</p>
+                <form onSubmit={handleUpdateEmail}>
+                    <div className="form-group">
+                        <label htmlFor="managerEmail">Email Address</label>
+                        <input type="email" id="managerEmail" value={newManagerEmail} onChange={(e) => setNewManagerEmail(e.target.value)} required />
+                    </div>
+                    <button type="submit" className="btn-primary">Save Changes</button>
+                </form>
+            </div>
+
+            <div className="glass-card" style={{padding: '30px'}}>
+                <h3>Promotional Banner</h3>
+                <p>Display a notification banner at the top of the homepage.</p>
+                <form onSubmit={handleUpdateBanner}>
+                    <div className="form-group">
+                        <label style={{display: 'flex', alignItems: 'center'}}>
+                            <input type="checkbox" checked={promoBanner.enabled} onChange={(e) => setPromoBanner({...promoBanner, enabled: e.target.checked})} style={{width: 'auto', marginRight: '10px'}} />
+                            Enable Promotional Banner
+                        </label>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="promoText">Banner Text</label>
+                        <input type="text" id="promoText" value={promoBanner.text} onChange={(e) => setPromoBanner({...promoBanner, text: e.target.value})} placeholder="e.g., Limited Time: Monsoon Service Camp!" />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="promoLink">Banner Link (Optional)</label>
+                        <input type="text" id="promoLink" value={promoBanner.link} onChange={(e) => setPromoBanner({...promoBanner, link: e.target.value})} placeholder="e.g., /services" />
+                    </div>
+                    <button type="submit" className="btn-primary">Save Banner Settings</button>
+                </form>
+            </div>
+
             {message && <p style={{marginTop: '15px'}}>{message}</p>}
         </div>
     );
 };
 
-const Dashboard = ({ bookings, messages, products }: { bookings: any[], messages: any[], products: any[] }) => (
+const Dashboard = ({ bookings, messages, products, reviews }: { bookings: any[], messages: any[], products: any[], reviews: any[] }) => (
   <div className="dashboard-grid">
     <div className="dashboard-card glass-card">
       <h3>Total Bookings</h3>
@@ -248,8 +299,74 @@ const Dashboard = ({ bookings, messages, products }: { bookings: any[], messages
       <h3>Listed Products</h3>
       <p className="dashboard-stat">{products.length}</p>
     </div>
+    <div className="dashboard-card glass-card">
+      <h3>Pending Reviews</h3>
+      <p className="dashboard-stat">{reviews.filter(r => !r.approved).length}</p>
+    </div>
   </div>
 );
+
+const ReviewsManagement = ({ reviews, onDataChange }: { reviews: any[], onDataChange: () => void }) => {
+
+    const handleApprove = async (id: string) => {
+        const reviewRef = doc(db, "reviews", id);
+        try {
+            await updateDoc(reviewRef, { approved: true });
+            onDataChange();
+        } catch (error) {
+            console.error("Error approving review: ", error);
+        }
+    };
+
+    const handleDelete = async (id: string) => {
+        if (window.confirm("Are you sure you want to delete this review?")) {
+            const reviewRef = doc(db, "reviews", id);
+            try {
+                await deleteDoc(reviewRef);
+                onDataChange();
+            } catch (error) {
+                console.error("Error deleting review: ", error);
+            }
+        }
+    };
+
+    return (
+        <div className="admin-table-container">
+            <table className="admin-table">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Rating</th>
+                        <th>Review</th>
+                        <th>Status</th>
+                        <th style={{textAlign: 'right'}}>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {reviews.map(review => (
+                        <tr key={review.id}>
+                            <td>{review.name}</td>
+                            <td>{review.rating}</td>
+                            <td style={{maxWidth: '300px'}}>{review.text}</td>
+                            <td>
+                                <span className={`status-badge ${review.approved ? 'status-approved' : 'status-pending'}`}>
+                                    {review.approved ? 'Approved' : 'Pending'}
+                                </span>
+                            </td>
+                            <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                {!review.approved && (
+                                    <button onClick={() => handleApprove(review.id)} className="btn-primary" style={{padding: '8px 12px', fontSize: '0.8rem', background: 'var(--green)', borderColor: 'var(--green)'}}><i className="fa-solid fa-check"></i> Approve</button>
+                                )}
+                                <button onClick={() => handleDelete(review.id)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+};
+
 
 const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
   const getInitialFormState = (): ProductData => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
@@ -618,7 +735,7 @@ const BookingsManagement = ({ bookings, onDataChange }: { bookings: any[], onDat
                                 <>
                                     <button onClick={() => handleStatusChange(booking.id, 'Approved', booking)} className="btn-primary" style={{padding: '8px 12px', fontSize: '0.8rem', background: 'var(--green)', borderColor: 'var(--green)'}}><i className="fa-solid fa-check"></i> Approve</button>
                                     <button onClick={() => handleStatusChange(booking.id, 'Disapproved', booking)} className="btn-delete" style={{padding: '8px 12px', fontSize: '0.8rem'}}><i className="fa-solid fa-times"></i> Disapprove</button>
-                                </>
+                                <>
                             )}
                         </td>
                     </tr>

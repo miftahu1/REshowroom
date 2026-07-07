@@ -33,6 +33,18 @@ const db = getFirestore(app);
 
 const getRandomNum = () => Math.floor(Math.random() * 10) + 1;
 
+const PromoBanner = ({ banner, onClose }: { banner: { enabled: boolean, text: string, link: string }, onClose: () => void }) => {
+    if (!banner || !banner.enabled) return null;
+
+    return (
+        <div className="promo-banner">
+            <p>{banner.text}</p>
+            {banner.link && <a href={banner.link} className="promo-link">Learn More</a>}
+            <button onClick={onClose} className="close-btn">&times;</button>
+        </div>
+    );
+};
+
 export default function Home() {
   const main = useRef(null);
   const [isMenuOpen, setMenuOpen] = useState(false);
@@ -58,14 +70,26 @@ export default function Home() {
   const [emi, setEmi] = useState(0);
   const [totalAmount, setTotalAmount] = useState(0);
   const [totalInterest, setTotalInterest] = useState(0);
+  const [promoBanner, setPromoBanner] = useState({ enabled: false, text: '', link: '' });
+  const [showPromoBanner, setShowPromoBanner] = useState(false);
+
 
   useEffect(() => {
-    const fetchProducts = async () => {
+    const fetchSiteSettings = async () => {
       const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
       const productsSnapshot = await getDocs(productsQuery);
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+      const promoDoc = await getDoc(doc(db, 'settings', 'promoBanner'));
+      if (promoDoc.exists()) {
+          const bannerData = promoDoc.data();
+          if(bannerData.enabled) {
+            setPromoBanner(bannerData as any);
+            setShowPromoBanner(true);
+          }
+      }
     };
-    fetchProducts();
+    fetchSiteSettings();
   }, []);
 
   useEffect(() => {
@@ -132,7 +156,7 @@ export default function Home() {
                             </tr>
                             <tr>
                                 <td style="padding: 30px; text-align: center; background-color: #f9f9f9;">
-                                    <a href="https://reshowroom-28210251.web.app/admin" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
+                                    <a href="https://reshowroom.vercel.app" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
                                 </td>
                             </tr>
                             <tr>
@@ -310,6 +334,7 @@ export default function Home() {
 
   return (
     <div ref={main}>
+      {showPromoBanner && <PromoBanner banner={promoBanner} onClose={() => setShowPromoBanner(false)} />}
       <section id="hero" aria-label="Hero">
         <canvas id="hero-canvas" aria-hidden="true"></canvas>
         <div className="hero-bg-grad" aria-hidden="true"></div>

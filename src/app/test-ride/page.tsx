@@ -114,7 +114,7 @@ export default function TestRidePage() {
                                 </tr>
                                 <tr>
                                     <td style="padding: 30px; text-align: center; background-color: #f9f9f9;">
-                                        <a href="https://reshowroom-28210251.web.app/admin" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
+                                        <a href="https://reshowroom.vercel.app/admin" target="_blank" style="background-color: #c9a84c; color: #ffffff; padding: 15px 25px; text-decoration: none; border-radius: 8px; font-weight: bold; font-family: 'Roboto', sans-serif; font-size: 16px;">Go to Admin Dashboard</a>
                                     </td>
                                 </tr>
                                 <tr>

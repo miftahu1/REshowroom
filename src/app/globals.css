@@ -625,7 +625,7 @@ ul {
     width: min(100%, 1180px);
     margin: 0 auto;
     align-items: center;
-    transform: translateY(-100px);
+    transform: translateY(-80px);
 }
 
 .hero-content {
@@ -2226,4 +2226,37 @@ footer {
         padding: 15px;
         width: 120px;
     }
+}
+.promo-banner {
+    background-color: var(--gold);
+    color: var(--dark-blue);
+    text-align: center;
+    padding: 12px 20px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.promo-banner p {
+    margin: 0;
+}
+
+.promo-banner .promo-link {
+    color: var(--dark-blue);
+    text-decoration: underline;
+    margin-left: 15px;
+    font-weight: 700;
+}
+
+.promo-banner .close-btn {
+    background: none;
+    border: none;
+    color: var(--dark-blue);
+    font-size: 20px;
+    position: absolute;
+    right: 20px;
+    cursor: pointer;
 }
