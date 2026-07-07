@@ -1,4 +1,5 @@
-import SectionPageShell from '../components/SectionPageShell';
+'use client'
+import Link from 'next/link';
 
 export const metadata = {
   title: 'Services | Royal Enfield',
@@ -7,27 +8,56 @@ export const metadata = {
 
 export default function ServicesPage() {
   return (
-    <SectionPageShell
-      eyebrow="Ownership support"
-      title="Service that feels as premium as the motorcycles themselves."
-      description="From routine maintenance to custom care plans, every service visit is designed to keep your ride dependable and refined."
-      highlights={['Express service', 'Genuine parts', 'Custom care plans']}
-      stats={[
-        { value: '1-day', label: 'Express service' },
-        { value: '100%', label: 'Genuine parts' },
-        { value: '3x', label: 'Faster turnaround' },
-        { value: 'All models', label: 'Covered' },
-      ]}
-      featureItems={[
-        { title: 'Scheduled servicing', body: 'Maintain peak performance with expert care plans tailored to your model.' },
-        { title: 'Accessory styling', body: 'Upgrade your ride with premium accessories and performance touches.' },
-        { title: 'Roadside confidence', body: 'We help riders stay supported before, during, and after every journey.' },
-      ]}
-      primaryHref="/contact"
-      primaryLabel="Request service"
-      secondaryHref="/"
-      secondaryLabel="Back to home"
-      accentLabel="Service experience"
-    />
+    <section id="services" aria-labelledby="services-title" style={{paddingTop: '120px', paddingBottom: '120px'}}>
+        <div className="services-layout">
+          <div className="services-image">
+            <img src="/assets/images/workshop.png" alt="Royal Enfield authorized service workshop" loading="lazy" />
+            <div className="services-image-overlay">
+              <h4><i className="fa-solid fa-shield-halved"></i> &nbsp;100% Genuine Parts</h4>
+              <p>Only authentic Royal Enfield spare parts and accessories — sourced directly from the factory,
+                with full warranty.</p>
+            </div>
+          </div>
+          <div>
+            <span className="section-tag">Expert Care</span>
+            <h2 className="section-title" id="services-title">Services &amp;<br />Genuine Parts</h2>
+            <p className="section-subtitle" style={{textAlign: 'left',maxWidth:'100%',margin:'16px 0 36px'}}>Your Royal
+              Enfield deserves nothing but the best. Our certified technicians and authorised service centre keep
+              your machine in peak condition.</p>
+            <div className="services-grid">
+              <div className="service-card">
+                <div className="service-icon"><i className="fa-solid fa-wrench"></i></div>
+                <h4>Expert Servicing</h4>
+                <p>Scheduled maintenance by RE-certified technicians using precision tools and diagnostics.</p>
+              </div>
+              <div className="service-card">
+                <div className="service-icon"><i className="fa-solid fa-gear"></i></div>
+                <h4>Genuine Parts</h4>
+                <p>OEM spare partswith factory warranty. No counterfeits, no compromises.</p>
+              </div>
+              <div className="service-card">
+                <div className="service-icon"><i className="fa-solid fa-road"></i></div>
+                <h4>Roadside Assistance</h4>
+                <p>24×7 emergency support wherever the road takes you. One call away.</p>
+              </div>
+              <div className="service-card">
+                <div className="service-icon"><i className="fa-solid fa-file-contract"></i></div>
+                <h4>AMC Plans</h4>
+                <p>Annual Maintenance Contracts that give you peace of mind and predictable costs.</p>
+              </div>
+              <div className="service-card">
+                <div className="service-icon"><i className="fa-solid fa-shield"></i></div>
+                <h4>Insurance Renewal</h4>
+                <p>Hassle-free insurance renewal and claim assistance through our in-house desk.</p>
+              </div>
+              <div className="service-card">
+                <div className="service-icon"><i className="fa-solid fa-spray-can-sparkles"></i></div>
+                <h4>Custom Accessories</h4>
+                <p>Personalise your ride with official Royal Enfield accessories and custom fitment.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
   );
 }
