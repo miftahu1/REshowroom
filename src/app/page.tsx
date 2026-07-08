@@ -473,7 +473,7 @@ export default function Home() {
               brand specialists will reach out to schedule your personal test ride experience.</p>
             <div className="test-ride-perks">
               <div className="perk-item"><i className="fa-solid fa-check"></i> No commitment required</div>
-              <div className="perk-.item"><i className="fa-solid fa-check"></i> Personal riding expert assigned</div>
+              <div className="perk-item"><i className="fa-solid fa-check"></i> Personal riding expert assigned</div>
               <div className="perk-item"><i className="fa-solid fa-check"></i> Rides available 7 days a week</div>
               <div className="perk-item"><i className="fa-solid fa-check"></i> Full model range available</div>
             </div>
