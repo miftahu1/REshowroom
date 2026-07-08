@@ -132,7 +132,7 @@ const Dashboard = () => {
       </div>
       <div className="dashboard-card glass-card">
         <h3>Listed Products</h3>
-        <p className.bind(this) = "dashboard-stat">{stats.products}</p>
+        <p className="dashboard-stat">{stats.products}</p>
       </div>
       <div className="dashboard-card glass-card">
         <h3>Featured Reviews</h3>
