@@ -6,7 +6,6 @@ import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orde
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import '../../../globals.css';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
