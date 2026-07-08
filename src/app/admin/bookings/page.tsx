@@ -138,6 +138,7 @@ const BookingsManagement = () => {
         const mainContent = status === 'Approved' ? `
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Great news! Your test ride for the <strong>Royal Enfield ${booking.model}</strong> has been confirmed.</p>
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Our team will contact you shortly to finalize the details for your ride on or around <strong>${booking.date || 'your selected date'}</strong>.</p>
+            <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">However, due to scheduling constraints, we have rescheduled your test ride to the following date: <strong>${booking.date}</strong>. We apologize for any inconvenience this may cause.</p>
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Get ready to feel the thunder!</p>
         ` : `
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Thank you for your interest in the <strong>Royal Enfield ${booking.model}</strong>.</p>
@@ -158,7 +159,7 @@ const BookingsManagement = () => {
                             <table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #2c2c2e; border-radius: 12px; overflow: hidden; border: 1px solid #444;">
                                 <tr>
                                     <td align="center" style="padding: 30px 20px; background-color: #121212;">
-                                        <h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">Royal Enfield Amguri</h1>
+                                        <h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">Funshine Getaways</h1>
                                     </td>
                                 </tr>
                                 <tr>
@@ -177,7 +178,7 @@ const BookingsManagement = () => {
                                 </tr>
                                 <tr>
                                     <td style="padding: 20px 30px; background-color: #121212;">
-                                        <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${new Date().getFullYear()} Royal Enfield Amguri. All rights reserved.<br>Amguri, Assam, India</p>
+                                        <p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${new Date().getFullYear()} Funshine Getaways. All rights reserved.<br>Amguri, Assam, India</p>
                                     </td>
                                 </tr>
                             </table>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue, writeBatch } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue } from "firebase/firestore";
 
 type Spec = { value: string; label: string };
 interface ProductData {
@@ -27,59 +27,6 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
-
-// --- PREDEFINED SEED DATA ---
-const seedData: Omit<ProductData, 'id' | 'createdAt'>[] = [
-    {
-        name: 'Classic 350',
-        engine: '349cc Single-Cylinder, 4 Stroke',
-        price: '₹1.93 Lakh',
-        imageUrl: '/assets/images/classic-350.png',
-        badge: 'Bestseller',
-        specs: [
-            { value: '20.2', label: 'BHP' },
-            { value: '27', label: 'Nm Torque' },
-            { value: '195', label: 'kg Kerb Weight' },
-        ],
-    },
-    {
-        name: 'Meteor 350',
-        engine: '349cc SOHC Engine',
-        price: '₹2.01 Lakh',
-        imageUrl: '/assets/images/meteor-350.png',
-        badge: 'Cruiser',
-        specs: [
-            { value: '20.2', label: 'BHP' },
-            { value: '27', label: 'Nm Torque' },
-            { value: '191', label: 'kg Kerb Weight' },
-        ],
-    },
-    {
-        name: 'Interceptor 650',
-        engine: '648cc Parallel Twin, 4-stroke',
-        price: '₹3.03 Lakh',
-        imageUrl: '/assets/images/interceptor-650.png',
-        badge: 'Twin Power',
-        specs: [
-            { value: '47', label: 'BHP' },
-            { value: '52', label: 'Nm Torque' },
-            { value: '202', label: 'kg Kerb Weight' },
-        ],
-    },
-    {
-        name: 'Himalayan',
-        engine: '411cc Single-Cylinder, 4-stroke',
-        price: '₹2.16 Lakh',
-        imageUrl: '/assets/images/himalayan.png',
-        badge: 'Adventure',
-        specs: [
-            { value: '24.3', label: 'BHP' },
-            { value: '32', label: 'Nm Torque' },
-            { value: '199', label: 'kg Kerb Weight' },
-        ],
-    },
-];
-
 
 const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
   const getInitialFormState = (): ProductData => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
@@ -198,33 +145,6 @@ const ProductManagement = () => {
     fetchData();
   }, []);
 
-    const handleSeedDatabase = async () => {
-        if (!window.confirm("Are you sure you want to seed the database? This will add predefined products. It is recommended to use this on an empty products collection.")) {
-            return;
-        }
-
-        setLoading(true);
-        console.log("Seeding database...");
-        try {
-            const batch = writeBatch(db);
-            const productsCollection = collection(db, "products");
-
-            for (const product of seedData) {
-                const docRef = doc(productsCollection);
-                batch.set(docRef, { ...product, createdAt: serverTimestamp() });
-            }
-
-            await batch.commit();
-            console.log("Database seeded successfully!");
-            alert("Database seeded successfully with " + seedData.length + " products.");
-            fetchData(); // Refresh the product list
-        } catch (error) {
-            console.error("Error seeding database: ", error);
-            alert("An error occurred while seeding the database. Check the console for details.");
-            setLoading(false);
-        }
-    };
-
   const handleAddClick = () => {
     setEditingProduct(null);
     setModalOpen(true);
@@ -257,11 +177,9 @@ const ProductManagement = () => {
 
   return (
     <div>
-        <div className="product-management-header" style={{ display: 'flex', gap: '12px', marginBottom: '20px' }}>
+        <div className="product-management-header">
             <button onClick={handleAddClick} className="btn-primary"><i className="fa-solid fa-plus"></i> Add New Model</button>
-            <button onClick={handleSeedDatabase} className="btn-outline"><i className="fa-solid fa-seedling"></i> Seed Products (Temp)</button>
         </div>
-
       <div className="admin-table-container">
         <table className="admin-table">
           <thead>

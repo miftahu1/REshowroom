@@ -3,8 +3,8 @@ import type { Metadata } from 'next';
 import SectionPageShell from '@/components/SectionPageShell';
 
 export const metadata: Metadata = {
-  title: 'Royal Enfield Dealership',
-  description: 'Cinematic GSAP-powered landing page for a premium Royal Enfield dealership.',
+  title: 'Royal Enfield Showroom - Funshine Getaways pvt ltd',
+  description: 'Authorised Royal Enfield dealership in Sivasagar. Discover the latest models, book a test ride, and experience the thrill of riding.',
 };
 
 export default function RootLayout({

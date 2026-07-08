@@ -137,7 +137,7 @@ export default function Home() {
         .join('');
 
     return `
-        <!DOCTYPE html><html><head><link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet"></head><body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;"><table border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding: 20px 0;"><table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"><tr><td align="center" style="padding: 30px 20px; background-color: #121212;"><h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">${title}</h1></td></tr><tr><td style="padding: 40px 30px;"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">${details}</table></td></tr><tr><td style="padding: 20px 30px; background-color: #121212;"><p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${currentYear} Royal Enfield Amguri. All rights reserved.</p></td></tr></table></td></tr></table></body></html>`;
+        <!DOCTYPE html><html><head><link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet"></head><body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;"><table border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding: 20px 0;"><table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"><tr><td align="center" style="padding: 30px 20px; background-color: #121212;"><h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">${title}</h1></td></tr><tr><td style="padding: 40px 30px;"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">${details}</table></td></tr><tr><td style="padding: 20px 30px; background-color: #121212;"><p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${new Date().getFullYear()} Funshine Getaways. All rights reserved.</p></td></tr></table></td></tr></table></body></html>`;
 };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -163,7 +163,7 @@ export default function Home() {
 
         await addDoc(collection(db, "bookings"), { ...bookingFormData, timestamp: serverTimestamp() });
         const emailBody = getManagerEmailBody('New Test Ride Request', bookingFormData);
-        const templateParams = { manager_email: managerEmailAddress, from_name: 'Royal Enfield Amguri', reply_to: bookingFormData.email, subject: `New Test Ride Request: ${bookingFormData.model || 'Test Ride'}`, email_body: emailBody };
+        const templateParams = { manager_email: managerEmailAddress, from_name: 'Funshine Getaways', reply_to: bookingFormData.email, subject: `New Test Ride Request: ${bookingFormData.model || 'Test Ride'}`, email_body: emailBody };
 
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
         .then((response) => {
@@ -270,16 +270,15 @@ export default function Home() {
           <div className="hero-content">
             <div className="hero-badge">
               <span className="hero-badge-dot"></span>
-              Authorized Dealership &nbsp;|&nbsp; Est. 2005
+              Authorized Dealership &nbsp;|&nbsp; Sivasagar
             </div>
             <h1 className="hero-headline">
-              Pure <span className="gold-text">Motorcycling.</span><br />
-              Timeless Legacy.
+              Welcome to <span className="gold-text">Funshine Getaways.</span><br />
+              Your Adventure Starts Here.
             </h1>
             <p className="hero-sub">Feel the thunder &nbsp;·&nbsp; Own the road</p>
             <p className="hero-desc">
-              Step into a world where machines are more than metal — they are a statement of character. Explore our
-              full range of Royal Enfield motorcycles at your trusted authorized dealership.
+            Step into the world of Royal Enfield at Funshine Getaways, your authorized dealership in Sivasagar. We are more than just a showroom; we are a hub for riders, adventurers, and enthusiasts.
             </p>
             <div className="hero-cta">
               <a href="#models" className="btn-primary">
@@ -375,7 +374,7 @@ export default function Home() {
           </div>
           <div className="about-content">
             <span className="section-tag">Our Story</span>
-            <h2 className="section-title" id="about-title">Where Passion<br />Meets Purpose</h2>
+            <h2 className="section-title" id="about-title">Welcome to Funshine Getaways</h2>
             <p>We are more than a dealership — we are custodians of a century-old legacy. Established in 2005, we
               have grown to become one of the most trusted Royal Enfield authorized dealerships, serving thousands
               of riders across the region.</p>
@@ -507,7 +506,7 @@ export default function Home() {
                 </div>
                 <div className="form-group">
                   <label htmlFor="f-city">Your City</label>
-                  <input type="text" id="f-city" name="city" placeholder="Mumbai" value={bookingFormData.city} onChange={handleBookingInputChange} />
+                  <input type="text" id="f-city" name="city" placeholder="Sivasagar" value={bookingFormData.city} onChange={handleBookingInputChange} />
                 </div>
                 <div className="form-group full">
                   <label htmlFor="f-msg">Message (Optional)</label>
@@ -545,7 +544,7 @@ export default function Home() {
               <div className="emi-slider-group">
                 <div className="emi-slider-header">
                   <span className="emi-slider-label">Loan Amount</span>
-                  <span className="emi-slider-value" id="loan-display">₹{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(loanAmount)}</span>
+                  <span className="emi-slider-value" id="loan-display">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(loanAmount)}</span>
                 </div>
                 <input type="range" id="loan-amount" min="50000" max="700000" step="5000" value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value))} aria-label="Loan Amount" />
               </div>
@@ -632,7 +631,7 @@ export default function Home() {
               <div className="contact-icon"><i className="fa-solid fa-location-dot"></i></div>
               <div className="contact-item-body">
                 <h4>Showroom Address</h4>
-                <p>42, Rajpur Road, Sector 14<br />Gurugram, Haryana - 122001</p>
+                <p>AT Rd, near ASTC Bus Stand<br />Sivasagar, Assam - 785640</p>
               </div>
             </div>
             <div className="contact-item">
@@ -654,7 +653,7 @@ export default function Home() {
               <div className="contact-icon"><i className="fa-solid fa-envelope"></i></div>
               <div className="contact-item-body">
                 <h4>Email Us</h4>
-                <a href="mailto:hello@re-amguri.in">hello@re-amguri.in</a>
+                <a href="mailto:hello@funshinegetaways.in">hello@funshinegetaways.in</a>
               </div>
             </div>
             <div className="contact-socials">
@@ -665,12 +664,14 @@ export default function Home() {
             </div>
           </div>
           <div className="contact-map">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3507.2!2d77.043!3d28.451!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjjCsDI3JzAzLjYiTiA3N8KwMDInMzQuOCJF!5e0!3m2!1sen!2sin!4v1"
-              allowFullScreen={true} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-              title="Royal Enfield Dealership Location"></iframe>
+            <iframe 
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3555.842580423468!2d94.6239287!3d26.971883999999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x374731af46b9901d%3A0xb7f1fff2e5bdc7ed!2sRoyal%20Enfield%20Showroom%20-%20Funshine%20Getaways%20Pvt%20Ltd!5e0!3m2!1sen!2sin!4v1783549863216!5m2!1sen!2sin" 
+              allowFullScreen={true} 
+              loading="lazy" 
+              referrerPolicy="strict-origin-when-cross-origin">
+            </iframe>
             <div className="map-overlay-badge">
-              <i className="fa-solid fa-location-dot"></i> Royal Enfield Gurugram
+              <i className="fa-solid fa-location-dot"></i> Royal Enfield - Sivasagar
             </div>
           </div>
         </div>

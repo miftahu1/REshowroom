@@ -1,9 +1,12 @@
 'use client';
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 
 const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
+  const isAdminPage = pathname.startsWith('/admin');
 
   const toggleMenu = () => {
     setMenuOpen(!isMenuOpen);
@@ -17,12 +20,16 @@ const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
     }
   }, [isMenuOpen]);
 
+  if (isAdminPage) {
+    return <>{children}</>;
+  }
+
   return (
     <div>
       <div id="scroll-progress" aria-hidden="true"></div>
       <nav id="navbar">
         <a href="/" className="nav-logo" aria-label="Royal Enfield Home">
-          <span className="logo-brand">Royal Enfield</span>
+          <span className="logo-brand">Funshine Getaways</span>
           <span className="logo-sub">Authorized Dealership</span>
         </a>
         <ul className="nav-links">
@@ -49,7 +56,7 @@ const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
       <footer>
         <div className="footer-main">
           <div className="footer-brand footer-col">
-            <span className="logo-brand">Royal Enfield</span>
+            <span className="logo-brand">Funshine Getaways</span>
             <span className="logo-sub">Authorized Dealership · Est. 2005</span>
             <p>Your trusted home for Royal Enfield motorcycles, genuine parts, expert service, and easy finance —
               all under one roof.</p>
@@ -81,8 +88,8 @@ const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
             <h4>Contact</h4>
             <ul>
               <li><a href="tel:+911244567890">+91 124 456 7890</a></li>
-              <li><a href="mailto:hello@re-gurugram.in">hello@re-gurugram.in</a></li>
-              <li><a href="/contact">42, Rajpur Road, Gurugram</a></li>
+              <li><a href="mailto:hello@funshinegetaways.in">hello@funshinegetaways.in</a></li>
+              <li><a href="/contact">AT Rd, near ASTC Bus Stand, Sivasagar</a></li>
             </ul>
             <div style={{marginTop:'20px'}}>
               <a href="#test-ride" className="btn-primary" style={{padding:'10px 20px',fontSize:'0.78rem'}}>Book Test
@@ -91,7 +98,7 @@ const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
           </div>
         </div>
         <div className="footer-bottom">
-          <p className="footer-copy">© 2024 Royal Enfield Gurugram. All rights reserved. An Authorized Royal Enfield
+          <p className="footer-copy">© 2024 Funshine Getaways. All rights reserved. An Authorized Royal Enfield
             Dealership.</p>
           <div className="footer-legal">
             <a href="#">Privacy Policy</a>
