@@ -7,6 +7,7 @@ import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup,
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue, getDoc, setDoc } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
 import '../globals.css';
+import Link from 'next/link';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -213,6 +214,7 @@ const AdminSidebar = ({ activeTab, setActiveTab, onSignOut }: { activeTab: strin
     <h2>RE Showroom</h2>
     <ul>
       <li><a href="#" onClick={() => setActiveTab('dashboard')} className={activeTab === 'dashboard' ? 'active' : ''}><i className="fa-solid fa-tachometer-alt"></i> Dashboard</a></li>
+      <li><Link href="/admin/receipt"><i className="fa-solid fa-receipt"></i> Create Receipt</Link></li>
       <li><a href="#" onClick={() => setActiveTab('products')} className={activeTab === 'products' ? 'active' : ''}><i className="fa-solid fa-motorcycle"></i> Products</a></li>
       <li><a href="#" onClick={() => setActiveTab('bookings')} className={activeTab === 'bookings' ? 'active' : ''}><i className="fa-solid fa-calendar-check"></i> Bookings</a></li>
       <li><a href="#" onClick={() => setActiveTab('messages')} className={activeTab === 'messages' ? 'active' : ''}><i className="fa-solid fa-envelope"></i> Messages</a></li>
