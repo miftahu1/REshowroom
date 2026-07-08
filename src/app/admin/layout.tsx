@@ -2,13 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { doc, getDoc, getFirestore, setDoc, serverTimestamp } from 'firebase/firestore';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import LoginPage from './login/page';
 
-// Correct Firebase Initialization
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -22,6 +21,24 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+const createUserDocument = async (user: User) => {
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    if (!userDoc.exists()) {
+        try {
+            await setDoc(userDocRef, {
+                email: user.email,
+                displayName: user.displayName || user.email,
+                createdAt: serverTimestamp(),
+                isAdmin: false
+            });
+        } catch (error) {
+            console.error("Error creating user document: ", error);
+        }
+    }
+};
+
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
@@ -32,6 +49,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
             if (currentUser) {
+                await createUserDocument(currentUser);
                 const userDocRef = doc(db, 'users', currentUser.uid);
                 const userDoc = await getDoc(userDocRef);
                 if (userDoc.exists() && userDoc.data().isAdmin) {
