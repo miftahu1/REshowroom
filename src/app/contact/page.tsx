@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
@@ -25,10 +25,21 @@ const EMAILJS_PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY as string;
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
+const getRandomNum = () => Math.floor(Math.random() * 10) + 1;
+
 const ContactPage = () => {
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
+  const [captchaNum1, setCaptchaNum1] = useState(getRandomNum());
+  const [captchaNum2, setCaptchaNum2] = useState(getRandomNum());
+  const [captchaAnswer, setCaptchaAnswer] = useState('');
+
+  const generateCaptcha = () => {
+    setCaptchaNum1(getRandomNum());
+    setCaptchaNum2(getRandomNum());
+    setCaptchaAnswer('');
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -61,6 +72,12 @@ const ContactPage = () => {
     setFormError('');
     setFormSuccess(false);
 
+    if (parseInt(captchaAnswer) !== captchaNum1 + captchaNum2) {
+        setFormError('Incorrect CAPTCHA answer. Please try again.');
+        generateCaptcha();
+        return;
+    }
+
     try {
       const settingDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
       const managerEmailAddress = settingDoc.exists() ? settingDoc.data().email : '';
@@ -75,10 +92,12 @@ const ContactPage = () => {
 
       setFormSuccess(true);
       setFormData({ name: '', email: '', message: '' });
+      generateCaptcha();
 
     } catch (error) {
       console.error("Error submitting message: ", error);
       setFormError("Sorry, something went wrong. Please try again later.");
+      generateCaptcha();
     }
   }
 
@@ -107,6 +126,10 @@ const ContactPage = () => {
                     <div className="form-group full">
                     <label htmlFor="c-msg">Your Message</label>
                     <textarea id="c-msg" name="message" placeholder="How can we help?" value={formData.message} onChange={handleInputChange}></textarea>
+                    </div>
+                    <div className="form-group full">
+                        <label htmlFor="f-captcha">Human Verification: What is {captchaNum1} + {captchaNum2}?</label>
+                        <input type="number" id="f-captcha" name="captcha" value={captchaAnswer} onChange={(e) => setCaptchaAnswer(e.target.value)} required />
                     </div>
                 </div>
                 <button type="submit" className="form-submit">
