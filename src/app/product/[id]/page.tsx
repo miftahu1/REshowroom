@@ -29,12 +29,12 @@ async function getProduct(id: string) {
     const data = productDoc.data();
     return {
         id: productDoc.id,
-        name: data.name,
-        engine: data.engine,
-        price: data.price,
-        specs: data.specs,
-        imageUrl: data.imageUrl,
-        badge: data.badge
+        name: data.name || "",
+        engine: data.engine || "",
+        price: data.price || "",
+        specs: data.specs || [],
+        imageUrl: data.imageUrl || "",
+        badge: data.badge || ""
     };
 }
 
