@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getFirestore, doc, getDoc, updateDoc, getApp, getApps, initializeApp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { initializeApp, getApp, getApps } from "firebase/app";
 
 // Correct Firebase Initialization
 const firebaseConfig = {
