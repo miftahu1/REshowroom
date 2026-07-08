@@ -132,10 +132,16 @@ const ReceiptPage = () => {
     };
 
     const handleSubmit = async () => {
+        if (!isAdmin) {
+            alert('You do not have permission to perform this action.');
+            return;
+        }
+
         if (!receiptData.buyerName || !receiptData.bikeModel || receiptData.totalPrice <= 0) {
             alert('Please fill in all required fields.');
             return;
         }
+
         try {
             await addDoc(collection(db, 'receipts'), {
                 ...receiptData,
@@ -153,7 +159,19 @@ const ReceiptPage = () => {
         return <div className="login-container"><h1>Loading...</h1></div>;
     }
 
-    if (!user || !isAdmin) {
+    if (!user) {
+        return (
+            <div className="login-container">
+                <div className="login-form glass-card" style={{ textAlign: 'center' }}>
+                    <h1 className="form-title">Please Log In</h1>
+                    <p style={{ marginBottom: '20px' }}>You must be logged in to access this page.</p>
+                    <a href="/admin/login" className="btn-primary">Go to Login</a>
+                </div>
+            </div>
+        );
+    }
+
+    if (!isAdmin) {
         return (
             <div className="login-container">
                 <div className="login-form glass-card" style={{ textAlign: 'center' }}>
