@@ -2,12 +2,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, doc, getDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy } from 'firebase/firestore';
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
-import '../../globals.css';
+import '../../../globals.css';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -20,7 +19,6 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
-const auth = getAuth(app);
 
 const generateReceiptId = () => {
     const year = new Date().getFullYear();
@@ -45,40 +43,18 @@ const getInitialReceiptState = () => ({
 });
 
 const ReceiptPage = () => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [products, setProducts] = useState<any[]>([]);
     const [receiptData, setReceiptData] = useState(getInitialReceiptState());
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists() && userDoc.data().isAdmin) {
-                    setIsAdmin(true);
-                    setUser(currentUser);
-                    fetchProducts();
-                } else {
-                    setIsAdmin(false);
-                    setUser(currentUser);
-                }
-            } else {
-                setUser(null);
-                setIsAdmin(false);
-            }
-            setLoading(false);
-        });
-        return () => unsubscribe();
+        const fetchProducts = async () => {
+            const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
+            const productsSnapshot = await getDocs(productsQuery);
+            setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        };
+        fetchProducts();
     }, []);
 
-    const fetchProducts = async () => {
-        const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
-        const productsSnapshot = await getDocs(productsQuery);
-        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    };
-    
     const resetForm = () => {
         setReceiptData(getInitialReceiptState());
     };
@@ -115,10 +91,8 @@ const ReceiptPage = () => {
                 const imgData = canvas.toDataURL('image/png');
                 const pdf = new jsPDF('p', 'mm', 'a4');
                 const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = pdf.internal.pageSize.getHeight();
                 const canvasWidth = canvas.width;
-                const canvasHeight = canvas.height;
-                const ratio = canvasWidth / canvasHeight;
+                const ratio = canvasWidth / pdf.internal.pageSize.getHeight();
                 const width = pdfWidth - 20;
                 const height = width / ratio;
                 pdf.addImage(imgData, 'PNG', 10, 10, width, height);
@@ -132,11 +106,6 @@ const ReceiptPage = () => {
     };
 
     const handleSubmit = async () => {
-        if (!isAdmin) {
-            alert('You do not have permission to perform this action.');
-            return;
-        }
-
         if (!receiptData.buyerName || !receiptData.bikeModel || receiptData.totalPrice <= 0) {
             alert('Please fill in all required fields.');
             return;
@@ -151,45 +120,15 @@ const ReceiptPage = () => {
             downloadPdf();
         } catch (error) {
             console.error("Error saving receipt: ", error);
-            alert('Failed to save receipt.');
+            alert('Failed to save receipt. Please check the Firestore rules and ensure you are authenticated as an admin.');
         }
     };
 
-    if (loading) {
-        return <div className="login-container"><h1>Loading...</h1></div>;
-    }
-
-    if (!user) {
-        return (
-            <div className="login-container">
-                <div className="login-form glass-card" style={{ textAlign: 'center' }}>
-                    <h1 className="form-title">Please Log In</h1>
-                    <p style={{ marginBottom: '20px' }}>You must be logged in to access this page.</p>
-                    <a href="/admin/login" className="btn-primary">Go to Login</a>
-                </div>
-            </div>
-        );
-    }
-
-    if (!isAdmin) {
-        return (
-            <div className="login-container">
-                <div className="login-form glass-card" style={{ textAlign: 'center' }}>
-                    <h1 className="form-title">Access Denied</h1>
-                    <p style={{ marginBottom: '20px' }}>You do not have permission to view this page.</p>
-                    <a href="/admin" className="btn-primary">Back to Admin Home</a>
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="admin-page printable-area p-8">
-            <div className="non-printable">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-                  <h1 className="text-2xl font-bold">Create Receipt</h1>
-                  <a href="/admin" className="btn-outline"><i className="fa-solid fa-arrow-left"></i> Back to Dashboard</a>
-                </div>
+        <div className="printable-area">
+            <div className="non-printable admin-header">
+                <h1>Create Receipt</h1>
+                <p>Generate a new customer invoice. The receipt will be saved to the database and a PDF copy will be downloaded.</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="form-container non-printable glass-card p-6">
@@ -213,6 +152,7 @@ const ReceiptPage = () => {
                             {products.map(p => <option key={p.id}>{p.name}</option>)}
                         </select>
                     </div>
+
                     <h2 className="text-xl font-semibold mt-6 mb-4">Price Breakdown</h2>
                     <div className="form-group">
                         <label>Ex-Showroom Price</label>
@@ -226,6 +166,7 @@ const ReceiptPage = () => {
                         <label>Insurance</label>
                         <input type="number" name="insurancePrice" value={receiptData.insurancePrice} onChange={handlePriceChange} />
                     </div>
+
                     <h2 className="text-xl font-semibold mt-6 mb-4">Payment</h2>
                      <div className="form-group">
                         <label>Payment Mode</label>
@@ -240,6 +181,7 @@ const ReceiptPage = () => {
                         <label>Transaction ID / Cheque No.</label>
                         <input type="text" name="transactionId" value={receiptData.transactionId} onChange={handleInputChange} />
                     </div>
+
                     <h2 className="text-xl font-semibold mt-6 mb-4">Additional Details</h2>
                     {receiptData.additionalDetails.map((detail, index) => (
                         <div key={index} className="grid grid-cols-2 gap-2 mb-2">
@@ -249,6 +191,7 @@ const ReceiptPage = () => {
                     ))}
                     <button onClick={addAdditionalDetail} className="btn-secondary mt-2">Add Detail</button>
                 </div>
+                
                 <div id="receipt-preview" className="p-6 bg-white text-black rounded-lg shadow-lg">
                     <h2 className="text-2xl font-bold text-center mb-4">INVOICE</h2>
                     <div className="flex justify-between mb-4">
@@ -298,10 +241,11 @@ const ReceiptPage = () => {
                     </div>
                 </div>
             </div>
+
             <div className="flex justify-end mt-8 gap-4 non-printable">
-                 <button onClick={resetForm} className="btn-outline text-lg px-8 py-3"><i className="fa-solid fa-plus"></i> New Receipt</button>
-                <button onClick={handlePrint} className="btn-secondary text-lg px-8 py-3"><i className="fa-solid fa-print"></i> Print</button>
-                <button onClick={handleSubmit} className="btn-primary text-lg px-8 py-3">Save & Download</button>
+                 <button onClick={resetForm} className="btn-outline"><i className="fa-solid fa-plus"></i> New Receipt</button>
+                <button onClick={handlePrint} className="btn-secondary"><i className="fa-solid fa-print"></i> Print</button>
+                <button onClick={handleSubmit} className="btn-primary"><i className="fa-solid fa-download"></i> Save & Download</button>
             </div>
         </div>
     );
