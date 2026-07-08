@@ -5,7 +5,6 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import '../globals.css';
-import Link from 'next/link';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -43,7 +42,6 @@ const AdminPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -92,15 +90,7 @@ const AdminPage = () => {
   }
 
   return (
-    <div className="admin-container">
-      <AdminSidebar activeTab={activeTab} setActiveTab={setActiveTab} onSignOut={handleSignOut} />
-      <div className="admin-content">
-        <AdminHeader tab={activeTab} />
-        <main>
-          <Dashboard />
-        </main>
-      </div>
-    </div>
+    <Dashboard />
   );
 };
 
@@ -146,38 +136,6 @@ const LoginScreen = () => {
         </div>
     );
 };
-
-const AdminSidebar = ({ activeTab, setActiveTab, onSignOut }: { activeTab: string, setActiveTab: (tab: string) => void, onSignOut: () => void }) => (
-  <div className="admin-sidebar">
-    <h2>RE Showroom</h2>
-    <ul>
-      <li><Link href="/admin" className={activeTab === 'dashboard' ? 'active' : ''}><i className="fa-solid fa-tachometer-alt"></i> Dashboard</Link></li>
-      <li><Link href="/admin/receipt"><i className="fa-solid fa-receipt"></i> Create Receipt</Link></li>
-      <li><Link href="/admin/products"><i className="fa-solid fa-motorcycle"></i> Products</Link></li>
-      <li><Link href="/admin/bookings"><i className="fa-solid fa-calendar-check"></i> Bookings</Link></li>
-      <li><Link href="/admin/messages"><i className="fa-solid fa-envelope"></i> Messages</Link></li>
-      <li><Link href="/admin/reviews"><i className="fa-solid fa-star"></i> Reviews</Link></li>
-      <li><Link href="/admin/settings"><i className="fa-solid fa-cog"></i> Settings</Link></li>
-    </ul>
-    <div style={{ marginTop: 'auto' }}>
-      <button onClick={onSignOut} className="btn-outline" style={{ width: '100%' }}><i className="fa-solid fa-right-from-bracket"></i> Sign Out</button>
-    </div>
-  </div>
-);
-
-const AdminHeader = ({ tab }: { tab: string }) => {
-  const titles: { [key: string]: { title: string, subtitle: string } } = {
-    dashboard: { title: "Dashboard", subtitle: "Overview of your dealership's performance." },
-  }
-  const { title, subtitle } = titles[tab] || { title: "Admin", subtitle: "" };
-
-  return (
-    <header className="admin-header">
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </header>
-  );
-}
 
 const Dashboard = () => {
   const [stats, setStats] = useState({ bookings: 0, messages: 0, products: 0, reviews: 0 });

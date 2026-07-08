@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged, User } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import Link from 'next/link';
@@ -45,6 +45,10 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         return () => unsubscribe();
     }, []);
 
+    const handleSignOut = () => {
+        signOut(auth).catch(error => console.error('Sign out error', error));
+    };
+
     if (loading) {
         return <div className="login-container"><h1>Loading...</h1></div>;
     }
@@ -76,24 +80,51 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <div className="admin-container">
             <aside className="admin-sidebar">
-                <h2>RE Admin</h2>
+                <h2>RE Showroom</h2>
                 <nav>
                     <ul>
                         <li><Link href="/admin" className={pathname === '/admin' ? 'active' : ''}><i className="fas fa-tachometer-alt"></i> Dashboard</Link></li>
-                        <li><Link href="/admin/bookings" className={pathname === '/admin/bookings' ? 'active' : ''}><i className="fas fa-calendar-check"></i> Bookings</Link></li>
-                        <li><Link href="/admin/messages" className={pathname === '/admin/messages' ? 'active' : ''}><i className="fas fa-envelope"></i> Messages</Link></li>
-                        <li><Link href="/admin/reviews" className={pathname === '/admin/reviews' ? 'active' : ''}><i className="fas fa-star"></i> Reviews</Link></li>
-                        <li><Link href="/admin/products" className={pathname === '/admin/products' ? 'active' : ''}><i className="fas fa-motorcycle"></i> Products</Link></li>
-                        <li><Link href="/admin/settings" className={pathname === '/admin/settings' ? 'active' : ''}><i className="fas fa-cog"></i> Settings</Link></li>
-                        <li><Link href="/admin/receipt" className={pathname === '/admin/receipt' ? 'active' : ''}><i className="fas fa-receipt"></i> Create Receipt</Link></li>
+                        <li><Link href="/admin/bookings" className={pathname.startsWith('/admin/bookings') ? 'active' : ''}><i className="fas fa-calendar-check"></i> Bookings</Link></li>
+                        <li><Link href="/admin/messages" className={pathname.startsWith('/admin/messages') ? 'active' : ''}><i className="fas fa-envelope"></i> Messages</Link></li>
+                        <li><Link href="/admin/reviews" className={pathname.startsWith('/admin/reviews') ? 'active' : ''}><i className="fas fa-star"></i> Reviews</Link></li>
+                        <li><Link href="/admin/products" className={pathname.startsWith('/admin/products') ? 'active' : ''}><i className="fas fa-motorcycle"></i> Products</Link></li>
+                        <li><Link href="/admin/settings" className={pathname.startsWith('/admin/settings') ? 'active' : ''}><i className="fas fa-cog"></i> Settings</Link></li>
+                        <li><Link href="/admin/receipt" className={pathname.startsWith('/admin/receipt') ? 'active' : ''}><i className="fas fa-receipt"></i> Create Receipt</Link></li>
                     </ul>
                 </nav>
+                <div style={{ marginTop: 'auto' }}>
+                    <button onClick={handleSignOut} className="btn-outline" style={{ width: '100%' }}>
+                        <i className="fa-solid fa-right-from-bracket"></i> Sign Out
+                    </button>
+                </div>
             </aside>
             <main className="admin-content">
+                <AdminHeader />
                 {children}
             </main>
         </div>
     );
 };
+
+const AdminHeader = () => {
+  const pathname = usePathname();
+  const titles: { [key: string]: { title: string, subtitle: string } } = {
+    '/admin': { title: "Dashboard", subtitle: "Overview of your dealership's performance." },
+    '/admin/products': { title: "Product Management", subtitle: "Add, edit, or remove motorcycle models." },
+    '/admin/bookings': { title: "Test Ride Bookings", subtitle: "View and manage all test ride requests." },
+    '/admin/messages': { title: "Contact Messages", subtitle: "Read and archive incoming messages." },
+    '/admin/reviews': { title: "Customer Reviews", subtitle: "Approve, delete, or feature customer reviews." },
+    '/admin/settings': { title: "Settings", subtitle: "Configure dealership settings." },
+    '/admin/receipt': { title: "Create Receipt", subtitle: "Generate a new sales receipt." },
+  }
+  const { title, subtitle } = titles[pathname] || { title: "Admin", subtitle: "Welcome to the admin panel." };
+
+  return (
+    <header className="admin-header">
+      <h1>{title}</h1>
+      <p>{subtitle}</p>
+    </header>
+  );
+}
 
 export default AdminLayout;
