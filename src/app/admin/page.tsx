@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
 import '../globals.css';
 
@@ -18,7 +18,6 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-const googleProvider = new GoogleAuthProvider();
 
 const createUserDocument = async (user: User) => {
     const userDocRef = doc(db, 'users', user.uid);
@@ -73,10 +72,6 @@ const AdminPage = () => {
     return <div className="login-container"><h1>Loading...</h1></div>;
   }
 
-  if (!user) {
-    return <LoginScreen />;
-  }
-
   if (!isAdmin) {
       return (
           <div className="login-container">
@@ -92,49 +87,6 @@ const AdminPage = () => {
   return (
     <Dashboard />
   );
-};
-
-const LoginScreen = () => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-
-    const handleAuthAction = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        try {
-            await signInWithEmailAndPassword(auth, email, password);
-        } catch (err: any) {
-            setError(err.message);
-        }
-    };
-
-    const handleGoogleSignIn = () => {
-        signInWithPopup(auth, googleProvider).catch(err => setError(err.message));
-    };
-
-    return (
-        <div className="login-container">
-            <div className="login-form glass-card">
-                <h1 className="form-title">Admin Login</h1>
-                <form onSubmit={handleAuthAction}>
-                    <div className="form-group">
-                        <label htmlFor="email">Email</label>
-                        <input type="email" id="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
-                    </div>
-                    <div className="form-group">
-                        <label htmlFor="password">Password</label>
-                        <input type="password" id="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-                    </div>
-                    <button type="submit" className="btn-primary" style={{width: '100%', marginBottom: '16px'}}>Sign In</button>
-                </form>
-                <button onClick={handleGoogleSignIn} className="btn-outline google-login" style={{width: '100%'}}>
-                    <i className="fa-brands fa-google"></i> &nbsp; Sign in with Google
-                </button>
-                {error && <p className="error-message">{error}</p>}
-            </div>
-        </div>
-    );
 };
 
 const Dashboard = () => {
@@ -180,7 +132,7 @@ const Dashboard = () => {
       </div>
       <div className="dashboard-card glass-card">
         <h3>Listed Products</h3>
-        <p className="dashboard-stat">{stats.products}</p>
+        <p className.bind(this) = "dashboard-stat">{stats.products}</p>
       </div>
       <div className="dashboard-card glass-card">
         <h3>Featured Reviews</h3>

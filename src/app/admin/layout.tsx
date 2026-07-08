@@ -5,7 +5,8 @@ import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { doc, getDoc, getFirestore } from 'firebase/firestore';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import LoginPage from './login/page';
 
 // Correct Firebase Initialization
 const firebaseConfig = {
@@ -26,6 +27,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     const [isAdmin, setIsAdmin] = useState(false);
     const [loading, setLoading] = useState(true);
     const pathname = usePathname();
+    const router = useRouter();
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -34,6 +36,8 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 const userDoc = await getDoc(userDocRef);
                 if (userDoc.exists() && userDoc.data().isAdmin) {
                     setIsAdmin(true);
+                } else {
+                    setIsAdmin(false);
                 }
                 setUser(currentUser);
             } else {
@@ -46,7 +50,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     const handleSignOut = () => {
-        signOut(auth).catch(error => console.error('Sign out error', error));
+        signOut(auth).then(() => {
+            router.push('/admin/login');
+        }).catch(error => console.error('Sign out error', error));
     };
 
     if (loading) {
@@ -54,15 +60,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     }
 
     if (!user) {
-        return (
-            <div className="login-container">
-                <div className="login-form glass-card" style={{ textAlign: 'center' }}>
-                    <h1 className="form-title">Please Log In</h1>
-                    <p style={{ marginBottom: '20px' }}>You must be logged in to access this page.</p>
-                    <Link href="/admin/login" className="btn-primary">Go to Login</Link>
-                </div>
-            </div>
-        );
+        return <LoginPage />;
     }
 
     if (!isAdmin) {
@@ -71,7 +69,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 <div className="login-form glass-card" style={{ textAlign: 'center' }}>
                     <h1 className="form-title">Access Denied</h1>
                     <p style={{ marginBottom: '20px' }}>You do not have permission to view this page.</p>
-                    <Link href="/" className="btn-primary">Back to Homepage</Link>
+                    <button onClick={handleSignOut} className="btn-outline" style={{width: '100%'}}>Sign Out</button>
                 </div>
             </div>
         );
