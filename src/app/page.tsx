@@ -8,6 +8,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orderBy, where, getDoc, doc } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
+import ReceiptLookup from './components/ReceiptLookup';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -48,6 +49,7 @@ const PromoBanner = ({ banner, onClose }: { banner: { enabled: boolean, text: st
 export default function Home() {
   const main = useRef(null);
   const [isMenuOpen, setMenuOpen] = useState(false);
+  const [isReceiptModalOpen, setReceiptModalOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
   const [bookingFormData, setBookingFormData] = useState({
@@ -182,12 +184,12 @@ export default function Home() {
   };
 
   useEffect(() => {
-    if (isMenuOpen) {
+    if (isMenuOpen || isReceiptModalOpen) {
       document.body.style.overflow = 'hidden';
     } else {
       document.body.style.overflow = '';
     }
-  }, [isMenuOpen]);
+  }, [isMenuOpen, isReceiptModalOpen]);
 
   useEffect(() => {
     const calculateEmi = () => {
@@ -259,6 +261,7 @@ export default function Home() {
   return (
     <div ref={main}>
       {showPromoBanner && <PromoBanner banner={promoBanner} onClose={() => setShowPromoBanner(false)} />}
+      <ReceiptLookup isOpen={isReceiptModalOpen} onClose={() => setReceiptModalOpen(false)} />
       <section id="hero" aria-label="Hero">
         <canvas id="hero-canvas" aria-hidden="true"></canvas>
         <div className="hero-bg-grad" aria-hidden="true"></div>
@@ -400,6 +403,16 @@ export default function Home() {
           </div>
         </div>
       </section>
+        <section id="receipt-download" aria-labelledby="receipt-download-title">
+            <div className="section-header">
+                <span className="section-tag">Post-Purchase</span>
+                <h2 className="section-title" id="receipt-download-title">Download Your Invoice</h2>
+                <p className="section-subtitle">Lost your receipt? No problem. Enter your details below to instantly download a digital copy of your invoice.</p>
+            </div>
+            <div className="text-center">
+                 <button onClick={() => setReceiptModalOpen(true)} className="btn-primary text-lg"><i className="fa-solid fa-download"></i> Download Your Receipt</button>
+            </div>
+        </section>
       <section id="services" aria-labelledby="services-title">
         <div className="services-layout">
           <div className="services-image">
