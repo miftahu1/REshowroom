@@ -96,7 +96,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
     return (
         <div className="admin-container">
             <aside className="admin-sidebar">
-                <h2>RE Showroom</h2>
+                <h2>Funshine Getaways</h2>
                 <nav>
                     <ul>
                         <li><Link href="/admin" className={pathname === '/admin' ? 'active' : ''}><i className="fas fa-tachometer-alt"></i> Dashboard</Link></li>

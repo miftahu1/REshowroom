@@ -1,11 +1,7 @@
 
-'use client';
-
-import { useState, useEffect } from 'react';
-import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, collection, getDocs } from "firebase/firestore";
 import '../../globals.css';
 
 const firebaseConfig = {
@@ -20,30 +16,31 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-const ProductDetailPage = () => {
-  const params = useParams();
-  const { id } = params;
-  const [product, setProduct] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+export async function generateStaticParams() {
+    const productsSnapshot = await getDocs(collection(db, "products"));
+    return productsSnapshot.docs.map(doc => ({ id: doc.id }));
+}
 
-  useEffect(() => {
-    if (id) {
-      const fetchProduct = async () => {
-        const productDoc = await getDoc(doc(db, "products", id as string));
-        if (productDoc.exists()) {
-          setProduct({ id: productDoc.id, ...productDoc.data() });
-        } else {
-          console.error("No such document!");
-        }
-        setLoading(false);
-      };
-      fetchProduct();
+async function getProduct(id: string) {
+    const productDoc = await getDoc(doc(db, "products", id));
+    if (!productDoc.exists()) {
+        return null;
     }
-  }, [id]);
+    const data = productDoc.data();
+    return {
+        id: productDoc.id,
+        name: data.name,
+        engine: data.engine,
+        price: data.price,
+        specs: data.specs,
+        imageUrl: data.imageUrl,
+        badge: data.badge
+    };
+}
 
-  if (loading) {
-    return <p style={{textAlign: 'center', padding: '40px'}}>Loading product details...</p>;
-  }
+const ProductDetailPage = async ({ params }: { params: { id: string } }) => {
+  const { id } = params;
+  const product: any = await getProduct(id);
 
   if (!product) {
     return <p style={{textAlign: 'center', padding: '40px'}}>Product not found.</p>;
@@ -59,24 +56,24 @@ const ProductDetailPage = () => {
       </div>
       <div className="about-grid" style={{padding: '80px 40px', alignItems: 'start'}}>
           <div className="about-image-wrap">
-              <img className="about-image-main" src={product.imageUrl} alt={product.name} style={{height: 'auto'}} />
+              <img className="about-image-main" src={product?.imageUrl} alt={product?.name} style={{height: 'auto'}} />
               <div className="about-image-accent" style={{bottom: 'auto', top:'-30px', right: '-30px', width: 'auto', padding: '16px 24px'}}>
-                  <span className="accent-label" style={{textAlign: 'center'}}>{product.badge}</span>
+                  <span className="accent-label" style={{textAlign: 'center'}}>{product?.badge}</span>
               </div>
           </div>
           <div className="about-content">
               <span className="section-tag">Model Details</span>
-              <h2 className="section-title" id="about-title">{product.name}</h2>
-              <p>{product.engine}</p>
-                <div className="model-card-specs" style={{borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)', padding: '24px 0', marginBottom: '32px'}}>
-                    {product.specs.map((spec: any, index: number) => spec.value && spec.label && (
+              <h2 className="section-title" id="about-title">{product?.name}</h2>
+              <p>{product?.engine}</p>
+                {/* <div className="model-card-specs" style={{borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)', padding: '24px 0', marginBottom: '32px'}}>
+                    {product?.specs?.map((spec: any, index: number) => spec.value && spec.label && (
                         <div key={index} className="model-spec">
                             <span className="model-spec-val">{spec.value}</span>
                             <span className="model-spec-label">{spec.label}</span>
                         </div>
                     ))}
-                </div>
-              <div className="model-price" style={{fontSize: '1.8rem', marginBottom: '32px'}}>{product.price} <span>onwards</span></div>
+                </div> */}
+              <div className="model-price" style={{fontSize: '1.8rem', marginBottom: '32px'}}>{product?.price} <span>onwards</span></div>
               <a href="/#test-ride" className="btn-primary">
                   <i className="fa-regular fa-calendar-check"></i> Book a Test Ride
               </a>

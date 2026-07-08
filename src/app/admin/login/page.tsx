@@ -73,7 +73,7 @@ const LoginPage = () => {
     return (
         <div className="login-container">
             <div className="login-form glass-card">
-                <h1 className="form-title">RE Showroom</h1>
+                <h1 className="form-title">Funshine Getaways</h1>
                 <h2 className="form-subtitle">Admin Panel</h2>
                 
                 {!showReset ? (
