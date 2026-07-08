@@ -1,10 +1,21 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getFirestore, collection, getDocs, query, orderBy, addDoc, serverTimestamp, deleteDoc, doc, updateDoc } from 'firebase/firestore';
-import { initializeApp, getApp, getApps } from "firebase/app";
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue } from "firebase/firestore";
 
-// Correct Firebase Initialization
+type Spec = { value: string; label: string };
+interface ProductData {
+    name: string;
+    engine: string;
+    price: string;
+    imageUrl: string;
+    badge: string;
+    specs: Spec[];
+    createdAt?: FieldValue;
+    id?: string;
+}
+
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -17,29 +28,116 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  category: string;
-  description: string;
-  createdAt: any;
-}
+const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
+  const getInitialFormState = (): ProductData => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
+  const [formState, setFormState] = useState<ProductData>(getInitialFormState());
+  const isEditing = product?.id;
 
-const ProductsManagement = () => {
-  const [products, setProducts] = useState<Product[]>([]);
+  useEffect(() => {
+    if(isOpen) {
+        if (product) {
+            setFormState({ ...getInitialFormState(), ...product });
+        } else {
+            setFormState(getInitialFormState());
+        }
+    }
+  }, [isOpen, product]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormState(prevState => ({ ...prevState, [name]: value }));
+  };
+
+  const handleSpecChange = (index: number, field: 'value' | 'label', value: string) => {
+    const newSpecs = [...formState.specs];
+    newSpecs[index] = { ...newSpecs[index], [field]: value };
+    setFormState(prevState => ({ ...prevState, specs: newSpecs }));
+  };
+
+  const addSpecField = () => {
+    setFormState(prevState => ({ ...prevState, specs: [...prevState.specs, { value: '', label: '' }] }));
+  };
+
+  const removeSpecField = (index: number) => {
+    const newSpecs = [...formState.specs];
+    newSpecs.splice(index, 1);
+    setFormState(prevState => ({ ...prevState, specs: newSpecs }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      if (isEditing) {
+        const productRef = doc(db, "products", product.id!);
+        const { createdAt, id, ...productData } = formState;
+        await updateDoc(productRef, productData);
+      } else {
+        const productData = { ...formState, createdAt: serverTimestamp() };
+        await addDoc(collection(db, "products"), productData);
+      }
+      onClose();
+      onSave();
+    } catch (error) {
+      console.error("Error saving product: ", error);
+    }
+  };
+
+  return (
+    <div className={`modal-overlay ${isOpen ? 'open' : ''}`}>
+      <div className="modal-content">
+        <div className="modal-header">
+            <h3>{isEditing ? 'Edit Model' : 'Add New Model'}</h3>
+            <button onClick={onClose} className="modal-close-btn">&times;</button>
+        </div>
+        <div className="modal-body">
+            <form onSubmit={handleSubmit}>
+            <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
+                <div className="form-group"><label>Model Name</label><input name="name" type="text" value={formState.name} onChange={handleInputChange} placeholder="e.g., Classic 350" required /></div>
+                <div className="form-group"><label>Engine Spec</label><input name="engine" type="text" value={formState.engine} onChange={handleInputChange} placeholder="e.g., 349cc Single-Cylinder" required /></div>
+                <div className="form-group"><label>Starting Price</label><input name="price" type="text" value={formState.price} onChange={handleInputChange} placeholder="e.g., ₹1.93 L" required /></div>
+                <div className="form-group"><label>Image URL</label><input name="imageUrl" type="text" value={formState.imageUrl} onChange={handleInputChange} placeholder="e.g., /assets/images/classic_350.png" required /></div>
+                <div className="form-group"><label>Badge</label><input name="badge" type="text" value={formState.badge} onChange={handleInputChange} placeholder="e.g., Bestseller" /></div>
+                
+                <div style={{borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop:'10px'}}>
+                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
+                        <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0}}>Specifications</p>
+                        <button type="button" onClick={addSpecField} className="btn-outline" style={{fontSize: '0.7rem', padding: '6px 10px'}}><i className="fa-solid fa-plus"></i> Add Spec</button>
+                    </div>
+                    {formState.specs.map((spec, index) => (
+                        <div key={index} style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px'}}>
+                            <div className="form-group" style={{margin:0}}><input type="text" value={spec.value} placeholder="Value (e.g. 20.2)" onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
+                            <div className="form-group" style={{margin:0}}><input type="text" value={spec.label} placeholder="Label (e.g. BHP)" onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
+                            <button type="button" onClick={() => removeSpecField(index)} className="btn-delete" style={{padding: '10px 12px'}}><i className="fa-solid fa-trash"></i></button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                <button type="submit" className="btn-primary" style={{ width: '100%' }}>{isEditing ? 'Update Product' : 'Add Product'}</button>
+                <button type="button" onClick={onClose} className="btn-outline" style={{ width: '100%' }}>Cancel</button>
+            </div>
+            </form>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const ProductManagement = () => {
+  const [products, setProducts] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [currentProduct, setCurrentProduct] = useState<Partial<Product> | null>(null);
+  const [isModalOpen, setModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<ProductData | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
-    const productsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"));
-    const productsSnapshot = await getDocs(productsQuery);
-    const productsList = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) as Product[];
-    setProducts(productsList);
+    try {
+        const productsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"));
+        const productsSnapshot = await getDocs(productsQuery);
+        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductData)));
+    } catch (error) {
+        console.error("Error fetching data: ", error);
+    }
     setLoading(false);
   };
 
@@ -47,99 +145,67 @@ const ProductsManagement = () => {
     fetchData();
   }, []);
 
-  const handleOpenModal = (product: Partial<Product> | null = null) => {
-    if (product) {
-      setIsEditing(true);
-      setCurrentProduct(product);
-    } else {
-      setIsEditing(false);
-      setCurrentProduct({ name: '', price: 0, image: '', category: '', description: '' });
+  const handleAddClick = () => {
+    setEditingProduct(null);
+    setModalOpen(true);
+  };
+
+  const handleEditClick = (product: ProductData) => {
+    setEditingProduct(product);
+    setModalOpen(true);
+  };
+
+  const handleDeleteProduct = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this product?")) {
+      try {
+        await deleteDoc(doc(db, "products", id));
+        fetchData();
+      } catch (error) {
+        console.error("Error deleting product: ", error);
+      }
     }
-    setIsModalOpen(true);
   };
 
   const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setCurrentProduct(null);
-  };
-
-  const handleSave = async () => {
-    if (!currentProduct) return;
-
-    if (isEditing && currentProduct.id) {
-      const productRef = doc(db, 'products', currentProduct.id);
-      await updateDoc(productRef, { ...currentProduct, createdAt: serverTimestamp() });
-    } else {
-      await addDoc(collection(db, 'products'), { ...currentProduct, createdAt: serverTimestamp() });
-    }
-    fetchData();
-    handleCloseModal();
-  };
-
-  const handleDelete = async (id: string) => {
-    if (window.confirm('Are you sure you want to delete this product?')) {
-      await deleteDoc(doc(db, 'products', id));
-      fetchData();
-    }
-  };
+      setModalOpen(false);
+      setEditingProduct(null);
+  }
 
   if (loading) {
-    return <p>Loading products...</p>;
+    return <p>Loading products...</p>
   }
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Products</h1>
-        <button onClick={() => handleOpenModal()} className="btn-primary">Add Product</button>
-      </div>
-      
+        <div className="product-management-header">
+            <button onClick={handleAddClick} className="btn-primary"><i className="fa-solid fa-plus"></i> Add New Model</button>
+        </div>
       <div className="admin-table-container">
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Image</th>
-              <th>Name</th>
+              <th>Model</th>
               <th>Price</th>
-              <th>Category</th>
-              <th>Actions</th>
+              <th style={{textAlign: 'right'}}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {products.map((product) => (
-              <tr key={product.id}>
-                <td><img src={product.image} alt={product.name} width="100" className="rounded-md"/></td>
-                <td>{product.name}</td>
-                <td>{product.price}</td>
-                <td>{product.category}</td>
-                <td>
-                  <button onClick={() => handleOpenModal(product)} className="btn-secondary">Edit</button>
-                  <button onClick={() => handleDelete(product.id)} className="btn-delete ml-2">Delete</button>
+            {products.map((p: ProductData) => (
+              <tr key={p.id}>
+                <td>{p.name}</td>
+                <td>{p.price}</td>
+                <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                  <button onClick={() => handleEditClick(p)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i> Edit</button>
+                  <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-
-      {isModalOpen && (
-        <div className="modal-backdrop">
-          <div className="modal-content">
-            <h2 className="text-xl font-bold mb-4">{isEditing ? 'Edit Product' : 'Add Product'}</h2>
-            <input type="text" placeholder="Name" value={currentProduct?.name} onChange={(e) => setCurrentProduct({ ...currentProduct, name: e.target.value })} className="w-full p-2 mb-2 rounded-md bg-bg-tertiary" />
-            <input type="number" placeholder="Price" value={currentProduct?.price} onChange={(e) => setCurrentProduct({ ...currentProduct, price: Number(e.target.value) })} className="w-full p-2 mb-2 rounded-md bg-bg-tertiary" />
-            <input type="text" placeholder="Image URL" value={currentProduct?.image} onChange={(e) => setCurrentProduct({ ...currentProduct, image: e.target.value })} className="w-full p-2 mb-2 rounded-md bg-bg-tertiary" />
-            <input type="text" placeholder="Category" value={currentProduct?.category} onChange={(e) => setCurrentProduct({ ...currentProduct, category: e.target.value })} className="w-full p-2 mb-2 rounded-md bg-bg-tertiary" />
-            <textarea placeholder="Description" value={currentProduct?.description} onChange={(e) => setCurrentProduct({ ...currentProduct, description: e.target.value })} className="w-full p-2 mb-2 rounded-md bg-bg-tertiary" rows={4}></textarea>
-            <div className="flex justify-end gap-4 mt-4">
-              <button onClick={handleCloseModal} className="btn-outline">Cancel</button>
-              <button onClick={handleSave} className="btn-primary">Save</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProductModal isOpen={isModalOpen} onClose={handleCloseModal} product={editingProduct} onSave={fetchData} />
     </div>
   );
 };
 
-export default ProductsManagement;
+export default ProductManagement;

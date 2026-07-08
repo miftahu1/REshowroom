@@ -1,10 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getFirestore, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { initializeApp, getApp, getApps } from "firebase/app";
+import { initializeApp, getApps, getApp } from 'firebase/app';
+import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
 
-// Correct Firebase Initialization
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -17,63 +16,154 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-const SettingsManagement = () => {
-  const [settings, setSettings] = useState({ managerEmail: '' });
-  const [loading, setLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(false);
+const EmailUpdateModal = ({ isOpen, onClose, currentEmail, onSave }: { isOpen: boolean, onClose: () => void, currentEmail: string, onSave: (newEmail: string) => Promise<void> }) => {
+    const [formState, setFormState] = useState({ current: '', new: '' });
+    const [error, setError] = useState('');
+    const [success, setSuccess] = useState('');
 
-  useEffect(() => {
-    const fetchSettings = async () => {
-      setLoading(true);
-      const docRef = doc(db, "settings", "admin");
-      const docSnap = await getDoc(docRef);
-      if (docSnap.exists()) {
-        setSettings(docSnap.data() as { managerEmail: string });
-      } else {
-        console.log("No such document!");
-      }
-      setLoading(false);
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setFormState({ ...formState, [e.target.name]: e.target.value });
     };
-    fetchSettings();
-  }, []);
 
-  const handleSave = async () => {
-    const docRef = doc(db, "settings", "admin");
-    await updateDoc(docRef, settings);
-    setIsEditing(false);
-    alert('Settings saved!');
-  };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setError('');
+        setSuccess('');
+        if (formState.current !== currentEmail) {
+            setError('The current email address does not match.');
+            return;
+        }
+        if (!formState.new) {
+            setError('Please enter a new email address.');
+            return;
+        }
+        try {
+            await onSave(formState.new);
+            setSuccess('Manager email updated successfully! You can now close this window.');
+            setFormState({ current: '', new: '' });
+        } catch (err) {
+            setError('Failed to update the email. Please try again.');
+        }
+    };
 
-  if (loading) {
-    return <p>Loading settings...</p>;
-  }
-
-  return (
-    <div className="glass-card p-6">
-      <h1 className="text-2xl font-bold mb-4">Admin Settings</h1>
-      <div className="form-group">
-        <label htmlFor="managerEmail">Manager's Email for Notifications</label>
-        <input
-          type="email"
-          id="managerEmail"
-          value={settings.managerEmail}
-          onChange={(e) => setSettings({ ...settings, managerEmail: e.target.value })}
-          readOnly={!isEditing}
-          className="w-full p-2 rounded-md bg-bg-tertiary"
-        />
-      </div>
-      <div className="flex justify-end gap-4 mt-4">
-        {isEditing ? (
-          <>
-            <button onClick={() => setIsEditing(false)} className="btn-outline">Cancel</button>
-            <button onClick={handleSave} className="btn-primary">Save</button>
-          </>
-        ) : (
-          <button onClick={() => setIsEditing(true)} className="btn-primary">Edit</button>
-        )}
-      </div>
-    </div>
-  );
+    return (
+        <div className={`modal-overlay ${isOpen ? 'open' : ''}`}>
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h3>Update Manager Email</h3>
+                    <button onClick={onClose} className="modal-close-btn">&times;</button>
+                </div>
+                <div className="modal-body">
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-group">
+                            <label htmlFor="current-email">Current Email</label>
+                            <input type="email" id="current-email" name="current" value={formState.current} onChange={handleInputChange} required />
+                        </div>
+                        <div className="form-group">
+                            <label htmlFor="new-email">New Email</label>
+                            <input type="email" id="new-email" name="new" value={formState.new} onChange={handleInputChange} required />
+                        </div>
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                            <button type="submit" className="btn-primary" style={{ width: '100%' }}>Save Changes</button>
+                            <button type="button" onClick={onClose} className="btn-outline" style={{ width: '100%' }}>Cancel</button>
+                        </div>
+                        {error && <p className="error-message" style={{marginTop: '15px'}}>{error}</p>}
+                        {success && <p className="success-message" style={{marginTop: '15px'}}>{success}</p>}
+                    </form>
+                </div>
+            </div>
+        </div>
+    );
 };
 
-export default SettingsManagement;
+const Settings = () => {
+    const [managerEmail, setManagerEmail] = useState('');
+    const [isEmailModalOpen, setEmailModalOpen] = useState(false);
+    const [promoBanner, setPromoBanner] = useState({ enabled: false, text: '', link: '' });
+    const [loading, setLoading] = useState(true);
+    const [message, setMessage] = useState('');
+
+    useEffect(() => {
+        fetchSettings();
+    }, []);
+
+    const fetchSettings = async () => {
+        setLoading(true);
+        const managerDoc = await getDoc(doc(db, 'settings', 'managerDetails'));
+        if (managerDoc.exists()) {
+            setManagerEmail(managerDoc.data().email);
+        }
+        const promoDoc = await getDoc(doc(db, 'settings', 'promoBanner'));
+        if (promoDoc.exists()) {
+            setPromoBanner(promoDoc.data() as { enabled: boolean; text: string; link: string; });
+        }
+        setLoading(false);
+    };
+
+    const handleUpdateEmail = async (newEmail: string) => {
+        setMessage('');
+        try {
+            await setDoc(doc(db, 'settings', 'managerDetails'), { email: newEmail });
+            setManagerEmail(newEmail);
+            fetchSettings(); // Re-fetch to confirm
+        } catch (error) {
+            console.error(error);
+            throw error; // Re-throw to be caught in the modal
+        }
+    };
+
+    const handleUpdateBanner = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setMessage('');
+        try {
+            await setDoc(doc(db, 'settings', 'promoBanner'), promoBanner);
+            setMessage('Promotional banner updated successfully!');
+        } catch (error) {
+            setMessage('Failed to update promotional banner. Please try again.');
+            console.error(error);
+        }
+    };
+
+    if (loading) {
+        return <p>Loading settings...</p>
+    }
+
+    return (
+        <div>
+            <div className="glass-card" style={{padding: '30px', marginBottom: '30px'}}>
+                <h3>Manager Notification Email</h3>
+                <p>This is the email address that receives notifications for new test ride bookings and contact messages.</p>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px' }}>
+                    <p style={{ margin: 0, fontSize: '1.1rem' }}><strong>{managerEmail || "Not Set"}</strong></p>
+                    <button onClick={() => setEmailModalOpen(true)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i></button>
+                </div>
+            </div>
+
+            <div className="glass-card" style={{padding: '30px'}}>
+                <h3>Promotional Banner</h3>
+                <p>Display a notification banner at the top of the homepage.</p>
+                <form onSubmit={handleUpdateBanner}>
+                    <div className="form-group">
+                        <label style={{display: 'flex', alignItems: 'center'}}>
+                            <input type="checkbox" checked={promoBanner.enabled} onChange={(e) => setPromoBanner({...promoBanner, enabled: e.target.checked})} style={{width: 'auto', marginRight: '10px'}} />
+                            Enable Promotional Banner
+                        </label>
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="promoText">Banner Text</label>
+                        <input type="text" id="promoText" value={promoBanner.text} onChange={(e) => setPromoBanner({...promoBanner, text: e.target.value})} placeholder="e.g., Limited Time: Monsoon Service Camp!" />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="promoLink">Banner Link (Optional)</label>
+                        <input type="text" id="promoLink" value={promoBanner.link} onChange={(e) => setPromoBanner({...promoBanner, link: e.target.value})} placeholder="e.g., /services" />
+                    </div>
+                    <button type="submit" className="btn-primary">Save Banner Settings</button>
+                </form>
+            </div>
+            {message && <p className="success-message" style={{marginTop: '15px'}}>{message}</p>}
+            <EmailUpdateModal isOpen={isEmailModalOpen} onClose={() => setEmailModalOpen(false)} currentEmail={managerEmail} onSave={handleUpdateEmail} />
+        </div>
+    );
+};
+
+export default Settings;
