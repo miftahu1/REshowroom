@@ -163,7 +163,7 @@ export default function Home() {
 
         await addDoc(collection(db, "bookings"), { ...bookingFormData, timestamp: serverTimestamp() });
         const emailBody = getManagerEmailBody('New Test Ride Request', bookingFormData);
-        const templateParams = { manager_email: managerEmailAddress, from_name: 'Royal Enfield Showroom - Funshine Getaways pvt ltd', reply_to: bookingFormData.email, subject: `New Test Ride Request: ${bookingFormData.model || 'Test Ride'}`, email_body: emailBody };
+        const templateParams = { manager_email: managerEmailAddress, from_name: 'Funshine Getaways', reply_to: bookingFormData.email, subject: `New Test Ride Request: ${bookingFormData.model || 'Test Ride'}`, email_body: emailBody };
 
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
         .then((response) => {

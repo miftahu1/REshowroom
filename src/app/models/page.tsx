@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from "firebase/firestore";
-import '../../globals.css';
+import '../globals.css';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {

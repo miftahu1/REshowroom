@@ -1,0 +1,91 @@
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-image:
+        radial-gradient(at 47% 33%, hsl(28.80, 55%, 53%) 0, transparent 59%),
+        radial-gradient(at 82% 65%, hsl(204.00, 68%, 51%) 0, transparent 55%);
+}
+
+.login-box {
+    width: 90%;
+    max-width: 420px;
+    padding: 48px;
+    text-align: center;
+    transform: scale(1);
+    animation: scale-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+@keyframes scale-in {
+    from {
+        transform: scale(0.9);
+        opacity: 0;
+    }
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.login-box h2 {
+    font-family: var(--font-heading);
+    font-size: 2.8rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+}
+
+.login-box p {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    margin-bottom: 32px;
+}
+
+.input-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+.input-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+}
+
+.input-group input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.input-group input:focus {
+    outline: none;
+    border-color: var(--gold);
+    box-shadow: 0 0 15px rgba(201, 168, 76, 0.2);
+}
+
+.login-box .btn-primary {
+    width: 100%;
+    padding: 16px;
+    font-size: 1rem;
+    letter-spacing: 0.1em;
+    margin-top: 12px;
+}
+
+.error-message {
+    margin-top: 20px;
+    color: var(--red);
+    font-size: 0.9rem;
+}

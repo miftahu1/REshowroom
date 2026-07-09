@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Cookies from 'js-cookie';
-import '../globals.css';
+import '../../globals.css';
+import './login.css';
 
 const AdminLoginPage = () => {
   const [password, setPassword] = useState('');
@@ -21,7 +22,7 @@ const AdminLoginPage = () => {
 
   return (
     <div className="login-container">
-        <div className="login-box glass-card">
+        <div className="login-box glass-card login-form">
             <h2>RE-Admin</h2>
             <p>Royal Enfield Dealership</p>
             <form onSubmit={(e) => { e.preventDefault(); handleLogin(); }}>
