@@ -137,7 +137,7 @@ export default function Home() {
         .join('');
 
     return `
-        <!DOCTYPE html><html><head><link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet"></head><body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;"><table border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding: 20px 0;"><table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"><tr><td align="center" style="padding: 30px 20px; background-color: #121212;"><h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">${title}</h1></td></tr><tr><td style="padding: 40px 30px;"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">${details}</table></td></tr><tr><td style="padding: 20px 30px; background-color: #121212;"><p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${new Date().getFullYear()} Funshine Getaways. All rights reserved.</p></td></tr></table></td></tr></table></body></html>`;
+        <!DOCTYPE html><html><head><link href="https://fonts.googleapis.com/css2?family=Teko:wght@400;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet"></head><body style="margin: 0; padding: 0; background-color: #f4f4f4; font-family: 'Roboto', sans-serif;"><table border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td style="padding: 20px 0;"><table align="center" border="0" cellpadding="0" cellspacing="0" width="600" style="border-collapse: collapse; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);"><tr><td align="center" style="padding: 30px 20px; background-color: #121212;"><h1 style="color: #c9a84c; font-family: 'Teko', sans-serif; font-size: 32px; text-transform: uppercase; letter-spacing: 0.1em; margin: 0;">${title}</h1></td></tr><tr><td style="padding: 40px 30px;"><table border="0" cellpadding="0" cellspacing="0" width="100%" style="border-collapse: collapse; border: 1px solid #e0e0e0; border-radius: 8px;">${details}</table></td></tr><tr><td style="padding: 20px 30px; background-color: #121212;"><p style="margin: 0; color: #888888; text-align: center; font-size: 12px;">&copy; ${new Date().getFullYear()} Royal Enfield Showroom - Funshine Getaways pvt ltd. All rights reserved.</p></td></tr></table></td></tr></table></body></html>`;
 };
 
   const handleBookingSubmit = async (e: React.FormEvent) => {
@@ -163,7 +163,7 @@ export default function Home() {
 
         await addDoc(collection(db, "bookings"), { ...bookingFormData, timestamp: serverTimestamp() });
         const emailBody = getManagerEmailBody('New Test Ride Request', bookingFormData);
-        const templateParams = { manager_email: managerEmailAddress, from_name: 'Funshine Getaways', reply_to: bookingFormData.email, subject: `New Test Ride Request: ${bookingFormData.model || 'Test Ride'}`, email_body: emailBody };
+        const templateParams = { manager_email: managerEmailAddress, from_name: 'Royal Enfield Showroom - Funshine Getaways pvt ltd', reply_to: bookingFormData.email, subject: `New Test Ride Request: ${bookingFormData.model || 'Test Ride'}`, email_body: emailBody };
 
       emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY)
         .then((response) => {
@@ -273,12 +273,12 @@ export default function Home() {
               Authorized Dealership &nbsp;|&nbsp; Sivasagar
             </div>
             <h1 className="hero-headline">
-              Welcome to <span className="gold-text">Funshine Getaways.</span><br />
+              Welcome to <span className="gold-text">Royal Enfield Showroom - Funshine Getaways pvt ltd.</span><br />
               Your Adventure Starts Here.
             </h1>
             <p className="hero-sub">Feel the thunder &nbsp;·&nbsp; Own the road</p>
             <p className="hero-desc">
-            Step into the world of Royal Enfield at Funshine Getaways, your authorized dealership in Sivasagar. We are more than just a showroom; we are a hub for riders, adventurers, and enthusiasts.
+            Step into the world of Royal Enfield at Royal Enfield Showroom - Funshine Getaways pvt ltd, your authorized dealership in Sivasagar. We are more than just a showroom; we are a hub for riders, adventurers, and enthusiasts.
             </p>
             <div className="hero-cta">
               <a href="#models" className="btn-primary">
@@ -374,7 +374,7 @@ export default function Home() {
           </div>
           <div className="about-content">
             <span className="section-tag">Our Story</span>
-            <h2 className="section-title" id="about-title">Welcome to Funshine Getaways</h2>
+            <h2 className="section-title" id="about-title">Welcome to Royal Enfield Showroom - Funshine Getaways pvt ltd</h2>
             <p>We are more than a dealership — we are custodians of a century-old legacy. Established in 2005, we
               have grown to become one of the most trusted Royal Enfield authorized dealerships, serving thousands
               of riders across the region.</p>
@@ -671,7 +671,7 @@ export default function Home() {
               referrerPolicy="strict-origin-when-cross-origin">
             </iframe>
             <div className="map-overlay-badge">
-              <i className="fa-solid fa-location-dot"></i> Royal Enfield - Sivasagar
+              <i className="fa-solid fa-location-dot"></i> Royal Enfield Showroom - Funshine Getaways pvt ltd
             </div>
           </div>
         </div>
