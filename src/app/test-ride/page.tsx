@@ -117,7 +117,7 @@ const TestRidePage = () => {
     };
 
     return (
-        <section id="test-ride" aria-labelledby="test-ride-title" style={{padding: 'var(--section-padding) 0'}}>
+        <section id="test-ride" aria-labelledby="test-ride-title">
             <div className="test-ride-layout">
                 <div className="test-ride-info">
                     <span className="section-tag">Experience It</span>

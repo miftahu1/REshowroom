@@ -1,10 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { getFirestore, collection, getDocs, doc, getDoc, setDoc, query, orderBy, serverTimestamp } from "firebase/firestore";
+import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
 import '../globals.css';
+import Cookies from 'js-cookie';
+import { useRouter } from 'next/navigation';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -16,130 +18,138 @@ const firebaseConfig = {
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
 const db = getFirestore(app);
 
-const createUserDocument = async (user: User) => {
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) {
-        try {
-            await setDoc(userDocRef, {
-                email: user.email,
-                displayName: user.displayName || user.email,
-                createdAt: serverTimestamp(),
-                isAdmin: false 
-            });
-        } catch (error) {
-            console.error("Error creating user document: ", error);
-        }
-    }
-};
-
 const AdminPage = () => {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [testRides, setTestRides] = useState<any[]>([]);
+  const [activeView, setActiveView] = useState('dashboard');
+  const router = useRouter();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-        if (currentUser) {
-            await createUserDocument(currentUser);
-            const userDocRef = doc(db, 'users', currentUser.uid);
-            const userDoc = await getDoc(userDocRef);
-            if (userDoc.exists() && userDoc.data().isAdmin) {
-                setIsAdmin(true);
-                setUser(currentUser);
-            } else {
-                setIsAdmin(false);
-                setUser(currentUser);
-            }
-        } else {
-            setUser(null);
-            setIsAdmin(false);
-        }
-        setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleSignOut = () => {
-    signOut(auth).catch(error => console.error(error));
-  };
-
-  if (loading) {
-    return <div className="login-container"><h1>Loading...</h1></div>;
-  }
-
-  if (!isAdmin) {
-      return (
-          <div className="login-container">
-              <div className="login-form glass-card" style={{textAlign: 'center'}}>
-                  <h1 className="form-title">Access Denied</h1>
-                  <p style={{marginBottom: '20px'}}>You do not have permission to access the admin panel.</p>
-                  <button onClick={handleSignOut} className="btn-outline" style={{width: '100%'}}>Sign Out</button>
-              </div>
-          </div>
-      );
-  }
-
-  return (
-    <Dashboard />
-  );
-};
-
-const Dashboard = () => {
-  const [stats, setStats] = useState({ bookings: 0, messages: 0, products: 0, reviews: 0 });
-  const [loading, setLoading] = useState(true);
-
-  const fetchStats = async () => {
-    setLoading(true);
-    try {
-        const bookingsSnapshot = await getDocs(collection(db, "bookings"));
-        const messagesSnapshot = await getDocs(collection(db, "messages"));
-        const productsSnapshot = await getDocs(collection(db, "products"));
-        const reviewsSnapshot = await getDocs(collection(db, "reviews"));
-        setStats({
-            bookings: bookingsSnapshot.size,
-            messages: messagesSnapshot.size,
-            products: productsSnapshot.size,
-            reviews: reviewsSnapshot.docs.filter(r => r.data().featured).length,
-        });
-    } catch (error) {
-        console.error("Error fetching stats: ", error);
+    if (!Cookies.get('admin-session')) {
+      router.push('/admin/login');
+      return;
     }
-    setLoading(false);
-  };
-
-  useEffect(() => {
-    fetchStats();
+    fetchReviews();
+    fetchTestRides();
   }, []);
 
-  if (loading) {
-    return <p>Loading dashboard...</p>
+  const fetchReviews = async () => {
+    const reviewsCollection = await getDocs(collection(db, "reviews"));
+    const reviewsData = reviewsCollection.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setReviews(reviewsData);
+  };
+
+  const fetchTestRides = async () => {
+    const testRidesCollection = await getDocs(collection(db, "test-rides"));
+    const testRidesData = testRidesCollection.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    setTestRides(testRidesData);
+  };
+
+  const handleApprove = async (id: string) => {
+    const reviewDoc = doc(db, "reviews", id);
+    await updateDoc(reviewDoc, { approved: true });
+    fetchReviews();
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    await deleteDoc(doc(db, "reviews", id));
+    fetchReviews();
+  };
+
+  const handleDeleteTestRide = async (id: string) => {
+    await deleteDoc(doc(db, "test-rides", id));
+    fetchTestRides();
+  };
+  
+  const handleLogout = () => {
+    Cookies.remove('admin-session');
+    router.push('/admin/login');
   }
 
+  const pendingReviewsCount = reviews.filter(r => !r.approved).length;
+
   return (
-    <div className="dashboard-grid">
-      <div className="dashboard-card glass-card">
-        <h3>Total Bookings</h3>
-        <p className="dashboard-stat">{stats.bookings}</p>
-      </div>
-      <div className="dashboard-card glass-card">
-        <h3>New Messages</h3>
-        <p className="dashboard-stat">{stats.messages}</p>
-      </div>
-      <div className="dashboard-card glass-card">
-        <h3>Listed Products</h3>
-        <p className="dashboard-stat">{stats.products}</p>
-      </div>
-      <div className="dashboard-card glass-card">
-        <h3>Featured Reviews</h3>
-        <p className="dashboard-stat">{stats.reviews}</p>
-      </div>
+    <div className="admin-container">
+        <div className="admin-sidebar">
+            <h2>RE-Admin</h2>
+            <ul>
+                <li><a href="#" className={activeView === 'dashboard' ? 'active' : ''} onClick={() => setActiveView('dashboard')}><i className="fa-solid fa-tachograph-digital"></i> Dashboard</a></li>
+                <li><a href="#" className={activeView === 'reviews' ? 'active' : ''} onClick={() => setActiveView('reviews')}><i className="fa-solid fa-comments"></i> Reviews</a></li>
+                <li><a href="#" className={activeView === 'test-rides' ? 'active' : ''} onClick={() => setActiveView('test-rides' )}><i className="fa-solid fa-motorcycle"></i> Test Rides</a></li>
+            </ul>
+            <div style={{marginTop: 'auto'}}>
+                <a href="#" onClick={handleLogout}><i className="fa-solid fa-right-from-bracket"></i> Logout</a>
+            </div>
+        </div>
+        <div className="admin-content">
+            {activeView === 'dashboard' && (
+                <div>
+                    <div className="admin-header">
+                        <h1>Dashboard</h1>
+                        <p>Welcome back, Admin!</p>
+                    </div>
+                    <div className="dashboard-grid">
+                        <div className="dashboard-card glass-card">
+                            <h3>Pending Reviews</h3>
+                            <p className="dashboard-stat">{pendingReviewsCount}</p>
+                        </div>
+                        <div className="dashboard-card glass-card">
+                            <h3>Test Ride Bookings</h3>
+                            <p className="dashboard-stat">{testRides.length}</p>
+                        </div>
+                    </div>
+                </div>
+            )}
+            {activeView === 'reviews' && (
+                <div>
+                    <div className="admin-header">
+                        <h1>Review Management</h1>
+                        <p>Approve or delete user-submitted reviews.</p>
+                    </div>
+                    <div className="admin-table-container">
+                        {reviews.map(review => (
+                            <div key={review.id} className="glass-card" style={{ marginBottom: '20px', padding: '20px'}}>
+                                <p><strong>{review.name}</strong></p>
+                                <p>{review.review}</p>
+                                <p>Status: {review.approved ? <span style={{color: 'var(--success)'}}>Approved</span> : <span style={{color: 'var(--warning)'}}>Pending</span>}</p>
+                                <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
+                                    {!review.approved && (
+                                    <button onClick={() => handleApprove(review.id)} className="btn-primary" style={{background: 'var(--success)'}}>Approve</button>
+                                    )}
+                                    <button onClick={() => handleDeleteReview(review.id)} className="btn-primary" style={{background: 'var(--danger)'}}>Delete</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+            {activeView === 'test-rides' && (
+                <div>
+                    <div className="admin-header">
+                        <h1>Test Ride Management</h1>
+                        <p>Manage and view scheduled test rides.</p>
+                    </div>
+                    <div className="admin-table-container">
+                        {testRides.map(ride => (
+                            <div key={ride.id} className="glass-card" style={{ marginBottom: '20px', padding: '20px'}}>
+                                <p><strong>{ride.name}</strong></p>
+                                <p>Email: {ride.email}</p>
+                                <p>Phone: {ride.phone}</p>
+                                <p>Preferred Date: {ride.date}</p>
+                                <p>Model: {ride.model}</p>
+                                <div style={{ marginTop: '10px' }}>
+                                    <button onClick={() => handleDeleteTestRide(ride.id)} className="btn-primary" style={{background: 'var(--danger)'}}>Delete</button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
     </div>
   );
-}
+};
 
 export default AdminPage;

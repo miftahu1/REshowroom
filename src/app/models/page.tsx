@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from "firebase/firestore";
+import '../../globals.css';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -64,23 +66,13 @@ const ModelsPage = () => {
         <p className="section-subtitle">Explore the complete range of Royal Enfield motorcycles. Each machine is a piece of history, built to rule the road.</p>
       </div>
 
-      <div className="filter-bar-container" style={{ display: 'flex', justifyContent: 'center', marginBottom: '40px' }}>
-        <div className="filter-bar" style={{ display: 'flex', gap: '10px', background: 'rgba(255, 255, 255, 0.05)', padding: '10px', borderRadius: '999px', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+      <div className="filter-bar-container">
+        <div className="filter-bar">
           {filterOptions.map(option => (
             <button 
               key={option} 
               onClick={() => handleFilter(option)} 
-              className={`filter-btn ${activeFilter === option ? 'active' : ''}`}
-              style={{
-                padding: '10px 20px',
-                borderRadius: '999px',
-                border: 'none',
-                background: activeFilter === option ? 'var(--gold)' : 'transparent',
-                color: activeFilter === option ? 'var(--text-inverted)' : 'var(--text-primary)',
-                cursor: 'pointer',
-                transition: 'all 0.3s ease'
-              }}
-            >
+              className={`filter-btn ${activeFilter === option ? 'active' : ''}`}>
               {option}
             </button>
           ))}
@@ -89,30 +81,32 @@ const ModelsPage = () => {
 
       <div className="models-grid">
         {filteredModels.map(model => (
-          <div className="model-card" key={model.id}>
-            <div className="model-card-img">
-              <img src={model.imageUrl} alt={model.name} />
-              {model.category && <div className="model-card-badge">{model.category}</div>}
-            </div>
-            <div className="model-card-body">
-              <h3 className="model-card-name">{model.name}</h3>
-              <p className="model-card-engine">{model.engine}</p>
-              {model.specs && (
-                <div className="model-card-specs">
-                    {model.specs.map((spec, index) => spec.value && spec.label && (
-                        <div key={index} className="model-spec">
-                            <span className="model-spec-val">{spec.value}</span>
-                            <span className="model-spec-label">{spec.label}</span>
+            <Link href={`/model/${model.id}`} key={model.id} className="model-card-link">
+                <div className="model-card">
+                    <div className="model-card-img">
+                        <img src={model.imageUrl} alt={model.name} />
+                        {model.category && <div className="model-card-badge">{model.category}</div>}
+                    </div>
+                    <div className="model-card-body">
+                    <h3 className="model-card-name">{model.name}</h3>
+                    <p className="model-card-engine">{model.engine}</p>
+                    {model.specs && (
+                        <div className="model-card-specs">
+                            {model.specs.map((spec, index) => spec.value && spec.label && (
+                                <div key={index} className="model-spec">
+                                    <span className="model-spec-val">{spec.value}</span>
+                                    <span className="model-spec-label">{spec.label}</span>
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    )}
+                    <div className="model-card-footer">
+                        <div className="model-price">{model.price}</div>
+                        <div className="model-explore-btn">Explore &rarr;</div>
+                    </div>
+                    </div>
                 </div>
-              )}
-              <div className="model-card-footer">
-                <div className="model-price">{model.price}</div>
-                <a href={`/product/${model.id}`} className="model-explore-btn">Explore &rarr;</a>
-              </div>
-            </div>
-          </div>
+            </Link>
         ))}
       </div>
     </div>
