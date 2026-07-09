@@ -273,7 +273,7 @@ export default function Home() {
               Authorized Dealership &nbsp;|&nbsp; Sivasagar
             </div>
             <h1 className="hero-headline">
-              Welcome to <span className="gold-text">Royal Enfield Showroom - Funshine Getaways pvt ltd.</span><br />
+              Welcome to <span className="gold-text">Funshine Getaways pvt ltd.</span><br />
               Your Adventure Starts Here.
             </h1>
             <p className="hero-sub">Feel the thunder &nbsp;·&nbsp; Own the road</p>
