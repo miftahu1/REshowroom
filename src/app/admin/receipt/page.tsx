@@ -125,12 +125,8 @@ const ReceiptPage = () => {
 
     return (
         <div className="printable-area">
-            <div className="non-printable admin-header">
-                <h1>Create Receipt</h1>
-                <p>Generate a new customer invoice. The receipt will be saved to the database and a PDF copy will be downloaded.</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="form-container non-printable glass-card p-6">
+            <div className="receipt-layout-grid">
+                <div className="receipt-form-container non-printable glass-card">
                     <h2 className="text-xl font-semibold mb-4">Buyer & Bike Details</h2>
                     <div className="form-group">
                         <label>Buyer Name</label>
@@ -188,63 +184,64 @@ const ReceiptPage = () => {
                             <input type="text" placeholder="Value" value={detail.value} onChange={e => handleAdditionalDetailChange(index, 'value', e.target.value)} />
                         </div>
                     ))}
-                    <button onClick={addAdditionalDetail} className="btn-secondary mt-2">Add Detail</button>
+                    <button onClick={addAdditionalDetail} className="btn-outline mt-2"><i className="fa-solid fa-plus"></i> Add Detail</button>
                 </div>
                 
-                <div id="receipt-preview" className="p-6 bg-white text-black rounded-lg shadow-lg">
-                    <h2 className="text-2xl font-bold text-center mb-4">INVOICE</h2>
-                    <div className="flex justify-between mb-4">
+                <div id="receipt-preview" className="receipt-preview-paper">
+                    <h2 className="text-2xl font-bold text-center mb-4" style={{ fontFamily: 'var(--font-heading)', color: '#121212', letterSpacing: '0.05em' }}>INVOICE</h2>
+                    <div className="receipt-preview-header">
                         <div>
-                            <p><strong>Royal Enfield Amguri</strong></p>
-                            <p>123, ABC Road, Amguri</p>
-                            <p>Phone: 123-456-7890</p>
+                            <p style={{ margin: 0 }}><strong>Funshine Getaways Pvt Ltd</strong></p>
+                            <p style={{ margin: 0, fontSize: '0.85rem' }}>Authorized Royal Enfield Dealership</p>
+                            <p style={{ margin: 0, fontSize: '0.85rem' }}>AT Rd, near ASTC Bus Stand, Sivasagar</p>
+                            <p style={{ margin: 0, fontSize: '0.85rem' }}>Phone: +91 124 456 7890</p>
                         </div>
-                        <div>
-                            <p><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
-                            <p><strong>Receipt No:</strong> {receiptData.receiptId}</p>
+                        <div style={{ textAlign: 'right' }}>
+                            <p style={{ margin: 0, fontSize: '0.9rem' }}><strong>Date:</strong> {new Date().toLocaleDateString()}</p>
+                            <p style={{ margin: 0, fontSize: '0.9rem' }}><strong>Invoice No:</strong> {receiptData.receiptId}</p>
                         </div>
                     </div>
-                    <hr className="my-4 border-gray-300" />
+                    <hr style={{ margin: '16px 0', border: 0, borderTop: '1px solid #e2e8f0' }} />
                     <div className="mb-4">
-                         <h3 className="font-semibold">Billed To:</h3>
-                         <p>{receiptData.buyerName}</p>
-                         <p>{receiptData.buyerAddress}</p>
-                         <p>{receiptData.buyerPhone}</p>
+                         <h3 className="font-semibold" style={{ margin: '0 0 4px 0', fontSize: '0.95rem' }}>Billed To:</h3>
+                         <p style={{ margin: 0 }}>{receiptData.buyerName || 'Customer Name'}</p>
+                         <p style={{ margin: 0, fontSize: '0.85rem' }}>{receiptData.buyerAddress || 'Address details'}</p>
+                         <p style={{ margin: 0, fontSize: '0.85rem' }}>{receiptData.buyerPhone || 'Phone number'}</p>
                     </div>
-                    <table className="w-full mb-4 text-sm">
+                    <table className="receipt-details-table">
                         <thead>
-                            <tr className="bg-gray-100">
-                                <th className="text-left p-2">Description</th>
-                                <th className="text-right p-2">Amount</th>
+                            <tr>
+                                <th>Description</th>
+                                <th className="text-right">Amount</th>
                             </tr>
                         </thead>
                         <tbody>
-                             <tr className="border-b"><td className="p-2">Ex-Showroom Price ({receiptData.bikeModel})</td><td className="text-right p-2">&#8377; {receiptData.exShowroomPrice.toLocaleString()}</td></tr>
-                             <tr className="border-b"><td className="p-2">RTO Registration</td><td className="text-right p-2">&#8377; {receiptData.rtoPrice.toLocaleString()}</td></tr>
-                             <tr className="border-b"><td className="p-2">Insurance</td><td className="text-right p-2">&#8377; {receiptData.insurancePrice.toLocaleString()}</td></tr>
+                             <tr><td>Ex-Showroom Price ({receiptData.bikeModel || 'Selected Model'})</td><td className="text-right">&#8377; {receiptData.exShowroomPrice.toLocaleString()}</td></tr>
+                             <tr><td>RTO Registration & Road Tax</td><td className="text-right">&#8377; {receiptData.rtoPrice.toLocaleString()}</td></tr>
+                             <tr><td>Comprehensive Insurance</td><td className="text-right">&#8377; {receiptData.insurancePrice.toLocaleString()}</td></tr>
                              {receiptData.additionalDetails.map((detail, index) => (
-                                <tr key={index} className="border-b"><td className="p-2">{detail.key}</td><td className="text-right p-2">{detail.value}</td></tr>
+                                <tr key={index}><td>{detail.key || 'Additional Charge'}</td><td className="text-right">&#8377; {Number(detail.value || 0).toLocaleString()}</td></tr>
                             ))}
                         </tbody>
                         <tfoot>
-                            <tr className="font-bold bg-gray-100"><td className="text-left p-2">Total Amount</td><td className="text-right p-2">&#8377; {receiptData.totalPrice.toLocaleString()}</td></tr>
+                            <tr className="total-row"><td>Total Amount Paid</td><td className="text-right">&#8377; {receiptData.totalPrice.toLocaleString()}</td></tr>
                         </tfoot>
                     </table>
-                     <div className="mt-6">
-                        <p><strong>Payment Mode:</strong> {receiptData.paymentMode}</p>
-                        {receiptData.transactionId && <p><strong>Transaction ID:</strong> {receiptData.transactionId}</p>}
+                     <div className="mt-6" style={{ fontSize: '0.9rem' }}>
+                        <p style={{ margin: 0 }}><strong>Payment Mode:</strong> {receiptData.paymentMode}</p>
+                        {receiptData.transactionId && <p style={{ margin: 0 }}><strong>Transaction / Auth ID:</strong> {receiptData.transactionId}</p>}
                     </div>
-                    <div className="mt-8 text-center text-xs text-gray-500">
-                        <p>This is a computer-generated receipt and does not require a signature.</p>
-                        <p>&copy; {new Date().getFullYear()} Royal Enfield Amguri. All rights reserved.</p>
+                    <div className="mt-8 text-center text-xs" style={{ fontSize: '0.75rem', color: '#718096' }}>
+                        <p style={{ margin: 0 }}>This is a computer-generated receipt and does not require a signature.</p>
+                        <p style={{ margin: 0 }}>&copy; {new Date().getFullYear()} Funshine Getaways. All rights reserved.</p>
                     </div>
                 </div>
             </div>
 
-            <div className="flex justify-end mt-8 gap-4 non-printable">
-                 <button onClick={resetForm} className="btn-outline"><i className="fa-solid fa-plus"></i> New Receipt</button>
-                <button onClick={handlePrint} className="btn-secondary"><i className="fa-solid fa-print"></i> Print</button>
-                <button onClick={handleSubmit} className="btn-primary"><i className="fa-solid fa-download"></i> Save & Download</button>
+            <div className="receipt-actions non-printable">
+                <button onClick={resetForm} className="btn-outline"><i className="fa-solid fa-plus"></i> Reset Form</button>
+                <button onClick={handlePrint} className="btn-outline"><i className="fa-solid fa-print"></i> Print Invoice</button>
+                <button onClick={handleSubmit} className="btn-primary"><i className="fa-solid fa-download"></i> Save & Download PDF</button>
             </div>
         </div>
     );

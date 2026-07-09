@@ -1,6 +1,8 @@
 
 'use client';
 
+import StatCounter from '@/components/StatCounter';
+
 const AboutPage = () => {
   return (
     <div className="page-shell">
@@ -26,15 +28,15 @@ const AboutPage = () => {
               bound not by horsepower alone, but by the spirit of adventure.</p>
             <div className="about-stats">
               <div className="about-stat">
-                <div className="about-stat-num" data-count="5000" data-suffix="+">0</div>
+                <StatCounter target={5000} suffix="+" />
                 <div className="about-stat-label">Happy Riders</div>
               </div>
               <div className="about-stat">
-                <div className="about-stat-num" data-count="18" data-suffix=" Yrs">0</div>
+                <StatCounter target={18} suffix=" Yrs" />
                 <div className="about-stat-label">In Business</div>
               </div>
               <div className="about-stat">
-                <div className="about-stat-num" data-count="30" data-suffix="+">0</div>
+                <StatCounter target={30} suffix="+" />
                 <div className="about-stat-label">Expert Staff</div>
               </div>
             </div>

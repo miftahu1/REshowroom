@@ -3,10 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, doc, updateDoc, deleteDoc } from "firebase/firestore";
-import '../globals.css';
-import Cookies from 'js-cookie';
-import { useRouter } from 'next/navigation';
+import { getFirestore, collection, getDocs, query, orderBy, limit } from "firebase/firestore";
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -20,136 +17,177 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-const AdminPage = () => {
-  const [reviews, setReviews] = useState<any[]>([]);
-  const [testRides, setTestRides] = useState<any[]>([]);
-  const [activeView, setActiveView] = useState('dashboard');
-  const router = useRouter();
+const AdminDashboard = () => {
+  const [metrics, setMetrics] = useState({
+    bookingsCount: 0,
+    pendingReviewsCount: 0,
+    messagesCount: 0,
+    productsCount: 0
+  });
+  const [recentBookings, setRecentBookings] = useState<any[]>([]);
+  const [recentMessages, setRecentMessages] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!Cookies.get('admin-session')) {
-      router.push('/admin/login');
-      return;
-    }
-    fetchReviews();
-    fetchTestRides();
+    const fetchDashboardData = async () => {
+      setLoading(true);
+      try {
+        // Fetch Counts
+        const bookingsSnap = await getDocs(collection(db, "bookings"));
+        const reviewsSnap = await getDocs(collection(db, "reviews"));
+        const messagesSnap = await getDocs(collection(db, "messages"));
+        const productsSnap = await getDocs(collection(db, "products"));
+
+        const pendingReviews = reviewsSnap.docs.filter(doc => !doc.data().approved).length;
+
+        setMetrics({
+          bookingsCount: bookingsSnap.size,
+          pendingReviewsCount: pendingReviews,
+          messagesCount: messagesSnap.size,
+          productsCount: productsSnap.size
+        });
+
+        // Fetch Recent Bookings (limit 5)
+        const recentBookingsQuery = query(collection(db, "bookings"), orderBy("timestamp", "desc"), limit(5));
+        const recentBookingsSnap = await getDocs(recentBookingsQuery);
+        setRecentBookings(recentBookingsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+        // Fetch Recent Messages (limit 5)
+        const recentMessagesQuery = query(collection(db, "messages"), orderBy("timestamp", "desc"), limit(5));
+        const recentMessagesSnap = await getDocs(recentMessagesQuery);
+        setRecentMessages(recentMessagesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+      } catch (error) {
+        console.error("Error loading dashboard data: ", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
-  const fetchReviews = async () => {
-    const reviewsCollection = await getDocs(collection(db, "reviews"));
-    const reviewsData = reviewsCollection.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setReviews(reviewsData);
-  };
-
-  const fetchTestRides = async () => {
-    const testRidesCollection = await getDocs(collection(db, "test-rides"));
-    const testRidesData = testRidesCollection.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setTestRides(testRidesData);
-  };
-
-  const handleApprove = async (id: string) => {
-    const reviewDoc = doc(db, "reviews", id);
-    await updateDoc(reviewDoc, { approved: true });
-    fetchReviews();
-  };
-
-  const handleDeleteReview = async (id: string) => {
-    await deleteDoc(doc(db, "reviews", id));
-    fetchReviews();
-  };
-
-  const handleDeleteTestRide = async (id: string) => {
-    await deleteDoc(doc(db, "test-rides", id));
-    fetchTestRides();
-  };
-  
-  const handleLogout = () => {
-    Cookies.remove('admin-session');
-    router.push('/admin/login');
+  if (loading) {
+    return <p>Loading dashboard metrics...</p>;
   }
 
-  const pendingReviewsCount = reviews.filter(r => !r.approved).length;
-
   return (
-    <div className="admin-container">
-        <div className="admin-sidebar">
-            <h2>RE-Admin</h2>
-            <ul>
-                <li><a href="#" className={activeView === 'dashboard' ? 'active' : ''} onClick={() => setActiveView('dashboard')}><i className="fa-solid fa-tachograph-digital"></i> Dashboard</a></li>
-                <li><a href="#" className={activeView === 'reviews' ? 'active' : ''} onClick={() => setActiveView('reviews')}><i className="fa-solid fa-comments"></i> Reviews</a></li>
-                <li><a href="#" className={activeView === 'test-rides' ? 'active' : ''} onClick={() => setActiveView('test-rides' )}><i className="fa-solid fa-motorcycle"></i> Test Rides</a></li>
-            </ul>
-            <div style={{marginTop: 'auto'}}>
-                <a href="#" onClick={handleLogout}><i className="fa-solid fa-right-from-bracket"></i> Logout</a>
-            </div>
+    <div>
+      {/* Metrics Card Grid */}
+      <div className="dashboard-grid">
+        <Link href="/admin/bookings" className="dashboard-card glass-card">
+          <h3>Test Rides</h3>
+          <p className="dashboard-stat">{metrics.bookingsCount}</p>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total scheduled bookings</span>
+        </Link>
+        <Link href="/admin/reviews" className="dashboard-card glass-card">
+          <h3>Pending Reviews</h3>
+          <p className="dashboard-stat" style={{ color: metrics.pendingReviewsCount > 0 ? 'var(--gold)' : 'inherit' }}>
+            {metrics.pendingReviewsCount}
+          </p>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Awaiting moderator approval</span>
+        </Link>
+        <Link href="/admin/messages" className="dashboard-card glass-card">
+          <h3>Messages</h3>
+          <p className="dashboard-stat">{metrics.messagesCount}</p>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Customer contact submissions</span>
+        </Link>
+        <Link href="/admin/products" className="dashboard-card glass-card">
+          <h3>Active Models</h3>
+          <p className="dashboard-stat">{metrics.productsCount}</p>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Motorcycles in catalog</span>
+        </Link>
+      </div>
+
+      {/* Quick Action Buttons */}
+      <h3 className="mt-8 mb-4" style={{ fontFamily: 'var(--font-heading)', fontSize: '1.8rem', color: 'var(--text-primary)' }}>Quick Administrative Tasks</h3>
+      <div className="admin-actions-grid">
+        <Link href="/admin/products" className="admin-action-btn">
+          <i className="fa-solid fa-circle-plus"></i>
+          <span>Add New Model</span>
+        </Link>
+        <Link href="/admin/receipt" className="admin-action-btn">
+          <i className="fa-solid fa-file-invoice"></i>
+          <span>Generate Receipt</span>
+        </Link>
+        <Link href="/admin/settings" className="admin-action-btn">
+          <i className="fa-solid fa-sliders"></i>
+          <span>Configure Settings</span>
+        </Link>
+      </div>
+
+      {/* Double Column Activity Feed */}
+      <div className="dashboard-activity-layout">
+        {/* Left Column: Recent Bookings */}
+        <div className="dashboard-section-box">
+          <h3>
+            <span>Recent Test Rides</span>
+            <Link href="/admin/bookings" className="view-all-link">Manage All &rarr;</Link>
+          </h3>
+          <div className="admin-table-container" style={{ border: 'none' }}>
+            {recentBookings.length > 0 ? (
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Customer</th>
+                    <th>Model</th>
+                    <th>Date</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentBookings.map((b) => (
+                    <tr key={b.id}>
+                      <td>
+                        <strong>{b.name}</strong><br />
+                        <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.phone}</span>
+                      </td>
+                      <td>{b.model}</td>
+                      <td>{b.date}</td>
+                      <td>
+                        <span className={`status-badge status-${(b.status || 'Pending').toLowerCase()}`} style={{ fontSize: '0.7rem', padding: '3px 8px' }}>
+                          {b.status || 'Pending'}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p style={{ color: 'var(--text-muted)', padding: '20px 0' }}>No test ride bookings found.</p>
+            )}
+          </div>
         </div>
-        <div className="admin-content">
-            {activeView === 'dashboard' && (
-                <div>
-                    <div className="admin-header">
-                        <h1>Dashboard</h1>
-                        <p>Welcome back, Admin!</p>
-                    </div>
-                    <div className="dashboard-grid">
-                        <div className="dashboard-card glass-card">
-                            <h3>Pending Reviews</h3>
-                            <p className="dashboard-stat">{pendingReviewsCount}</p>
-                        </div>
-                        <div className="dashboard-card glass-card">
-                            <h3>Test Ride Bookings</h3>
-                            <p className="dashboard-stat">{testRides.length}</p>
-                        </div>
-                    </div>
+
+        {/* Right Column: Recent Messages */}
+        <div className="dashboard-section-box">
+          <h3>
+            <span>Recent Messages</span>
+            <Link href="/admin/messages" className="view-all-link">View Inbox &rarr;</Link>
+          </h3>
+          <div className="messages-list">
+            {recentMessages.length > 0 ? (
+              recentMessages.map((m) => (
+                <div key={m.id} className="message-item" style={{ padding: '16px', background: 'rgba(255,255,255,0.015)' }}>
+                  <div className="message-header" style={{ marginBottom: '6px' }}>
+                    <strong>{m.name}</strong>
+                    <span style={{ fontSize: '0.75rem' }}>
+                      {m.timestamp?.toDate ? new Date(m.timestamp.toDate()).toLocaleDateString() : ''}
+                    </span>
+                  </div>
+                  <p style={{ fontSize: '0.85rem', margin: 0, color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {m.message}
+                  </p>
                 </div>
+              ))
+            ) : (
+              <p style={{ color: 'var(--text-muted)', padding: '20px 0' }}>No customer messages received.</p>
             )}
-            {activeView === 'reviews' && (
-                <div>
-                    <div className="admin-header">
-                        <h1>Review Management</h1>
-                        <p>Approve or delete user-submitted reviews.</p>
-                    </div>
-                    <div className="admin-table-container">
-                        {reviews.map(review => (
-                            <div key={review.id} className="glass-card" style={{ marginBottom: '20px', padding: '20px'}}>
-                                <p><strong>{review.name}</strong></p>
-                                <p>{review.review}</p>
-                                <p>Status: {review.approved ? <span style={{color: 'var(--success)'}}>Approved</span> : <span style={{color: 'var(--warning)'}}>Pending</span>}</p>
-                                <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
-                                    {!review.approved && (
-                                    <button onClick={() => handleApprove(review.id)} className="btn-primary" style={{background: 'var(--success)'}}>Approve</button>
-                                    )}
-                                    <button onClick={() => handleDeleteReview(review.id)} className="btn-primary" style={{background: 'var(--danger)'}}>Delete</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
-            {activeView === 'test-rides' && (
-                <div>
-                    <div className="admin-header">
-                        <h1>Test Ride Management</h1>
-                        <p>Manage and view scheduled test rides.</p>
-                    </div>
-                    <div className="admin-table-container">
-                        {testRides.map(ride => (
-                            <div key={ride.id} className="glass-card" style={{ marginBottom: '20px', padding: '20px'}}>
-                                <p><strong>{ride.name}</strong></p>
-                                <p>Email: {ride.email}</p>
-                                <p>Phone: {ride.phone}</p>
-                                <p>Preferred Date: {ride.date}</p>
-                                <p>Model: {ride.model}</p>
-                                <div style={{ marginTop: '10px' }}>
-                                    <button onClick={() => handleDeleteTestRide(ride.id)} className="btn-primary" style={{background: 'var(--danger)'}}>Delete</button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            )}
+          </div>
         </div>
+      </div>
     </div>
   );
 };
 
-export default AdminPage;
+export default AdminDashboard;

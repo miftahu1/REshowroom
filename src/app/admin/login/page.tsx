@@ -12,7 +12,8 @@ const AdminLoginPage = () => {
   const router = useRouter();
 
   const handleLogin = () => {
-    if (password === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
+    const adminPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || 'admin123';
+    if (password === adminPassword) {
       Cookies.set('admin-session', 'true', { expires: 1 }); // Expires in 1 day
       router.push('/admin');
     } else {

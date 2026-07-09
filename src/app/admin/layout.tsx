@@ -1,12 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAuth, onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { doc, getDoc, getFirestore, setDoc, serverTimestamp } from 'firebase/firestore';
-import { initializeApp, getApps, getApp } from 'firebase/app';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import LoginPage from './login/page';
+import Cookies from 'js-cookie';
+import { getAuth, signOut } from 'firebase/auth';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -18,85 +17,48 @@ const firebaseConfig = {
 };
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
 const auth = getAuth(app);
 
-const createUserDocument = async (user: User) => {
-    const userDocRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) {
-        try {
-            await setDoc(userDocRef, {
-                email: user.email,
-                displayName: user.displayName || user.email,
-                createdAt: serverTimestamp(),
-                isAdmin: false
-            });
-        } catch (error) {
-            console.error("Error creating user document: ", error);
-        }
-    }
-};
-
 const AdminLayout = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [loading, setLoading] = useState(true);
     const pathname = usePathname();
     const router = useRouter();
+    const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            if (currentUser) {
-                await createUserDocument(currentUser);
-                const userDocRef = doc(db, 'users', currentUser.uid);
-                const userDoc = await getDoc(userDocRef);
-                if (userDoc.exists() && userDoc.data().isAdmin) {
-                    setIsAdmin(true);
-                } else {
-                    setIsAdmin(false);
-                }
-                setUser(currentUser);
-            } else {
-                setUser(null);
-                setIsAdmin(false);
-            }
-            setLoading(false);
-        });
-        return () => unsubscribe();
-    }, []);
+        const hasSession = !!Cookies.get('admin-session');
+        setIsAuthenticated(hasSession);
+        
+        // If not authenticated, redirect to /login
+        if (!hasSession) {
+            router.push('/login');
+        }
+    }, [pathname, router]);
 
-    const handleSignOut = () => {
-        signOut(auth).then(() => {
-            router.push('/admin/login');
-        }).catch(error => console.error('Sign out error', error));
-    };
-
-    if (loading) {
-        return <div className="login-container"><h1>Loading...</h1></div>;
-    }
-
-    if (!user) {
-        return <LoginPage />;
-    }
-
-    if (!isAdmin) {
+    if (isAuthenticated === null) {
         return (
-            <div className="login-container">
-                <div className="login-form glass-card" style={{ textAlign: 'center' }}>
-                    <h1 className="form-title">Access Denied</h1>
-                    <p style={{ marginBottom: '20px' }}>You do not have permission to view this page.</p>
-                    <button onClick={handleSignOut} className="btn-outline" style={{width: '100%'}}>Sign Out</button>
-                </div>
+            <div className="login-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: 'var(--bg-primary)' }}>
+                <h1 style={{ color: 'var(--gold)', fontFamily: 'var(--font-heading)', fontSize: '2.5rem', letterSpacing: '0.1em' }}>LOADING...</h1>
             </div>
         );
     }
 
+    const handleSignOut = async () => {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error('Firebase sign out error', error);
+        }
+        Cookies.remove('admin-session');
+        router.push('/login');
+    };
+
     return (
         <div className="admin-container">
             <aside className="admin-sidebar">
-                <h2>Funshine Getaways</h2>
+                <div className="admin-sidebar-logo">
+                    <span className="logo-brand">Funshine Getaways</span>
+                    <span className="logo-sub">Admin Panel</span>
+                </div>
                 <nav>
                     <ul>
                         <li><Link href="/admin" className={pathname === '/admin' ? 'active' : ''}><i className="fas fa-tachometer-alt"></i> Dashboard</Link></li>
@@ -116,7 +78,9 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
             </aside>
             <main className="admin-content">
                 <AdminHeader />
-                {children}
+                <div className="admin-page-body">
+                    {children}
+                </div>
             </main>
         </div>
     );

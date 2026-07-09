@@ -57,7 +57,14 @@ const ModelsPage = () => {
     }
   };
 
-  const filterOptions = ['All', 'Cruiser', 'Adventure', 'Roadster', 'Cafe Racer', 'Scrambler'];
+  const filterOptions = [
+    { name: 'All', icon: 'fa-solid fa-motorcycle' },
+    { name: 'Cruiser', icon: 'fa-solid fa-road' },
+    { name: 'Adventure', icon: 'fa-solid fa-compass' },
+    { name: 'Roadster', icon: 'fa-solid fa-bolt' },
+    { name: 'Cafe Racer', icon: 'fa-solid fa-wind' },
+    { name: 'Scrambler', icon: 'fa-solid fa-mountain' }
+  ];
 
   return (
     <div id="models" className="page-shell">
@@ -70,10 +77,11 @@ const ModelsPage = () => {
         <div className="filter-bar">
           {filterOptions.map(option => (
             <button 
-              key={option} 
-              onClick={() => handleFilter(option)} 
-              className={`filter-btn ${activeFilter === option ? 'active' : ''}`}>
-              {option}
+              key={option.name} 
+              onClick={() => handleFilter(option.name)} 
+              className={`filter-btn ${activeFilter === option.name ? 'active' : ''}`}>
+              <i className={`${option.icon} filter-btn-icon`}></i>
+              <span>{option.name}</span>
             </button>
           ))}
         </div>
