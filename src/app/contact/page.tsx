@@ -146,7 +146,7 @@ const ContactPage = () => {
           </div>
           <div className="contact-map">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3507.2!2d77.043!3d28.451!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjjCsDI3JzAzLjYiTiA3N8KwMDInMzQuOCJF!5e0!3m2!1sen!2sin!4v1"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3555.842580423468!2d94.6239287!3d26.971883999999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x374731af46b9901d%3A0xb7f1fff2e5bdc7ed!2sRoyal%20Enfield%20Showroom%20-%20Funshine%20Getaways%20Pvt%20Ltd!5e0!3m2!1sen!2sin!4v1783549863216!5m2!1sen!2sin"
               allowFullScreen={true} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
               title="Royal Enfield Dealership Location"></iframe>
             <div className="map-overlay-badge">

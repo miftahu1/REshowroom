@@ -2,20 +2,112 @@
 
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue } from "firebase/firestore";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue, where, writeBatch } from "firebase/firestore";
 
 type Spec = { value: string; label: string };
 interface ProductData {
+    id?: string;
     name: string;
     engine: string;
     price: string;
     imageUrl: string;
     badge: string;
     specs: Spec[];
+    category: string; // For filtering
     createdAt?: FieldValue;
-    id?: string;
 }
 
+// --- Seed Data ---
+const initialBikeModels: Omit<ProductData, 'id' | 'createdAt'>[] = [
+    {
+        name: 'Classic 350',
+        engine: '349cc Single-Cylinder',
+        price: '₹1.93 L',
+        imageUrl: '/assets/images/classic350.png',
+        badge: 'Bestseller',
+        category: 'classic',
+        specs: [
+            { value: '20.2', label: 'BHP' },
+            { value: '27', label: 'Nm Torque' },
+            { value: '195', label: 'Kerb Weight' },
+        ],
+    },
+    {
+        name: 'Himalayan 450',
+        engine: '452cc Single-Cylinder',
+        price: '₹2.85 L',
+        imageUrl: '/assets/images/himalayan.png',
+        badge: 'Adventure',
+        category: 'adventure',
+        specs: [
+            { value: '40.02', label: 'PS @ 8000 rpm' },
+            { value: '40', label: 'Nm @ 5500 rpm' },
+            { value: '196', label: 'Kerb Weight' },
+        ],
+    },
+    {
+        name: 'Bullet 350',
+        engine: '349cc Single-Cylinder',
+        price: '₹1.74 L',
+        imageUrl: '/assets/images/bullet350.png',
+        badge: 'Timeless',
+        category: 'classic',
+        specs: [
+            { value: '20.2', label: 'BHP' },
+            { value: '27', label: 'Nm Torque' },
+            { value: '195', label: 'Kerb Weight' },
+        ],
+    },
+    {
+        name: 'Hunter 350',
+        engine: '349cc Single-Cylinder',
+        price: '₹1.50 L',
+        imageUrl: '/assets/images/hunter350.png',
+        badge: 'Urban',
+        category: 'roadster',
+        specs: [
+            { value: '20.2', label: 'BHP' },
+            { value: '27', label: 'Nm Torque' },
+            { value: '181', label: 'Kerb Weight' },
+        ],
+    },
+    {
+        name: 'Meteor 350',
+        engine: '349cc Single-Cylinder',
+        price: '₹2.06 L',
+        imageUrl: '/assets/images/meteor350.png',
+        badge: 'Cruiser',
+        category: 'cruiser',
+        specs: [
+            { value: '20.2', label: 'BHP' },
+            { value: '27', label: 'Nm Torque' },
+            { value: '191', label: 'Kerb Weight' },
+        ],
+    },
+    {
+        name: 'Super Meteor 650',
+        engine: '648cc Parallel-Twin',
+        price: '₹3.64 L',
+        imageUrl: '/assets/images/meteor650.png',
+        badge: 'Super Cruiser',
+        category: 'cruiser',
+        specs: [
+            { value: '47', label: 'PS @ 7250 rpm' },
+            { value: '52.3', label: 'Nm @ 5650 rpm' },
+            { value: '241', label: 'Kerb Weight' },
+        ],
+    },
+];
+
+const categories = [
+    { id: 'all', name: 'All Models' },
+    { id: 'classic', name: 'Classic' },
+    { id: 'adventure', name: 'Adventure' },
+    { id: 'roadster', name: 'Roadster' },
+    { id: 'cruiser', name: 'Cruiser' },
+];
+
+// --- Firebase Initialization ---
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -28,184 +120,243 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
+
 const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
-  const getInitialFormState = (): ProductData => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [] });
-  const [formState, setFormState] = useState<ProductData>(getInitialFormState());
-  const isEditing = product?.id;
+    const getInitialFormState = (): ProductData => ({ name: '', engine: '', price: '', imageUrl: '', badge: '', specs: [], category: 'classic' });
+    const [formState, setFormState] = useState<ProductData>(getInitialFormState());
+    const isEditing = product?.id;
 
-  useEffect(() => {
-    if(isOpen) {
-        if (product) {
-            setFormState({ ...getInitialFormState(), ...product });
-        } else {
-            setFormState(getInitialFormState());
+    useEffect(() => {
+        if (isOpen) {
+            if (product) {
+                setFormState({ ...getInitialFormState(), ...product });
+            } else {
+                setFormState(getInitialFormState());
+            }
         }
-    }
-  }, [isOpen, product]);
+    }, [isOpen, product]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormState(prevState => ({ ...prevState, [name]: value }));
-  };
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormState(prevState => ({ ...prevState, [name]: value }));
+    };
 
-  const handleSpecChange = (index: number, field: 'value' | 'label', value: string) => {
-    const newSpecs = [...formState.specs];
-    newSpecs[index] = { ...newSpecs[index], [field]: value };
-    setFormState(prevState => ({ ...prevState, specs: newSpecs }));
-  };
+    const handleSpecChange = (index: number, field: 'value' | 'label', value: string) => {
+        const newSpecs = [...formState.specs];
+        newSpecs[index] = { ...newSpecs[index], [field]: value };
+        setFormState(prevState => ({ ...prevState, specs: newSpecs }));
+    };
 
-  const addSpecField = () => {
-    setFormState(prevState => ({ ...prevState, specs: [...prevState.specs, { value: '', label: '' }] }));
-  };
+    const addSpecField = () => {
+        setFormState(prevState => ({ ...prevState, specs: [...prevState.specs, { value: '', label: '' }] }));
+    };
 
-  const removeSpecField = (index: number) => {
-    const newSpecs = [...formState.specs];
-    newSpecs.splice(index, 1);
-    setFormState(prevState => ({ ...prevState, specs: newSpecs }));
-  };
+    const removeSpecField = (index: number) => {
+        const newSpecs = [...formState.specs];
+        newSpecs.splice(index, 1);
+        setFormState(prevState => ({ ...prevState, specs: newSpecs }));
+    };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (isEditing) {
-        const productRef = doc(db, "products", product.id!);
-        const { createdAt, id, ...productData } = formState;
-        await updateDoc(productRef, productData);
-      } else {
-        const productData = { ...formState, createdAt: serverTimestamp() };
-        await addDoc(collection(db, "products"), productData);
-      }
-      onClose();
-      onSave();
-    } catch (error) {
-      console.error("Error saving product: ", error);
-    }
-  };
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            if (isEditing) {
+                const productRef = doc(db, "products", product!.id!);
+                const { createdAt, id, ...productData } = formState;
+                await updateDoc(productRef, productData);
+            } else {
+                const productData = { ...formState, createdAt: serverTimestamp() };
+                await addDoc(collection(db, "products"), productData);
+            }
+            onClose();
+            onSave();
+        } catch (error) {
+            console.error("Error saving product: ", error);
+        }
+    };
 
-  return (
-    <div className={`modal-overlay ${isOpen ? 'open' : ''}`}>
-      <div className="modal-content">
-        <div className="modal-header">
-            <h3>{isEditing ? 'Edit Model' : 'Add New Model'}</h3>
-            <button onClick={onClose} className="modal-close-btn">&times;</button>
-        </div>
-        <div className="modal-body">
-            <form onSubmit={handleSubmit}>
-            <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
-                <div className="form-group"><label>Model Name</label><input name="name" type="text" value={formState.name} onChange={handleInputChange} placeholder="e.g., Classic 350" required /></div>
-                <div className="form-group"><label>Engine Spec</label><input name="engine" type="text" value={formState.engine} onChange={handleInputChange} placeholder="e.g., 349cc Single-Cylinder" required /></div>
-                <div className="form-group"><label>Starting Price</label><input name="price" type="text" value={formState.price} onChange={handleInputChange} placeholder="e.g., ₹1.93 L" required /></div>
-                <div className="form-group"><label>Image URL</label><input name="imageUrl" type="text" value={formState.imageUrl} onChange={handleInputChange} placeholder="e.g., /assets/images/classic_350.png" required /></div>
-                <div className="form-group"><label>Badge</label><input name="badge" type="text" value={formState.badge} onChange={handleInputChange} placeholder="e.g., Bestseller" /></div>
-                
-                <div style={{borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop:'10px'}}>
-                    <div style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px'}}>
-                        <p style={{color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0}}>Specifications</p>
-                        <button type="button" onClick={addSpecField} className="btn-outline" style={{fontSize: '0.7rem', padding: '6px 10px'}}><i className="fa-solid fa-plus"></i> Add Spec</button>
-                    </div>
-                    {formState.specs.map((spec, index) => (
-                        <div key={index} style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px'}}>
-                            <div className="form-group" style={{margin:0}}><input type="text" value={spec.value} placeholder="Value (e.g. 20.2)" onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
-                            <div className="form-group" style={{margin:0}}><input type="text" value={spec.label} placeholder="Label (e.g. BHP)" onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
-                            <button type="button" onClick={() => removeSpecField(index)} className="btn-delete" style={{padding: '10px 12px'}}><i className="fa-solid fa-trash"></i></button>
+    return (
+        <div className={`modal-overlay ${isOpen ? 'open' : ''}`}>
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h3>{isEditing ? 'Edit Model' : 'Add New Model'}</h3>
+                    <button onClick={onClose} className="modal-close-btn">&times;</button>
+                </div>
+                <div className="modal-body">
+                    <form onSubmit={handleSubmit}>
+                        <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
+                            <div className="form-group"><label>Model Name</label><input name="name" type="text" value={formState.name} onChange={handleInputChange} placeholder="e.g., Classic 350" required /></div>
+                            <div className="form-group"><label>Category</label>
+                                <select name="category" value={formState.category} onChange={handleInputChange} required>
+                                    {categories.filter(c => c.id !== 'all').map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                                </select>
+                            </div>
+                            <div className="form-group"><label>Engine Spec</label><input name="engine" type="text" value={formState.engine} onChange={handleInputChange} placeholder="e.g., 349cc Single-Cylinder" required /></div>
+                            <div className="form-group"><label>Starting Price</label><input name="price" type="text" value={formState.price} onChange={handleInputChange} placeholder="e.g., ₹1.93 L" required /></div>
+                            <div className="form-group"><label>Image URL</label><input name="imageUrl" type="text" value={formState.imageUrl} onChange={handleInputChange} placeholder="e.g., /assets/images/classic_350.png" required /></div>
+                            <div className="form-group"><label>Badge</label><input name="badge" type="text" value={formState.badge} onChange={handleInputChange} placeholder="e.g., Bestseller" /></div>
+
+                            <div style={{ borderTop: '1px solid var(--glass-border)', paddingTop: '20px', marginTop: '10px' }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+                                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', margin: 0 }}>Specifications</p>
+                                    <button type="button" onClick={addSpecField} className="btn-outline" style={{ fontSize: '0.7rem', padding: '6px 10px' }}><i className="fa-solid fa-plus"></i> Add Spec</button>
+                                </div>
+                                {formState.specs.map((spec, index) => (
+                                    <div key={index} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '12px', alignItems: 'center', marginBottom: '12px' }}>
+                                        <div className="form-group" style={{ margin: 0 }}><input type="text" value={spec.value} placeholder="Value (e.g. 20.2)" onChange={(e) => handleSpecChange(index, 'value', e.target.value)} /></div>
+                                        <div className="form-group" style={{ margin: 0 }}><input type="text" value={spec.label} placeholder="Label (e.g. BHP)" onChange={(e) => handleSpecChange(index, 'label', e.target.value)} /></div>
+                                        <button type="button" onClick={() => removeSpecField(index)} className="btn-delete" style={{ padding: '10px 12px' }}><i className="fa-solid fa-trash"></i></button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
-                    ))}
+                        <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+                            <button type="submit" className="btn-primary" style={{ width: '100%' }}>{isEditing ? 'Update Product' : 'Add Product'}</button>
+                            <button type="button" onClick={onClose} className="btn-outline" style={{ width: '100%' }}>Cancel</button>
+                        </div>
+                    </form>
                 </div>
             </div>
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
-                <button type="submit" className="btn-primary" style={{ width: '100%' }}>{isEditing ? 'Update Product' : 'Add Product'}</button>
-                <button type="button" onClick={onClose} className="btn-outline" style={{ width: '100%' }}>Cancel</button>
-            </div>
-            </form>
         </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 const ProductManagement = () => {
-  const [products, setProducts] = useState<ProductData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<ProductData | null>(null);
+    const [products, setProducts] = useState<ProductData[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [isModalOpen, setModalOpen] = useState(false);
+    const [editingProduct, setEditingProduct] = useState<ProductData | null>(null);
+    const [activeFilter, setActiveFilter] = useState('all');
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-        const productsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"));
-        const productsSnapshot = await getDocs(productsQuery);
-        setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductData)));
-    } catch (error) {
-        console.error("Error fetching data: ", error);
-    }
-    setLoading(false);
-  };
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            let productsQuery;
+            if(activeFilter === 'all') {
+                productsQuery = query(collection(db, "products"), orderBy("createdAt", "desc"));
+            } else {
+                productsQuery = query(collection(db, "products"), where("category", "==", activeFilter), orderBy("createdAt", "desc"));
+            }
+            
+            const productsSnapshot = await getDocs(productsQuery);
+            setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductData)));
+        } catch (error) {
+            console.error("Error fetching data: ", error);
+        }
+        setLoading(false);
+    };
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleAddClick = () => {
-    setEditingProduct(null);
-    setModalOpen(true);
-  };
-
-  const handleEditClick = (product: ProductData) => {
-    setEditingProduct(product);
-    setModalOpen(true);
-  };
-
-  const handleDeleteProduct = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      try {
-        await deleteDoc(doc(db, "products", id));
+    useEffect(() => {
         fetchData();
-      } catch (error) {
-        console.error("Error deleting product: ", error);
-      }
+    }, [activeFilter]);
+
+    const handleAddClick = () => {
+        setEditingProduct(null);
+        setModalOpen(true);
+    };
+
+    const handleEditClick = (product: ProductData) => {
+        setEditingProduct(product);
+        setModalOpen(true);
+    };
+
+    const handleDeleteProduct = async (id: string) => {
+        if (window.confirm("Are you sure you want to delete this product?")) {
+            try {
+                await deleteDoc(doc(db, "products", id));
+                fetchData();
+            } catch (error) {
+                console.error("Error deleting product: ", error);
+            }
+        }
+    };
+
+    const handleCloseModal = () => {
+        setModalOpen(false);
+        setEditingProduct(null);
     }
-  };
 
-  const handleCloseModal = () => {
-      setModalOpen(false);
-      setEditingProduct(null);
-  }
+    const seedModels = async () => {
+        setLoading(true);
+        try {
+            const productsRef = collection(db, "products");
+            const existingNames = new Set((await getDocs(productsRef)).docs.map(d => d.data().name));
+            const batch = writeBatch(db);
 
-  if (loading) {
-    return <p>Loading products...</p>
-  }
+            let seededCount = 0;
+            initialBikeModels.forEach(model => {
+                if (!existingNames.has(model.name)) {
+                    const newDocRef = doc(productsRef); 
+                    batch.set(newDocRef, { ...model, createdAt: serverTimestamp() });
+                    seededCount++;
+                }
+            });
 
-  return (
-    <div>
-        <div className="product-management-header">
-            <button onClick={handleAddClick} className="btn-primary"><i className="fa-solid fa-plus"></i> Add New Model</button>
+            if (seededCount > 0) {
+                await batch.commit();
+                alert(`${seededCount} new models have been seeded successfully!`);
+                fetchData(); // Refresh data
+            } else {
+                alert('All models already exist in the database.');
+            }
+        } catch (error) {
+            console.error("Error seeding models: ", error);
+            alert('An error occurred while seeding the models.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <div>
+            <div className="product-management-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem'}}>
+                <div style={{display: 'flex', gap: '1rem'}}>
+                    <button onClick={handleAddClick} className="btn-primary"><i className="fa-solid fa-plus"></i> Add New Model</button>
+                    <button onClick={seedModels} className="btn-outline"><i className="fa-solid fa-seedling"></i> Seed Models</button>
+                </div>
+                <div className="filter-bar" style={{margin: 0}}>
+                   <select onChange={(e) => setActiveFilter(e.target.value)} value={activeFilter} style={{padding: '12px 16px', borderRadius: '8px'}}>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                   </select>
+                </div>
+            </div>
+
+            {loading ? <p>Loading products...</p> : (
+                <div className="admin-table-container mt-6">
+                    <table className="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>Category</th>
+                                <th>Price</th>
+                                <th style={{ textAlign: 'right' }}>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {products.length > 0 ? products.map((p: ProductData) => (
+                                <tr key={p.id}>
+                                    <td>{p.name}</td>
+                                    <td><span className="event-type-badge">{p.category}</span></td>
+                                    <td>{p.price}</td>
+                                    <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
+                                        <button onClick={() => handleEditClick(p)} className="btn-outline" style={{ padding: '8px 12px' }}><i className="fa-solid fa-pencil"></i> Edit</button>
+                                        <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
+                                    </td>
+                                </tr>
+                            )) : (
+                                <tr>
+                                    <td colSpan={4} style={{textAlign: 'center', padding: '40px'}}>
+                                        <p>No models found for the filter '{activeFilter}'.</p>
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            )}
+            <ProductModal isOpen={isModalOpen} onClose={handleCloseModal} product={editingProduct} onSave={fetchData} />
         </div>
-      <div className="admin-table-container">
-        <table className="admin-table">
-          <thead>
-            <tr>
-              <th>Model</th>
-              <th>Price</th>
-              <th style={{textAlign: 'right'}}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p: ProductData) => (
-              <tr key={p.id}>
-                <td>{p.name}</td>
-                <td>{p.price}</td>
-                <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                  <button onClick={() => handleEditClick(p)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i> Edit</button>
-                  <button onClick={() => handleDeleteProduct(p.id!)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <ProductModal isOpen={isModalOpen} onClose={handleCloseModal} product={editingProduct} onSave={fetchData} />
-    </div>
-  );
+    );
 };
 
 export default ProductManagement;
