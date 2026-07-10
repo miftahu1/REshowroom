@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import Cookies from 'js-cookie';
@@ -13,17 +13,22 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    if (Cookies.get('admin-session')) {
-      router.push('/admin');
-    }
+    // Listen for auth state changes to handle page access and loading state
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (Cookies.get('admin-session')) {
+        router.push('/admin');
+      } else {
+        setLoading(false); // Finished loading, allow user interaction
+      }
+    });
+    return () => unsubscribe();
   }, [router]);
 
-  const handleAuth = async (user) => {
-    setLoading(true);
+  const processSignIn = async (user) => {
     try {
       const userDocRef = doc(db, 'users', user.uid);
       const userDoc = await getDoc(userDocRef);
@@ -47,7 +52,7 @@ const LoginPage = () => {
         setError('Your account has been created and is pending approval from an administrator.');
       }
     } catch (err) {
-      setError(err.message || 'An unknown error occurred during authentication.');
+      setError(err.message || 'An error occurred during verification.');
       if (auth.currentUser) await signOut(auth);
     } finally {
       setLoading(false);
@@ -58,11 +63,16 @@ const LoginPage = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => handleAuth(userCredential.user))
-      .catch((err) => {
-        setError(err.message);
+      .then(userCredential => processSignIn(userCredential.user))
+      .catch(err => {
+        if (err.code === 'auth/user-not-found') {
+          setError('No user found with this email. Please use the correct email or Google Sign-In.');
+        } else if (err.code === 'auth/wrong-password') {
+          setError('Incorrect password. Please try again.');
+        } else {
+          setError('Invalid credentials. Please try again.');
+        }
         setLoading(false);
       });
   };
@@ -72,12 +82,16 @@ const LoginPage = () => {
     setLoading(true);
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
-      .then((result) => handleAuth(result.user))
-      .catch((err) => {
+      .then(result => processSignIn(result.user))
+      .catch(err => {
         setError(err.message);
         setLoading(false);
       });
   };
+  
+  if (loading && !error) {
+    return <div className="login-container"><p>Loading...</p></div>;
+  }
 
   return (
     <div className="login-container">
