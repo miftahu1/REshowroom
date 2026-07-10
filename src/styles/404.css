@@ -1,0 +1,59 @@
+@keyframes crashAnimation {
+  0% {
+    transform: translateX(-100vw) rotate(0deg);
+    opacity: 0;
+  }
+  50% {
+    transform: translateX(0) rotate(-25deg);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(5vw) rotate(10deg) scale(1.1);
+  }
+  70% {
+    transform: translateX(-5vw) rotate(-10deg) scale(1);
+  }
+  80% {
+    transform: translateX(2vw) rotate(5deg);
+  }
+  90% {
+    transform: translateX(0) rotate(0deg) scale(1.2);
+  }
+  100% {
+    transform: translateX(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+.not-found-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  min-height: 80vh;
+  background-color: var(--background-primary);
+  color: var(--text-primary);
+}
+
+.not-found-content {
+  max-width: 600px;
+  padding: 2rem;
+}
+
+.error-bike-animation {
+  width: 250px;
+  height: auto;
+  margin-bottom: 2rem;
+  animation: crashAnimation 2s ease-out forwards;
+}
+
+.error-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  color: var(--text-secondary);
+  margin-bottom: 2rem;
+}
