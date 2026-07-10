@@ -1,36 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp, enableIndexedDbPersistence } from 'firebase/firestore';
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import '../globals.css';
-
-const firebaseConfig = {
-    apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
-    authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-    appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID
-};
-
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-// Enable offline persistence
-try {
-  enableIndexedDbPersistence(db);
-} catch (error) {
-  if (error.code === 'failed-precondition') {
-    console.warn('Firestore persistence failed: Multiple tabs open?');
-  } else if (error.code === 'unimplemented') {
-    console.warn('Firestore persistence not available in this browser.');
-  }
-}
 
 const LoginPage = () => {
   const [email, setEmail] = useState('');
@@ -46,7 +22,7 @@ const LoginPage = () => {
     }
   }, [router]);
 
-  const verifyAdminAndLogin = async (user) => {
+  const handleAuth = async (user) => {
     setLoading(true);
     try {
       const userDocRef = doc(db, 'users', user.uid);
@@ -71,10 +47,8 @@ const LoginPage = () => {
         setError('Your account has been created and is pending approval from an administrator.');
       }
     } catch (err) {
-      setError(`An error occurred: ${err.message}`);
-      if (auth.currentUser) {
-        await signOut(auth);
-      }
+      setError(err.message || 'An unknown error occurred during authentication.');
+      if (auth.currentUser) await signOut(auth);
     } finally {
       setLoading(false);
     }
@@ -83,22 +57,25 @@ const LoginPage = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     setError('');
+    setLoading(true);
+
     signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => verifyAdminAndLogin(userCredential.user))
-      .catch((error) => {
+      .then((userCredential) => handleAuth(userCredential.user))
+      .catch((err) => {
+        setError(err.message);
         setLoading(false);
-        setError(error.message);
       });
   };
 
   const handleGoogleSignIn = () => {
     setError('');
+    setLoading(true);
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
-      .then((result) => verifyAdminAndLogin(result.user))
-      .catch((error) => {
+      .then((result) => handleAuth(result.user))
+      .catch((err) => {
+        setError(err.message);
         setLoading(false);
-        setError(error.message);
       });
   };
 
