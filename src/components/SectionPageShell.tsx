@@ -90,7 +90,7 @@ const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
             <h4>Contact</h4>
             <ul>
               <li><a href="tel:+911244567890">+91 124 456 7890</a></li>
-              <li><a href="mailto:hello@funshinegetaways.in">hello@funshinegetaways.in</a></li>
+              <li><a href="mailto:funshine.reshowroom@gmail.com">funshine.reshowroom@gmail.com</a></li>
               <li><a href="/contact">AT Rd, near ASTC Bus Stand, Sivasagar</a></li>
             </ul>
             <div style={{marginTop:'20px'}}>

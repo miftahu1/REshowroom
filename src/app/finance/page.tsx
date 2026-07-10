@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, where, orderBy } from "firebase/firestore";
 
@@ -58,10 +59,11 @@ const FinancePage = () => {
 
                 const bikesQuery = query(collection(db, "products"), where("financeEnabled", "==", true));
                 const bikesSnap = await getDocs(bikesQuery);
-                setBikes(bikesSnap.docs.map(doc => ({ id: doc.id, name: doc.data().name, price: doc.data().price })));
+                const bikeData = bikesSnap.docs.map(doc => ({ id: doc.id, name: doc.data().name, price: Number(doc.data().price.replace(/[^\d]/g, '')) || 0 }))
+                setBikes(bikeData);
 
                 // In a real app, you would fetch settings from a 'settings' collection
-                setSettings({ defaultDisclaimer: 'EMI is estimated.', currencySymbol: '₹' });
+                setSettings({ defaultDisclaimer: 'EMI is estimated and subject to final approval.', currencySymbol: '₹' });
 
             } catch (error) {
                 console.error("Error fetching finance data: ", error);
@@ -74,14 +76,16 @@ const FinancePage = () => {
 
     const handleCompanySelect = (company: FinanceCompany) => {
         setSelectedCompany(company);
-        setTenure(company.allowedTenures[0] || 0);
+        if (company.allowedTenures?.length > 0) {
+            setTenure(company.allowedTenures[0]);
+        }
     };
 
     const handleBikeSelect = (bikeId: string) => {
         const bike = bikes.find(b => b.id === bikeId);
         if (bike) {
             setSelectedBike(bike);
-            setDownPayment(bike.price * 0.1); // Default 10% down payment
+            setDownPayment(Math.round(bike.price * 0.1)); // Default 10% down payment
         }
     };
 
@@ -91,7 +95,7 @@ const FinancePage = () => {
         ? (loanAmount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, tenure)) / (Math.pow(1 + monthlyInterestRate, tenure) - 1)
         : 0;
 
-    if (loading) return <div className="page-shell">Loading...</div>;
+    if (loading) return <div className="page-shell loading-container"><div></div><div></div><div></div></div>;
 
     return (
         <div className="page-shell">
@@ -102,14 +106,14 @@ const FinancePage = () => {
 
             {/* Step 1: Finance Partners */}
             <div className="finance-partners">
-                <h3 className="subsection-title">Our Finance Partners</h3>
+                <h3 className="subsection-title">1. Select a Finance Partner</h3>
                 <div className="company-grid">
                     {companies.map(c => (
                         <div key={c.id} className={`company-card ${selectedCompany?.id === c.id ? 'selected' : ''}`} onClick={() => handleCompanySelect(c)}>
                             <img src={c.logo} alt={c.name} className="company-logo" />
                             <div className="company-name">{c.name}</div>
                             <div className="company-rate">Starts at {c.interestRate}% p.a.</div>
-                            {selectedCompany?.id === c.id && <div className="check-icon">✔</div>}
+                            {selectedCompany?.id === c.id && <div className="check-icon"><i className="fa-solid fa-check-circle"></i></div>}
                         </div>
                     ))}
                 </div>
@@ -118,10 +122,10 @@ const FinancePage = () => {
             {/* Step 2: EMI Calculator */}
             {selectedCompany && (
                 <div className="emi-calculator-section">
-                     <h3 className="subsection-title">EMI Calculator</h3>
+                     <h3 className="subsection-title">2. Calculate Your EMI</h3>
                     <div className="calculator-grid">
                         {/* Left Side: Inputs */}
-                        <div className="calculator-inputs">
+                        <div className="calculator-inputs glass-card">
                             <select onChange={(e) => handleBikeSelect(e.target.value)} defaultValue="">
                                 <option value="" disabled>Select Bike Model</option>
                                 {bikes.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
@@ -131,16 +135,16 @@ const FinancePage = () => {
                                 <>
                                     <div className="input-group">
                                         <label>Bike Price</label>
-                                        <span>{settings?.currencySymbol}{selectedBike.price.toLocaleString()}</span>
+                                        <span>{settings?.currencySymbol}{selectedBike.price.toLocaleString('en-IN')}</span>
                                     </div>
                                     <div className="input-group">
-                                        <label>Down Payment</label>
-                                        <input type="range" min={0} max={selectedBike.price} value={downPayment} onChange={(e) => setDownPayment(Number(e.target.value))} />
-                                        <span>{settings?.currencySymbol}{downPayment.toLocaleString()}</span>
+                                        <label>Down Payment ({settings?.currencySymbol}{downPayment.toLocaleString('en-IN')})</label>
+                                        <input type="range" min={0} max={selectedBike.price * 0.8} value={downPayment} onChange={(e) => setDownPayment(Number(e.target.value))} />
+                                        
                                     </div>
                                     <div className="input-group">
                                         <label>Loan Amount</label>
-                                        <span>{settings?.currencySymbol}{loanAmount.toLocaleString()}</span>
+                                        <span className="highlight-text">{settings?.currencySymbol}{loanAmount.toLocaleString('en-IN')}</span>
                                     </div>
                                     <div className="input-group">
                                         <label>Loan Tenure (Months)</label>
@@ -157,24 +161,28 @@ const FinancePage = () => {
                         {/* Right Side: Summary */}
                         {selectedBike && (
                             <div className="calculator-summary">
-                                <div className="emi-display"> 
+                                <div className="emi-display glass-card"> 
                                     <div className="emi-label">Estimated Monthly EMI</div>
-                                    <div className="emi-value">{settings?.currencySymbol}{Math.round(emi).toLocaleString()} / month</div>
+                                    <div className="emi-value">{settings?.currencySymbol}{Math.round(emi).toLocaleString('en-IN')} / mo</div>
                                 </div>
-                                <p className="disclaimer">{settings?.defaultDisclaimer}</p>
+                                <p className="disclaimer"><i className="fa-solid fa-circle-info"></i> {settings?.defaultDisclaimer}</p>
 
-                                <div className="summary-card">
+                                <div className="summary-card glass-card">
                                     <h4>Loan Summary</h4>
-                                    <div className="summary-item"><span>Bike Price:</span><span>{settings?.currencySymbol}{selectedBike.price.toLocaleString()}</span></div>
-                                    <div className="summary-item"><span>Down Payment:</span><span>{settings?.currencySymbol}{downPayment.toLocaleString()}</span></div>
-                                    <div className="summary-item"><span>Loan Amount:</span><span>{settings?.currencySymbol}{loanAmount.toLocaleString()}</span></div>
+                                    <div className="summary-item"><span>Bike Price:</span><span>{settings?.currencySymbol}{selectedBike.price.toLocaleString('en-IN')}</span></div>
+                                    <div className="summary-item"><span>Down Payment:</span><span>-{settings?.currencySymbol}{downPayment.toLocaleString('en-IN')}</span></div>
+                                    <div className="summary-item"><span>Loan Amount:</span><span>{settings?.currencySymbol}{loanAmount.toLocaleString('en-IN')}</span></div>
                                     <div className="summary-item"><span>Interest Rate:</span><span>{selectedCompany.interestRate}% p.a.</span></div>
                                     <div className="summary-item"><span>Tenure:</span><span>{tenure} months</span></div>
                                 </div>
 
                                 <div className="calculator-actions">
-                                    <button className="btn-primary">Apply for Finance</button>
-                                    <button className="btn-outline">Book Test Ride</button>
+                                    <Link href={`/contact?type=finance&model=${encodeURIComponent(selectedBike.name)}&price=${selectedBike.price}&company=${encodeURIComponent(selectedCompany.name)}&loanAmount=${loanAmount}&emi=${Math.round(emi)}&tenure=${tenure}`} className="btn-primary">
+                                        <i className="fa-solid fa-file-contract"></i> Apply for Finance
+                                    </Link>
+                                    <Link href={`/test-ride?model=${encodeURIComponent(selectedBike.name)}`} className="btn-outline">
+                                        <i className="fa-solid fa-road"></i> Book Test Ride
+                                    </Link>
                                 </div>
                             </div>
                         )}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
@@ -52,6 +51,7 @@ export default function Home() {
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isReceiptModalOpen, setReceiptModalOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
+  const [financeCompanies, setFinanceCompanies] = useState<any[]>([]);
   const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
   const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
   const [bookingFormData, setBookingFormData] = useState({
@@ -84,6 +84,10 @@ export default function Home() {
       const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
       const productsSnapshot = await getDocs(productsQuery);
       setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+      const financeCompaniesQuery = query(collection(db, "finance_companies"), where("isActive", "==", true), orderBy("displayOrder"));
+      const financeCompaniesSnapshot = await getDocs(financeCompaniesQuery);
+      setFinanceCompanies(financeCompaniesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
 
       const promoDoc = await getDoc(doc(db, 'settings', 'promoBanner'));
       if (promoDoc.exists()) {
@@ -604,8 +608,7 @@ export default function Home() {
           <div className="section-header">
             <span className="section-tag">Easy Finance</span>
             <h2 className="section-title" id="emi-title">Calculate Your EMI</h2>
-            <p className="section-subtitle">Custom financing options starting at 8.5% p.a. with flexible tenure up to 60
-              months. Low down payment, fast approval.</p>
+            <p className="section-subtitle">Custom financing options with competitive interest rates and flexible tenures up to 60 months. Low down payment, fast approval.</p>
           </div>
           <div className="emi-calculator glass-card">
             <div className="emi-sliders">
@@ -644,16 +647,15 @@ export default function Home() {
                   <div className="emi-break-val" id="interest-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalInterest / 1000)}K</div>
                   <div className="emi-break-label">Interest Payable</div>
                 </div>
-                <div className="emi-break-item">
-                  <div className="emi-break-val">Instant</div>
-                  <div className="emi-break-label">Approval</div>
+                 <div className="finance-partners-glance">
+                  {financeCompanies.slice(0, 5).map(c => <img key={c.id} src={c.logo} alt={c.name} title={c.name} />)}
                 </div>
               </div>
             </div>
             <div style={{textAlign: 'center',marginTop:'36px'}}>
-              <a href="#test-ride" className="btn-primary">
-                <i className="fa-solid fa-indian-rupee-sign"></i> Apply for Finance
-              </a>
+                <Link href="/finance" className="btn-primary">
+                    <i className="fa-solid fa-indian-rupee-sign"></i> View All Finance Options
+                </Link>
             </div>
           </div>
         </div>
@@ -721,7 +723,7 @@ export default function Home() {
               <div className="contact-icon"><i className="fa-solid fa-envelope"></i></div>
               <div className="contact-item-body">
                 <h4>Email Us</h4>
-                <a href="mailto:hello@funshinegetaways.in">hello@funshinegetaways.in</a>
+                <a href="mailto:funshine.reshowroom@gmail.com">funshine.reshowroom@gmail.com</a>
               </div>
             </div>
             <div className="contact-socials">

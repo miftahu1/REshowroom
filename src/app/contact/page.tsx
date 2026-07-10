@@ -1,7 +1,7 @@
-
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
 import emailjs from '@emailjs/browser';
@@ -28,12 +28,38 @@ const db = getFirestore(app);
 const getRandomNum = () => Math.floor(Math.random() * 10) + 1;
 
 const ContactPage = () => {
-  const [formData, setFormData] = useState({ name: '', email: '', message: '' });
+  const searchParams = useSearchParams();
+  const inquiryType = searchParams.get('type');
+  
+  const getInitialFormData = () => {
+    if (inquiryType === 'finance') {
+      return {
+        name: '', 
+        email: '', 
+        phone: '',
+        message: '', 
+        inquiryType: 'Finance',
+        model: searchParams.get('model') || '',
+        price: searchParams.get('price') || '',
+        company: searchParams.get('company') || '',
+        loanAmount: searchParams.get('loanAmount') || '',
+        emi: searchParams.get('emi') || '',
+        tenure: searchParams.get('tenure') || '',
+      };
+    }
+    return { name: '', email: '', phone: '', message: '' };
+  };
+
+  const [formData, setFormData] = useState(getInitialFormData);
   const [formSuccess, setFormSuccess] = useState(false);
   const [formError, setFormError] = useState('');
   const [captchaNum1, setCaptchaNum1] = useState(getRandomNum());
   const [captchaNum2, setCaptchaNum2] = useState(getRandomNum());
   const [captchaAnswer, setCaptchaAnswer] = useState('');
+
+  useEffect(() => {
+    setFormData(getInitialFormData());
+  }, [searchParams]);
 
   const generateCaptcha = () => {
     setCaptchaNum1(getRandomNum());
@@ -53,7 +79,7 @@ const ContactPage = () => {
     const details = Object.entries(data)
         .map(([key, value]) => {
             if (!value) return '';
-            const formattedKey = key.charAt(0).toUpperCase() + key.slice(1);
+            const formattedKey = key.replace(/([A-Z])/g, ' $1').charAt(0).toUpperCase() + key.slice(1);
             return `
                 <tr>
                     <td style="padding: 12px 15px; border-bottom: 1px solid #e0e0e0; text-transform: capitalize; font-weight: bold; color: #555; width: 30%;">${formattedKey}</td>
@@ -85,13 +111,15 @@ const ContactPage = () => {
       await addDoc(collection(db, "messages"), { ...formData, timestamp: serverTimestamp() });
 
       if (managerEmailAddress) {
-        const emailBody = getManagerEmailBody('New Contact Message', formData);
-        const templateParams = { manager_email: managerEmailAddress, from_name: formData.name, reply_to: formData.email, subject: 'New Message from Website Contact Form', email_body: emailBody };
+        const subject = inquiryType === 'finance' ? `New Finance Inquiry: ${formData.model}` : 'New Message from Website Contact Form';
+        const title = inquiryType === 'finance' ? 'New Finance Inquiry' : 'New Contact Message';
+        const emailBody = getManagerEmailBody(title, formData);
+        const templateParams = { manager_email: managerEmailAddress, from_name: formData.name, reply_to: formData.email, subject, email_body: emailBody };
         emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID_MANAGER, templateParams, EMAILJS_PUBLIC_KEY);
       }
 
       setFormSuccess(true);
-      setFormData({ name: '', email: '', message: '' });
+      setFormData(getInitialFormData());
       generateCaptcha();
 
     } catch (error) {
@@ -101,31 +129,47 @@ const ContactPage = () => {
     }
   }
 
+  const renderFinanceDetails = () => (
+    <div className="finance-summary-card glass-card">
+      <h3>Finance Inquiry Details</h3>
+      <div className="summary-item"><span>Bike Model:</span><span>{formData.model}</span></div>
+      <div className="summary-item"><span>Bike Price:</span><span>₹{Number(formData.price).toLocaleString('en-IN')}</span></div>
+      <div className="summary-item"><span>Finance Company:</span><span>{formData.company}</span></div>
+      <div className="summary-item"><span>Estimated Loan:</span><span>₹{Number(formData.loanAmount).toLocaleString('en-IN')}</span></div>
+      <div className="summary-item"><span>Estimated EMI:</span><span>₹{Number(formData.emi).toLocaleString('en-IN')} / mo for {formData.tenure} months</span></div>
+    </div>
+  );
+
   return (
     <div className="page-shell">
         <section id="contact" aria-labelledby="contact-title">
         <div className="section-header">
           <span className="section-tag">Contact Us</span>
           <h2 className="section-title" id="contact-title">Get in Touch</h2>
-          <p className="section-subtitle">We're here to help. Send us a message and we'll get back to you.</p>
+          <p className="section-subtitle">{inquiryType === 'finance' ? 'Complete the form below to proceed with your finance application.' : 'We\'re here to help. Send us a message and we\'ll get back to you.'}</p>
         </div>
         <div className="contact-layout">
           <div className="contact-info">
              <div className="test-ride-form glass-card" style={{padding: '30px'}}>
-                <h3 className="form-title">Send us a Message</h3>
-                <form id="contact-form" noValidate onSubmit={handleSubmit}>
+                <h3 className="form-title">{inquiryType === 'finance' ? 'Finance Application' : 'Send a Message'}</h3>
+                {inquiryType === 'finance' && renderFinanceDetails()}
+                <form id="contact-form" noValidate onSubmit={handleSubmit} style={{marginTop: '24px'}}>
                 <div className="form-grid">
                     <div className="form-group full">
                     <label htmlFor="c-name">Full Name</label>
                     <input type="text" id="c-name" name="name" placeholder="Your Name" required value={formData.name} onChange={handleInputChange} />
                     </div>
-                    <div className="form-group full">
-                    <label htmlFor="c-email">Email Address</label>
-                    <input type="email" id="c-email" name="email" placeholder="your.email@example.com" value={formData.email} onChange={handleInputChange} />
+                     <div className="form-group">
+                        <label htmlFor="c-email">Email Address</label>
+                        <input type="email" id="c-email" name="email" placeholder="your.email@example.com" required value={formData.email} onChange={handleInputChange} />
+                    </div>
+                    <div className="form-group">
+                        <label htmlFor="c-phone">Phone Number</label>
+                        <input type="tel" id="c-phone" name="phone" placeholder="+91 98765 43210" required value={formData.phone} onChange={handleInputChange} />
                     </div>
                     <div className="form-group full">
-                    <label htmlFor="c-msg">Your Message</label>
-                    <textarea id="c-msg" name="message" placeholder="How can we help?" value={formData.message} onChange={handleInputChange}></textarea>
+                    <label htmlFor="c-msg">Your Message (Optional)</label>
+                    <textarea id="c-msg" name="message" placeholder="Any additional questions or comments?" value={formData.message} onChange={handleInputChange}></textarea>
                     </div>
                     <div className="form-group full">
                         <label htmlFor="f-captcha">Human Verification: What is {captchaNum1} + {captchaNum2}?</label>
@@ -133,25 +177,49 @@ const ContactPage = () => {
                     </div>
                 </div>
                 <button type="submit" className="form-submit">
-                    <i className="fa-solid fa-paper-plane"></i> &nbsp; Send Message
+                    <i className="fa-solid fa-paper-plane"></i> &nbsp; {inquiryType === 'finance' ? 'Submit Application' : 'Send Message'}
                 </button>
                 </form>
                 {formError && <p style={{ color: 'var(--red)', marginTop: '15px', textAlign: 'center' }}>{formError}</p>}
                 <div className="form-success" aria-live="polite" style={{ display: formSuccess ? 'block' : 'none' }}>
                 <i className="fa-solid fa-circle-check"></i>
-                <h3>Message Sent!</h3>
-                <p>Thanks for reaching out. We'll get back to you as soon as possible.</p>
+                <h3>{inquiryType === 'finance' ? 'Application Submitted!' : 'Message Sent!'}</h3>
+                <p>Thanks for reaching out. Our finance team will contact you shortly to process your application.</p>
                 </div>
             </div>
           </div>
           <div className="contact-map">
-            <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3555.842580423468!2d94.6239287!3d26.971883999999996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x374731af46b9901d%3A0xb7f1fff2e5bdc7ed!2sRoyal%20Enfield%20Showroom%20-%20Funshine%20Getaways%20Pvt%20Ltd!5e0!3m2!1sen!2sin!4v1783549863216!5m2!1sen!2sin"
-              allowFullScreen={true} loading="lazy" referrerPolicy="no-referrer-when-downgrade"
-              title="Royal Enfield Dealership Location"></iframe>
-            <div className="map-overlay-badge">
-              <i className="fa-solid fa-location-dot"></i> Royal Enfield Showroom - Funshine Getaways pvt ltd
-            </div>
+             <div className="contact-item-group">
+                 <div className="contact-item">
+                    <div className="contact-icon"><i className="fa-solid fa-location-dot"></i></div>
+                    <div className="contact-item-body">
+                        <h4>Showroom Address</h4>
+                        <p>AT Rd, near ASTC Bus Stand<br />Sivasagar, Assam - 785640</p>
+                    </div>
+                </div>
+                <div className="contact-item">
+                    <div className="contact-icon"><i className="fa-solid fa-phone"></i></div>
+                    <div className="contact-item-body">
+                        <h4>Sales &amp; Enquiries</h4>
+                        <a href="tel:+911244567890">+91 124 456 7890</a><br />
+                        <a href="tel:+919876543210">+91 98765 43210</a>
+                    </div>
+                </div>
+                <div className="contact-item">
+                    <div className="contact-icon"><i className="fa-solid fa-clock"></i></div>
+                    <div className="contact-item-body">
+                        <h4>Showroom Hours</h4>
+                        <p>Mon – Sat: 9:00 AM – 8:00 PM<br />Sunday: 10:00 AM – 6:00 PM</p>
+                    </div>
+                </div>
+                 <div className="contact-item">
+                    <div className="contact-icon"><i className="fa-solid fa-envelope"></i></div>
+                    <div className="contact-item-body">
+                        <h4>Email Us</h4>
+                        <a href="mailto:funshine.reshowroom@gmail.com">funshine.reshowroom@gmail.com</a>
+                    </div>
+                </div>
+             </div>
           </div>
         </div>
       </section>
