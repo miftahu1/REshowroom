@@ -239,7 +239,7 @@ const ProductManagement = () => {
             }
             
             const productsSnapshot = await getDocs(productsQuery);
-            setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductData)));
+            setProducts(productsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as ProductData));
         } catch (error) {
             console.error("Error fetching data: ", error);
         }

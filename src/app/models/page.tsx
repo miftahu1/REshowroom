@@ -55,7 +55,7 @@ const ModelsPage = () => {
             modelsQuery = query(collection(db, "products"), where("category", "==", activeFilter), orderBy("createdAt"));
         }
         const modelsSnapshot = await getDocs(modelsQuery);
-        const allModels = modelsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Model));
+        const allModels = modelsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as Model);
         setModels(allModels);
       } catch (error) {
           console.error("Error fetching models: ", error);
