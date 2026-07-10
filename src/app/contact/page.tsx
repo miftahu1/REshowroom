@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, serverTimestamp, getDoc, doc } from "firebase/firestore";
@@ -27,7 +27,7 @@ const db = getFirestore(app);
 
 const getRandomNum = () => Math.floor(Math.random() * 10) + 1;
 
-const ContactPage = () => {
+const ContactForm = () => {
   const searchParams = useSearchParams();
   const inquiryType = searchParams.get('type');
   
@@ -59,6 +59,7 @@ const ContactPage = () => {
 
   useEffect(() => {
     setFormData(getInitialFormData());
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const generateCaptcha = () => {
@@ -165,7 +166,7 @@ const ContactPage = () => {
                     </div>
                     <div className="form-group">
                         <label htmlFor="c-phone">Phone Number</label>
-                        <input type="tel" id="c-phone" name="phone" placeholder="+91 98765 43210" required value={formData.phone} onChange={handleInputChange} />
+                        <input type="tel" id="c-phone" name="phone" placeholder="+91 98765 43210" required value={formData.phone || ''} onChange={handleInputChange} />
                     </div>
                     <div className="form-group full">
                     <label htmlFor="c-msg">Your Message (Optional)</label>
@@ -227,4 +228,10 @@ const ContactPage = () => {
   )
 }
 
-export default ContactPage
+const ContactPage = () => (
+    <Suspense fallback={<div className="page-shell loading-container"><div></div><div></div><div></div></div>}>
+        <ContactForm />
+    </Suspense>
+);
+
+export default ContactPage;
