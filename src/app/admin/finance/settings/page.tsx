@@ -46,7 +46,6 @@ const FinanceSettingsPage = () => {
                 if (docSnap.exists()) {
                     setSettings({ ...getInitialFormState(), ...docSnap.data() });
                 } else {
-                    // If not exists, create it with default values
                     await setDoc(docRef, getInitialFormState());
                 }
             } catch (error) {
@@ -69,7 +68,9 @@ const FinanceSettingsPage = () => {
 
     const handleSaveSettings = async () => {
         try {
-            await updateDoc(doc(db, "settings", "finance"), settings);
+            // Create a plain JS object from state to satisfy Firestore's type requirements
+            const settingsData = { ...settings };
+            await updateDoc(doc(db, "settings", "finance"), settingsData);
             alert('Settings saved successfully!');
         } catch (error) {
             console.error("Error saving settings: ", error);

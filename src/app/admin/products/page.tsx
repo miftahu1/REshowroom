@@ -49,7 +49,7 @@ const db = getFirestore(app);
 
 const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
     const getInitialFormState = (): Omit<ProductData, 'id' | 'createdAt'> => ({ name: '', engine: '', price: 0, financeEnabled: false, imageUrl: '', badge: '', specs: [], category: 'classic' });
-    const [formState, setFormState] = useState(getInitialFormState());
+    const [formState, setFormState] = useState<ProductData>(getInitialFormState());
     const isEditing = product?.id;
 
     useEffect(() => {
