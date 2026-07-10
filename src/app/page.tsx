@@ -53,6 +53,7 @@ export default function Home() {
   const [isReceiptModalOpen, setReceiptModalOpen] = useState(false);
   const [products, setProducts] = useState<any[]>([]);
   const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
+  const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
   const [bookingFormData, setBookingFormData] = useState({
     name: '',
     phone: '',
@@ -96,6 +97,17 @@ export default function Home() {
       const featuredReviewsQuery = query(collection(db, "reviews"), where("featured", "==", true), orderBy("timestamp", "desc"));
       const featuredReviewsSnapshot = await getDocs(featuredReviewsQuery);
       setFeaturedReviews(featuredReviewsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+
+      try {
+        const featuredEventsQuery = query(collection(db, "events"), where("featured", "==", true), where("published", "==", true), orderBy("date", "desc"));
+        const featuredEventsSnapshot = await getDocs(featuredEventsQuery);
+        setFeaturedEvents(featuredEventsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      } catch {
+        // Fallback if composite index not yet created
+        const fallbackEventsQuery = query(collection(db, "events"), orderBy("createdAt", "desc"));
+        const fallbackSnap = await getDocs(fallbackEventsQuery);
+        setFeaturedEvents(fallbackSnap.docs.map(d => ({ id: d.id, ...d.data() })).filter((e: any) => e.featured && e.published).slice(0, 3));
+      }
     };
     fetchSiteData();
   }, []);
@@ -363,6 +375,61 @@ export default function Home() {
             ))}
         </div>
       </section>
+
+      {/* ===== Featured Events Section ===== */}
+      {featuredEvents.length > 0 && (
+        <section id="events-highlight" aria-labelledby="events-highlight-title">
+          <div className="section-header">
+            <span className="section-tag">What&apos;s On</span>
+            <h2 className="section-title" id="events-highlight-title">Events &amp; Updates</h2>
+            <p className="section-subtitle">Latest happenings, offers, and announcements from Funshine Getaways.</p>
+          </div>
+          <div className="home-events-grid">
+            {featuredEvents.slice(0, 3).map((ev: any) => {
+              const typeConfig: Record<string, { label: string; icon: string; color: string }> = {
+                event: { label: 'Event', icon: 'fa-calendar-days', color: 'var(--gold)' },
+                update: { label: 'Update', icon: 'fa-bullhorn', color: '#5ac8fa' },
+                offer: { label: 'Offer', icon: 'fa-tag', color: '#32d74b' },
+              };
+              const cfg = typeConfig[ev.type] || typeConfig.event;
+              const formatDate = (dateStr: string) => {
+                if (!dateStr) return '';
+                return new Date(dateStr + 'T00:00:00').toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+              };
+              return (
+                <div key={ev.id} className="home-event-card glass-card">
+                  {ev.imageUrl && (
+                    <div className="home-event-card-img">
+                      <img src={ev.imageUrl} alt={ev.title} loading="lazy" />
+                    </div>
+                  )}
+                  <div className="home-event-card-body">
+                    <div className="home-event-card-meta">
+                      <span className="event-type-badge" style={{ color: cfg.color, borderColor: cfg.color }}>
+                        <i className={`fa-solid ${cfg.icon}`} />&nbsp;{cfg.label}
+                      </span>
+                      {ev.date && <span className="home-event-date"><i className="fa-regular fa-calendar" />&nbsp;{formatDate(ev.date)}</span>}
+                    </div>
+                    <h3 className="home-event-title">{ev.title}</h3>
+                    <p className="home-event-desc">{ev.description}</p>
+                    {ev.link && (
+                      <a href={ev.link} target="_blank" rel="noopener noreferrer" className="home-event-link">
+                        Learn More <i className="fa-solid fa-arrow-right" />
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: '48px' }}>
+            <Link href="/events" className="btn-outline">
+              <i className="fa-solid fa-calendar-days" /> View All Events &amp; Updates
+            </Link>
+          </div>
+        </section>
+      )}
+
       <section id="about" aria-labelledby="about-title">
         <div className="about-grid">
           <div className="about-image-wrap">

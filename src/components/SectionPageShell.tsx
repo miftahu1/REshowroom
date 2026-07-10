@@ -37,6 +37,7 @@ const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
           <li><Link href="/about">About</Link></li>
           <li><Link href="/services">Services</Link></li>
           <li><Link href="/finance">Finance</Link></li>
+          <li><Link href="/events">Events</Link></li>
           <li><Link href="/contact">Contact</Link></li>
         </ul>
         <Link href="/test-ride" className="nav-cta">Book Test Ride</Link>
@@ -50,6 +51,7 @@ const SectionPageShell = ({ children }: { children: React.ReactNode }) => {
         <Link href="/services" onClick={toggleMenu}>Services</Link>
         <Link href="/test-ride" onClick={toggleMenu}>Test Ride</Link>
         <Link href="/finance" onClick={toggleMenu}>Finance</Link>
+        <Link href="/events" onClick={toggleMenu}>Events</Link>
         <Link href="/contact" onClick={toggleMenu}>Contact</Link>
       </div>
       {children}

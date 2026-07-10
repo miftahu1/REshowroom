@@ -66,6 +66,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         <li><Link href="/admin/messages" className={pathname.startsWith('/admin/messages') ? 'active' : ''}><i className="fas fa-envelope"></i> Messages</Link></li>
                         <li><Link href="/admin/reviews" className={pathname.startsWith('/admin/reviews') ? 'active' : ''}><i className="fas fa-star"></i> Reviews</Link></li>
                         <li><Link href="/admin/products" className={pathname.startsWith('/admin/products') ? 'active' : ''}><i className="fas fa-motorcycle"></i> Products</Link></li>
+                        <li><Link href="/admin/events" className={pathname.startsWith('/admin/events') ? 'active' : ''}><i className="fas fa-calendar-star"></i> Events</Link></li>
                         <li><Link href="/admin/settings" className={pathname.startsWith('/admin/settings') ? 'active' : ''}><i className="fas fa-cog"></i> Settings</Link></li>
                         <li><Link href="/admin/receipt" className={pathname.startsWith('/admin/receipt') ? 'active' : ''}><i className="fas fa-receipt"></i> Create Receipt</Link></li>
                     </ul>
@@ -94,6 +95,7 @@ const AdminHeader = () => {
     '/admin/bookings': { title: "Test Ride Bookings", subtitle: "View and manage all test ride requests." },
     '/admin/messages': { title: "Contact Messages", subtitle: "Read and archive incoming messages." },
     '/admin/reviews': { title: "Customer Reviews", subtitle: "Approve, delete, or feature customer reviews." },
+    '/admin/events': { title: "Events & Updates", subtitle: "Manage showroom events, offers, and announcements." },
     '/admin/settings': { title: "Settings", subtitle: "Configure dealership settings." },
     '/admin/receipt': { title: "Create Receipt", subtitle: "Generate a new sales receipt." },
   }

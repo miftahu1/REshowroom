@@ -22,7 +22,8 @@ const AdminDashboard = () => {
     bookingsCount: 0,
     pendingReviewsCount: 0,
     messagesCount: 0,
-    productsCount: 0
+    productsCount: 0,
+    eventsCount: 0,
   });
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [recentMessages, setRecentMessages] = useState<any[]>([]);
@@ -37,6 +38,7 @@ const AdminDashboard = () => {
         const reviewsSnap = await getDocs(collection(db, "reviews"));
         const messagesSnap = await getDocs(collection(db, "messages"));
         const productsSnap = await getDocs(collection(db, "products"));
+        const eventsSnap = await getDocs(collection(db, "events"));
 
         const pendingReviews = reviewsSnap.docs.filter(doc => !doc.data().approved).length;
 
@@ -44,7 +46,8 @@ const AdminDashboard = () => {
           bookingsCount: bookingsSnap.size,
           pendingReviewsCount: pendingReviews,
           messagesCount: messagesSnap.size,
-          productsCount: productsSnap.size
+          productsCount: productsSnap.size,
+          eventsCount: eventsSnap.size,
         });
 
         // Fetch Recent Bookings (limit 5)
@@ -97,6 +100,11 @@ const AdminDashboard = () => {
           <p className="dashboard-stat">{metrics.productsCount}</p>
           <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Motorcycles in catalog</span>
         </Link>
+        <Link href="/admin/events" className="dashboard-card glass-card">
+          <h3>Events & Updates</h3>
+          <p className="dashboard-stat">{metrics.eventsCount}</p>
+          <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Published events &amp; announcements</span>
+        </Link>
       </div>
 
       {/* Quick Action Buttons */}
@@ -105,6 +113,10 @@ const AdminDashboard = () => {
         <Link href="/admin/products" className="admin-action-btn">
           <i className="fa-solid fa-circle-plus"></i>
           <span>Add New Model</span>
+        </Link>
+        <Link href="/admin/events" className="admin-action-btn">
+          <i className="fa-solid fa-calendar-plus"></i>
+          <span>Add Event</span>
         </Link>
         <Link href="/admin/receipt" className="admin-action-btn">
           <i className="fa-solid fa-file-invoice"></i>
