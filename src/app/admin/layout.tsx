@@ -66,6 +66,13 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         <li><Link href="/admin/messages" className={pathname.startsWith('/admin/messages') ? 'active' : ''}><i className="fas fa-envelope"></i> Messages</Link></li>
                         <li><Link href="/admin/reviews" className={pathname.startsWith('/admin/reviews') ? 'active' : ''}><i className="fas fa-star"></i> Reviews</Link></li>
                         <li><Link href="/admin/products" className={pathname.startsWith('/admin/products') ? 'active' : ''}><i className="fas fa-motorcycle"></i> Products</Link></li>
+                        <li className={pathname.startsWith('/admin/finance') ? 'active' : ''}>
+                            <Link href="/admin/finance/companies"><i className="fas fa-hand-holding-usd"></i> Finance</Link>
+                            <ul className="submenu">
+                                <li><Link href="/admin/finance/companies" className={pathname === '/admin/finance/companies' ? 'sub-active' : ''}>Finance Companies</Link></li>
+                                <li><Link href="/admin/finance/settings" className={pathname === '/admin/finance/settings' ? 'sub-active' : ''}>Finance Settings</Link></li>
+                            </ul>
+                        </li>
                         <li><Link href="/admin/events" className={pathname.startsWith('/admin/events') ? 'active' : ''}><i className="fas fa-calendar-star"></i> Events</Link></li>
                         <li><Link href="/admin/settings" className={pathname.startsWith('/admin/settings') ? 'active' : ''}><i className="fas fa-cog"></i> Settings</Link></li>
                         <li><Link href="/admin/receipt" className={pathname.startsWith('/admin/receipt') ? 'active' : ''}><i className="fas fa-receipt"></i> Create Receipt</Link></li>
@@ -92,6 +99,8 @@ const AdminHeader = () => {
   const titles: { [key: string]: { title: string, subtitle: string } } = {
     '/admin': { title: "Dashboard", subtitle: "Overview of your dealership's performance." },
     '/admin/products': { title: "Product Management", subtitle: "Add, edit, or remove motorcycle models." },
+    '/admin/finance/companies': { title: "Finance Companies", subtitle: "Manage your finance partners." },
+    '/admin/finance/settings': { title: "Finance Settings", subtitle: "Configure global finance settings." },
     '/admin/bookings': { title: "Test Ride Bookings", subtitle: "View and manage all test ride requests." },
     '/admin/messages': { title: "Contact Messages", subtitle: "Read and archive incoming messages." },
     '/admin/reviews': { title: "Customer Reviews", subtitle: "Approve, delete, or feature customer reviews." },
