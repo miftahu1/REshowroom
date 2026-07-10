@@ -92,7 +92,7 @@ const ModelsPage = () => {
         ) : (
             <div className="models-grid">
                 {models.map(model => (
-                    <Link href={`/model/${model.id}`} key={model.id} className="model-card-link">
+                    <Link href={`/models/${model.id}`} key={model.id} className="model-card-link">
                         <div className="model-card">
                             <div className="model-card-img">
                                 <img src={model.imageUrl} alt={model.name} />
