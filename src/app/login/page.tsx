@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { getAuth, signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp, enableIndexedDbPersistence } from 'firebase/firestore';
 import Cookies from 'js-cookie';
 import { useRouter } from 'next/navigation';
 import '../globals.css';
@@ -21,9 +21,21 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 const auth = getAuth(app);
 
+// Enable offline persistence
+try {
+  enableIndexedDbPersistence(db);
+} catch (error) {
+  if (error.code === 'failed-precondition') {
+    console.warn('Firestore persistence failed: Multiple tabs open?');
+  } else if (error.code === 'unimplemented') {
+    console.warn('Firestore persistence not available in this browser.');
+  }
+}
+
 const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -34,68 +46,59 @@ const LoginPage = () => {
     }
   }, [router]);
 
-  const verifyAdminAndLogin = async (user: any) => {
+  const verifyAdminAndLogin = async (user) => {
+    setLoading(true);
     try {
-        const userDocRef = doc(db, 'users', user.uid);
-        const userDoc = await getDoc(userDocRef);
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) {
-            // New user: create their document and then sign them out with a message.
-            await setDoc(userDocRef, {
-                email: user.email,
-                displayName: user.displayName || user.email,
-                createdAt: serverTimestamp(),
-                isAdmin: false
-            });
-
-            await signOut(auth);
-            setError('Your account has been created and is pending approval from an administrator.');
-
+      if (userDoc.exists()) {
+        if (userDoc.data().isAdmin) {
+          Cookies.set('admin-session', 'true', { expires: 1 });
+          router.push('/admin');
         } else {
-            // Existing user: check if they are an admin.
-            if (userDoc.data().isAdmin) {
-                Cookies.set('admin-session', 'true', { expires: 1 });
-                router.push('/admin');
-            } else {
-                await signOut(auth);
-                setError('Access Denied: You do not have administrator permissions.');
-            }
+          await signOut(auth);
+          setError('Access Denied: You do not have administrator permissions.');
         }
-    } catch (err: any) {
-        setError(err.message || 'An error occurred during verification.');
-        if (auth.currentUser) {
-            await signOut(auth);
-        }
+      } else {
+        await setDoc(userDocRef, {
+          email: user.email,
+          displayName: user.displayName || user.email,
+          createdAt: serverTimestamp(),
+          isAdmin: false
+        });
+        await signOut(auth);
+        setError('Your account has been created and is pending approval from an administrator.');
+      }
+    } catch (err) {
+      setError(`An error occurred: ${err.message}`);
+      if (auth.currentUser) {
+        await signOut(auth);
+      }
     } finally {
-        setLoading(false);
+      setLoading(false);
     }
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = (e) => {
     e.preventDefault();
     setError('');
-    setLoading(true);
     signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        verifyAdminAndLogin(userCredential.user);
-      })
+      .then((userCredential) => verifyAdminAndLogin(userCredential.user))
       .catch((error) => {
-        setError(error.message);
         setLoading(false);
+        setError(error.message);
       });
   };
 
   const handleGoogleSignIn = () => {
     setError('');
-    setLoading(true);
     const provider = new GoogleAuthProvider();
     signInWithPopup(auth, provider)
-      .then((result) => {
-        verifyAdminAndLogin(result.user);
-      })
+      .then((result) => verifyAdminAndLogin(result.user))
       .catch((error) => {
-        setError(error.message);
         setLoading(false);
+        setError(error.message);
       });
   };
 
@@ -118,19 +121,31 @@ const LoginPage = () => {
           </div>
           <div className="form-group">
             <label htmlFor="password">Password</label>
-            <input
-              type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={loading}
-              required
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type={showPassword ? 'text' : 'password'}
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
+                required
+              />
+              <span 
+                onClick={() => setShowPassword(!showPassword)} 
+                style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', cursor: 'pointer' }}>
+                <i className={`fa-regular ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+              </span>
+            </div>
           </div>
-          <button type="submit" className="btn-primary" style={{ width: '100%', marginBottom: '16px' }} disabled={loading}>
+          <button type="submit" className="btn-primary" style={{ width: '100%', marginTop: '24px' }} disabled={loading}>
             {loading ? 'Signing In...' : 'Sign In'}
           </button>
         </form>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', margin: '16px 0' }}>
+            <hr style={{flex: 1, borderColor: 'rgba(255,255,255,0.1)'}} />
+            <span style={{color: 'var(--text-muted)'}}>OR</span>
+            <hr style={{flex: 1, borderColor: 'rgba(255,255,255,0.1)'}} />
+        </div>
         <button onClick={handleGoogleSignIn} className="btn-outline google-login" style={{width: '100%'}} disabled={loading}>
             <i className="fa-brands fa-google"></i> &nbsp; Sign in with Google
         </button>
