@@ -13,16 +13,16 @@ const LoginPage = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Listen for auth state changes to handle page access and loading state
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (Cookies.get('admin-session')) {
         router.push('/admin');
       } else {
-        setLoading(false); // Finished loading, allow user interaction
+        setPageLoading(false);
       }
     });
     return () => unsubscribe();
@@ -88,14 +88,23 @@ const LoginPage = () => {
         setLoading(false);
       });
   };
-  
-  if (loading && !error) {
-    return <div className="login-container"><p>Loading...</p></div>;
+
+  if (pageLoading) {
+    return (
+      <div className="login-container">
+        <div className="loading-spinner"></div>
+      </div>
+    );
   }
 
   return (
     <div className="login-container">
-      <div className="login-form glass-card">
+      <div className="login-form glass-card" style={{ position: 'relative' }}>
+        {loading && (
+          <div className="loading-overlay">
+            <div className="loading-spinner"></div>
+          </div>
+        )}
         <h1 className="form-title">Admin Login</h1>
         {error && <p className="error-message">{error}</p>}
         <form onSubmit={handleLogin}>
