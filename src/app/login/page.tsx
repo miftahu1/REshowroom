@@ -38,8 +38,10 @@ const LoginPage = () => {
     try {
       const userDocRef = doc(db, 'users', user.uid);
       let userDoc = await getDoc(userDocRef);
+      let isNewUser = false;
 
       if (!userDoc.exists()) {
+        isNewUser = true;
         await setDoc(userDocRef, {
           email: user.email,
           displayName: user.displayName || user.email,
@@ -54,7 +56,11 @@ const LoginPage = () => {
         router.push('/admin');
       } else {
         await signOut(auth);
-        setError('Access Denied: You do not have administrator permissions.');
+        if (isNewUser) {
+          setError('Your account has been created and is pending approval from an administrator.');
+        } else {
+          setError('Access Denied: You do not have administrator permissions.');
+        }
       }
     } catch (err: any) {
       setError(err.message || 'An error occurred during verification.');
