@@ -36,37 +36,38 @@ const LoginPage = () => {
 
   const verifyAdminAndLogin = async (user: any) => {
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      let userDoc = await getDoc(userDocRef);
-      let isNewUser = false;
+        const userDocRef = doc(db, 'users', user.uid);
+        const userDoc = await getDoc(userDocRef);
 
-      if (!userDoc.exists()) {
-        isNewUser = true;
-        await setDoc(userDocRef, {
-          email: user.email,
-          displayName: user.displayName || user.email,
-          createdAt: serverTimestamp(),
-          isAdmin: false
-        });
-        userDoc = await getDoc(userDocRef);
-      }
+        if (!userDoc.exists()) {
+            // New user: create their document and then sign them out with a message.
+            await setDoc(userDocRef, {
+                email: user.email,
+                displayName: user.displayName || user.email,
+                createdAt: serverTimestamp(),
+                isAdmin: false
+            });
 
-      if (userDoc.exists() && userDoc.data().isAdmin) {
-        Cookies.set('admin-session', 'true', { expires: 1 });
-        router.push('/admin');
-      } else {
-        await signOut(auth);
-        if (isNewUser) {
-          setError('Your account has been created and is pending approval from an administrator.');
+            await signOut(auth);
+            setError('Your account has been created and is pending approval from an administrator.');
+
         } else {
-          setError('Access Denied: You do not have administrator permissions.');
+            // Existing user: check if they are an admin.
+            if (userDoc.data().isAdmin) {
+                Cookies.set('admin-session', 'true', { expires: 1 });
+                router.push('/admin');
+            } else {
+                await signOut(auth);
+                setError('Access Denied: You do not have administrator permissions.');
+            }
         }
-      }
     } catch (err: any) {
-      setError(err.message || 'An error occurred during verification.');
-      await signOut(auth);
+        setError(err.message || 'An error occurred during verification.');
+        if (auth.currentUser) {
+            await signOut(auth);
+        }
     } finally {
-      setLoading(false);
+        setLoading(false);
     }
   };
 
