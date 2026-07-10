@@ -346,7 +346,7 @@ export default function Home() {
         </div>
         <div className="models-grid">
             {products.map(product => (
-                 <Link key={product.id} href={`/product/${product.id}`} passHref>
+                 <Link key={product.id} href={`/model/${product.id}`} passHref>
                     <article className="model-card" role="article" id={product.name === 'Hunter 350' ? 'hunter-card' : undefined}>
                     <div className="model-card-img">
                         <img src={product.imageUrl} alt={`Royal Enfield ${product.name}`} loading="lazy" />

@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import '../../globals.css';
+import NotFoundPage from '../../not-found';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -23,24 +24,32 @@ const db = getFirestore(app);
 const ModelDetailPage = () => {
     const { id } = useParams();
     const [product, setProduct] = useState<any>(null);
+    const [loading, setLoading] = useState(true);
+    const [notFound, setNotFound] = useState(false);
 
     useEffect(() => {
         if (id) {
             const getProduct = async () => {
+                setLoading(true);
                 const docRef = doc(db, "products", id as string);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
                     setProduct({ id: docSnap.id, ...docSnap.data() });
                 } else {
-                    console.log("No such document!");
+                    setNotFound(true);
                 }
+                setLoading(false);
             };
             getProduct();
         }
     }, [id]);
 
-    if (!product) {
+    if (loading) {
         return <div className="loading-container"><div></div><div></div><div></div></div>;
+    }
+
+    if (notFound) {
+        return <NotFoundPage />;
     }
 
       return (
