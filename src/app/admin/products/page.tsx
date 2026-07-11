@@ -137,7 +137,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
                              <div className="form-group">
                                 <label>Category</label>
                                 <select name="category" value={formState.category} onChange={handleInputChange}>
-                                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}>
+                                    {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                                 </select>
                             </div>
                              <div className="form-group">

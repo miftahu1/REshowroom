@@ -107,14 +107,14 @@ const MediaLibraryPage = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
                 <h3 className="font-semibold text-lg text-gray-700 flex items-center"><FaDatabase className="mr-2 text-gray-500"/> Storage Usage</h3>
-                <p className="text-2xl font-bold text-gray-900">{formatBytes(usage.storage.used)} / {formatBytes(usage.storage.limit)}</g>
+                <p className="text-2xl font-bold text-gray-900">{formatBytes(usage.storage.used)} / {formatBytes(usage.storage.limit)}</p>
                 <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
                     <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${usage.storage.used_percent}%` }}></div>
                 </div>
             </div>
              <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
                 <h3 className="font-semibold text-lg text-gray-700 flex items-center"><FaCloud className="mr-2 text-gray-500"/> Media Count</h3>
-                <p className="text-2xl font-bold text-gray-900">{images.length} <span className="text-base font-normal text-gray-500">items</span></g>
+                <p className="text-2xl font-bold text-gray-900">{images.length} <span className="text-base font-normal text-gray-500">items</span></p>
                  <p className="text-sm text-gray-500">Displaying the latest {images.length} images.</p>
             </div>
         </div>
