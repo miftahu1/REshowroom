@@ -74,6 +74,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                             </ul>
                         </li>
                         <li><Link href="/admin/events" className={pathname.startsWith('/admin/events') ? 'active' : ''}><i className="fas fa-calendar-days"></i> Events</Link></li>
+                        <li><Link href="/admin/media" className={pathname.startsWith('/admin/media') ? 'active' : ''}><i className="fas fa-photo-video"></i> Media Library</Link></li>
                         <li><Link href="/admin/settings" className={pathname.startsWith('/admin/settings') ? 'active' : ''}><i className="fas fa-cog"></i> Settings</Link></li>
                         <li><Link href="/admin/receipt" className={pathname.startsWith('/admin/receipt') ? 'active' : ''}><i className="fas fa-receipt"></i> Create Receipt</Link></li>
                     </ul>
