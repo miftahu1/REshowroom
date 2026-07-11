@@ -604,62 +604,71 @@ export default function Home() {
         </div>
       </section>
       <section id="emi" aria-labelledby="emi-title">
-        <div className="emi-layout">
-          <div className="section-header">
+    <div className="emi-layout">
+        <div className="section-header">
             <span className="section-tag">Easy Finance</span>
             <h2 className="section-title" id="emi-title">Calculate Your EMI</h2>
             <p className="section-subtitle">Custom financing options with competitive interest rates and flexible tenures up to 60 months. Low down payment, fast approval.</p>
-          </div>
-          <div className="emi-calculator glass-card">
+        </div>
+        <div className="emi-calculator glass-card">
             <div className="emi-sliders">
-              <div className="emi-slider-group">
-                <div className="emi-slider-header">
-                  <span className="emi-slider-label">Loan Amount</span>
-                  <span className="emi-slider-value" id="loan-display">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(loanAmount)}</span>
+                <div className="emi-slider-group">
+                    <div className="emi-slider-header">
+                        <span className="emi-slider-label">Loan Amount</span>
+                        <span className="emi-slider-value" id="loan-display">{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(loanAmount)}</span>
+                    </div>
+                    <input type="range" id="loan-amount" min="50000" max="700000" step="5000" value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value))} aria-label="Loan Amount" />
                 </div>
-                <input type="range" id="loan-amount" min="50000" max="700000" step="5000" value={loanAmount} onChange={e => setLoanAmount(Number(e.target.value))} aria-label="Loan Amount" />
-              </div>
-              <div className="emi-slider-group">
-                <div className="emi-slider-header">
-                  <span className="emi-slider-label">Loan Tenure</span>
-                  <span className="emi-slider-value" id="tenure-display">{loanTenure} mo</span>
+                <div className="emi-slider-group">
+                    <div className="emi-slider-header">
+                        <span className="emi-slider-label">Loan Tenure</span>
+                        <span className="emi-slider-value" id="tenure-display">{loanTenure} mo</span>
+                    </div>
+                    <input type="range" id="loan-tenure" min="12" max="60" step="6" value={loanTenure} onChange={e => setLoanTenure(Number(e.target.value))} aria-label="Loan Tenure" />
                 </div>
-                <input type="range" id="loan-tenure" min="12" max="60" step="6" value={loanTenure} onChange={e => setLoanTenure(Number(e.target.value))} aria-label="Loan Tenure" />
-              </div>
-              <div className="emi-slider-group">
-                <div className="emi-slider-header">
-                  <span className="emi-slider-label">Interest Rate (p.a.)</span>
-                  <span className="emi-slider-value" id="rate-display">{interestRate.toFixed(1)}%</span>
+                <div className="emi-slider-group">
+                    <div className="emi-slider-header">
+                        <span className="emi-slider-label">Interest Rate (p.a.)</span>
+                        <span className="emi-slider-value" id="rate-display">{interestRate.toFixed(1)}%</span>
+                    </div>
+                    <input type="range" id="loan-rate" min="8.5" max="16" step="0.1" value={interestRate} onChange={e => setInterestRate(Number(e.target.value))} aria-label="Interest Rate" />
                 </div>
-                <input type="range" id="loan-rate" min="8.5" max="16" step="0.1" value={interestRate} onChange={e => setInterestRate(Number(e.target.value))} aria-label="Interest Rate" />
-              </div>
             </div>
             <div className="emi-result">
-              <div className="emi-result-label">Monthly EMI</div>
-              <div className="emi-result-amount" id="emi-display">₹{new Intl.NumberFormat('en-IN').format(emi)}</div>
-              <div className="emi-result-sub">Estimated — subject to credit approval</div>
-              <div className="emi-breakdown">
-                <div className="emi-break-item">
-                  <div className="emi-break-val" id="total-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalAmount / 1000)}K</div>
-                  <div className="emi-break-label">Total Amount</div>
+                <div className="emi-result-label">Monthly EMI</div>
+                <div className="emi-result-amount" id="emi-display">₹{new Intl.NumberFormat('en-IN').format(emi)}</div>
+                <div className="emi-result-sub">Estimated — subject to credit approval</div>
+                <div className="emi-breakdown">
+                    <div className="emi-break-item">
+                        <div className="emi-break-val" id="total-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalAmount / 1000)}K</div>
+                        <div className="emi-break-label">Total Amount</div>
+                    </div>
+                    <div className="emi-break-item">
+                        <div className="emi-break-val" id="interest-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalInterest / 1000)}K</div>
+                        <div className="emi-break-label">Interest Payable</div>
+                    </div>
                 </div>
-                <div className="emi-break-item">
-                  <div className="emi-break-val" id="interest-display">₹{new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(totalInterest / 1000)}K</div>
-                  <div className="emi-break-label">Interest Payable</div>
-                </div>
-                 <div className="finance-partners-glance">
-                  {financeCompanies.slice(0, 5).map(c => <img key={c.id} src={c.logo} alt={c.name} title={c.name} />)}
-                </div>
-              </div>
             </div>
-            <div style={{textAlign: 'center',marginTop:'36px'}}>
+        </div>
+        {financeCompanies.length > 0 && (
+            <div className="finance-partners-section">
+                <h3 className="finance-partners-title">Our Trusted Finance Partners</h3>
+                <div className="finance-partners-list">
+                    {financeCompanies.map(c => (
+                        <div key={c.id} className="partner-logo-card">
+                            <img src={c.logo} alt={c.name} title={c.name} />
+                        </div>
+                    ))}
+                </div>
+                 <div style={{textAlign: 'center',marginTop:'36px'}}>
                 <Link href="/finance" className="btn-primary">
                     <i className="fa-solid fa-indian-rupee-sign"></i> View All Finance Options
                 </Link>
             </div>
-          </div>
-        </div>
-      </section>
+            </div>
+        )}
+    </div>
+</section>
       <section id="testimonials" aria-labelledby="testimonials-title">
         <div className="section-header">
           <span className="section-tag">Voices of the Road</span>
