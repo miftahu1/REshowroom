@@ -46,6 +46,7 @@ export const ImageUploader: React.FC<ImageUploaderProps> = ({ onUploadSuccess, i
     <CldUploadWidget
       signatureEndpoint="/api/sign-cloudinary-params"
       options={{
+        apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
         cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
         uploadPreset: 'ml_default', 
         sources: ['local', 'url', 'camera', 'image_search'],
