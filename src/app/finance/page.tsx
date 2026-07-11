@@ -60,7 +60,8 @@ const FinancePage = () => {
                 const bikesQuery = query(collection(db, "products"), where("financeEnabled", "==", true));
                 const bikesSnap = await getDocs(bikesQuery);
                 const bikeData = bikesSnap.docs.map(doc => {
-                    const priceString = doc.data().price || '0';
+                    const priceValue = doc.data().price || '0';
+                    const priceString = typeof priceValue === 'string' ? priceValue : String(priceValue);
                     return {
                         id: doc.id, 
                         name: doc.data().name, 
