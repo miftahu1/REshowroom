@@ -73,7 +73,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                                 <li><Link href="/admin/finance/settings" className={pathname === '/admin/finance/settings' ? 'sub-active' : ''}>Finance Settings</Link></li>
                             </ul>
                         </li>
-                        <li><Link href="/admin/events" className={pathname.startsWith('/admin/events') ? 'active' : ''}><i className="fas fa-calendar-star"></i> Events</Link></li>
+                        <li><Link href="/admin/events" className={pathname.startsWith('/admin/events') ? 'active' : ''}><i className="fas fa-calendar-days"></i> Events</Link></li>
                         <li><Link href="/admin/settings" className={pathname.startsWith('/admin/settings') ? 'active' : ''}><i className="fas fa-cog"></i> Settings</Link></li>
                         <li><Link href="/admin/receipt" className={pathname.startsWith('/admin/receipt') ? 'active' : ''}><i className="fas fa-receipt"></i> Create Receipt</Link></li>
                     </ul>

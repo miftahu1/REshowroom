@@ -59,7 +59,14 @@ const FinancePage = () => {
 
                 const bikesQuery = query(collection(db, "products"), where("financeEnabled", "==", true));
                 const bikesSnap = await getDocs(bikesQuery);
-                const bikeData = bikesSnap.docs.map(doc => ({ id: doc.id, name: doc.data().name, price: Number(doc.data().price.replace(/[^\d]/g, '')) || 0 }))
+                const bikeData = bikesSnap.docs.map(doc => {
+                    const priceString = doc.data().price || '0';
+                    return {
+                        id: doc.id, 
+                        name: doc.data().name, 
+                        price: Number(priceString.replace(/[^\d]/g, '')) || 0 
+                    }
+                });
                 setBikes(bikeData);
 
                 // In a real app, you would fetch settings from a 'settings' collection
@@ -78,7 +85,11 @@ const FinancePage = () => {
         setSelectedCompany(company);
         if (company.allowedTenures?.length > 0) {
             setTenure(company.allowedTenures[0]);
+        } else {
+            setTenure(0) // Reset tenure if not allowed
         }
+        setSelectedBike(null); // Reset bike selection
+        setDownPayment(0);
     };
 
     const handleBikeSelect = (bikeId: string) => {
@@ -86,6 +97,9 @@ const FinancePage = () => {
         if (bike) {
             setSelectedBike(bike);
             setDownPayment(Math.round(bike.price * 0.1)); // Default 10% down payment
+        } else {
+            setSelectedBike(null);
+            setDownPayment(0);
         }
     };
 
@@ -126,7 +140,7 @@ const FinancePage = () => {
                     <div className="calculator-grid">
                         {/* Left Side: Inputs */}
                         <div className="calculator-inputs glass-card">
-                            <select onChange={(e) => handleBikeSelect(e.target.value)} defaultValue="">
+                            <select onChange={(e) => handleBikeSelect(e.target.value)} value={selectedBike?.id || ''} >
                                 <option value="" disabled>Select Bike Model</option>
                                 {bikes.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
                             </select>
