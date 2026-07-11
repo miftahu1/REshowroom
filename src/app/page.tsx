@@ -9,6 +9,7 @@ import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orde
 import emailjs from '@emailjs/browser';
 import ReceiptLookup from './components/ReceiptLookup';
 import StatCounter from '@/components/StatCounter';
+import { CLImage } from '@/components/ImageUploader';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -656,7 +657,7 @@ export default function Home() {
                 <div className="finance-partners-list">
                     {financeCompanies.map(c => (
                         <div key={c.id} className="partner-logo-card">
-                            <img src={c.logo} alt={c.name} title={c.name} />
+                            <CLImage publicId={c.logo} alt={c.name} />
                         </div>
                     ))}
                 </div>
@@ -718,7 +719,7 @@ export default function Home() {
               <div className="contact-item-body">
                 <h4>Sales &amp; Enquiries</h4>
                 <a href="tel:+911244567890">+91 124 456 7890</a><br />
-                <a href="tel:+919876543210">+91 98765 43210</a>
+                <a href="tel:+919876543210">+91 9876543210</a>
               </div>
             </div>
             <div className="contact-item">

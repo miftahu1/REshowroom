@@ -8,45 +8,58 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Get all images from cloudinary
+// Get all images and usage data from Cloudinary
 export async function GET() {
   try {
-    const { resources } = await cloudinary.search
-      .expression('resource_type:image')
-      .sort_by('created_at', 'desc')
-      .max_results(500)
-      .execute();
+    // Fetch image resources and usage data in parallel for efficiency
+    const [resourcesResult, usageResult] = await Promise.all([
+      cloudinary.search
+        .expression('resource_type:image')
+        .sort_by('created_at', 'desc')
+        .max_results(500)
+        .execute(),
+      cloudinary.api.usage()
+    ]);
     
-    return NextResponse.json({ resources });
+    return NextResponse.json({ 
+      resources: resourcesResult.resources,
+      usage: usageResult 
+    });
 
   } catch (error) {
-    console.error("Error fetching images from Cloudinary", error)
-    return NextResponse.json({ message: "Failed to fetch images" }, { status: 500 });
+    console.error("Error fetching data from Cloudinary", error);
+    return NextResponse.json({ message: "Failed to fetch data from Cloudinary" }, { status: 500 });
   }
 }
 
-// Delete an image by its public ID
+// Delete one or more images by their public IDs
 export async function DELETE(request: Request) {
   try {
-    const { publicId } = await request.json();
+    const { publicId, publicIds } = await request.json();
 
-    if (!publicId) {
-      return NextResponse.json({ message: "Public ID is required" }, { status: 400 });
+    if (!publicId && !publicIds) {
+      return NextResponse.json({ message: "At least one Public ID is required" }, { status: 400 });
     }
 
-    const result = await cloudinary.uploader.destroy(publicId);
+    if (publicIds && Array.isArray(publicIds) && publicIds.length > 0) {
+      // Bulk delete
+      const result = await cloudinary.api.delete_resources(publicIds);
+      return NextResponse.json({ message: `${publicIds.length} images deleted successfully`, details: result });
 
-    // The result object from Cloudinary contains details about the deletion.
-    // A successful deletion returns { result: 'ok' }.
-    if (result.result === 'ok') {
-      return NextResponse.json({ message: `Image ${publicId} deleted successfully` });
-    } else {
-      // This will catch cases where the public_id doesn't exist or other API errors.
-      return NextResponse.json({ message: "Failed to delete image", details: result }, { status: 500 });
+    } else if (publicId) {
+      // Single delete
+      const result = await cloudinary.uploader.destroy(publicId);
+       if (result.result === 'ok') {
+        return NextResponse.json({ message: `Image ${publicId} deleted successfully` });
+      } else {
+        return NextResponse.json({ message: "Failed to delete image", details: result }, { status: 500 });
+      }
     }
+    
+    return NextResponse.json({ message: "Invalid request payload" }, { status: 400 });
 
   } catch (error) {
-    console.error("Error deleting image from Cloudinary", error);
-    return NextResponse.json({ message: "An unexpected error occurred" }, { status: 500 });
+    console.error("Error deleting image(s) from Cloudinary", error);
+    return NextResponse.json({ message: "An unexpected error occurred during deletion." }, { status: 500 });
   }
 }
