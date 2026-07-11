@@ -54,7 +54,8 @@ const MessagesInbox = () => {
             const id = message?.id ?? `message-${index}`;
             const name = message?.name ?? 'No Name';
             const email = message?.email ?? 'No Email';
-            const timestamp = message?.timestamp?.toDate ? new Date(message.timestamp.toDate()).toLocaleString() : 'No Date';
+            const timestampObject = message?.timestamp;
+            const timestamp = timestampObject && typeof timestampObject.toDate === 'function' ? new Date(timestampObject.toDate()).toLocaleString() : 'No Date';
             const summary = message?.message ?? 'No message content. Click "View Details" to see all fields.';
             
             return (
@@ -89,8 +90,9 @@ const MessagesInbox = () => {
                     if (key === 'id') return null; // Don't show the internal document ID
                     
                     const formattedKey = formatKey(key);
-                    const formattedValue = key === 'timestamp' && value?.toDate 
-                        ? new Date(value.toDate()).toLocaleString()
+                    const timestampValue = value as any;
+                    const formattedValue = key === 'timestamp' && timestampValue && typeof timestampValue.toDate === 'function'
+                        ? new Date(timestampValue.toDate()).toLocaleString()
                         : String(value ?? 'Not provided');
 
                     return (
