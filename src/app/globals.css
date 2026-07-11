@@ -3391,6 +3391,10 @@ footer {
     font-size: 0.95rem;
 }
 
+.calculator-inputs select option {
+    color: var(--text-inverted);
+}
+
 .input-group {
     display: flex;
     flex-direction: column;

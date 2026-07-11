@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from "firebase/firestore";
 
+// Initialize Firebase
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
     authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -16,30 +17,30 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
+// Helper to format keys for display
+const formatKey = (key: string) => {
+    return key.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase());
+};
+
 const MessagesInbox = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<any | null>(null);
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-        const messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "desc"));
-        const messagesSnapshot = await getDocs(messagesQuery);
-        setMessages(messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
-    } catch (error) {
-        console.error("Error fetching data: ", error);
-    }
-    setLoading(false);
-  };
-
   useEffect(() => {
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const messagesQuery = query(collection(db, "messages"), orderBy("timestamp", "desc"));
+            const messagesSnapshot = await getDocs(messagesQuery);
+            setMessages(messagesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+        } catch (error) {
+            console.error("Error fetching data: ", error);
+        }
+        setLoading(false);
+      };
     fetchData();
   }, []);
-
-  const isFinanceInquiry = (message: any) => {
-    return message.message.toLowerCase().includes("finance form submission");
-  };
 
   if (loading) {
     return <p>Loading messages...</p>
@@ -48,36 +49,57 @@ const MessagesInbox = () => {
   return (
     <>
       <div className="messages-list">
-          {messages.map(message => (
-          <div key={message.id} className="message-item">
-              <div className="message-header">
-                  <strong>{message.name} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({message.email})</span></strong>
-                  <div>
-                    {isFinanceInquiry(message) && (
-                        <button className="btn-outline" style={{ padding: '5px 10px', marginRight: '10px' }} onClick={() => setSelectedMessage(message)}>
-                            <i className="fas fa-eye"></i> View Application
-                        </button>
-                    )}
-                    <span style={{ fontSize: '0.8rem' }}>{new Date(message.timestamp?.toDate()).toLocaleString()}</span>
-                  </div>
-              </div>
-              <p>{message.message.substring(0, 150)}{message.message.length > 150 ? '...' : ''}</p>
-          </div>
-          ))}
+          {messages.map((message, index) => {
+            // Maximum safety: use optional chaining and nullish coalescing for every property.
+            const id = message?.id ?? `message-${index}`;
+            const name = message?.name ?? 'No Name';
+            const email = message?.email ?? 'No Email';
+            const timestamp = message?.timestamp?.toDate ? new Date(message.timestamp.toDate()).toLocaleString() : 'No Date';
+            const summary = message?.message ?? 'No message content. Click "View Details" to see all fields.';
+            
+            return (
+                <div key={id} className="message-item">
+                    <div className="message-header">
+                        <strong>{name} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({email})</span></strong>
+                        <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <button className="btn-outline" style={{ padding: '5px 10px', marginRight: '10px' }} onClick={() => setSelectedMessage(message)}>
+                                <i className="fas fa-eye"></i> View Details
+                            </button>
+                            <span style={{ fontSize: '0.8rem' }}>{timestamp}</span>
+                        </div>
+                    </div>
+                    <p>
+                        {summary.substring(0, 150)}
+                        {summary.length > 150 ? '...' : ''}
+                    </p>
+                </div>
+            )
+          })}
       </div>
 
       {selectedMessage && (
         <div className="modal-overlay open" onClick={() => setSelectedMessage(null)}>
           <div className="modal-content" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Finance Application</h3>
+              <h3>Full Message Details</h3>
               <button className="modal-close-btn" onClick={() => setSelectedMessage(null)}>&times;</button>
             </div>
-            <div className="modal-body">
-              <p><strong>Name:</strong> {selectedMessage.name}</p>
-              <p><strong>Email:</strong> {selectedMessage.email}</p>
-              <p><strong>Phone:</strong> {selectedMessage.phone}</p>
-              <p><strong>Message:</strong> {selectedMessage.message}</p>
+            <div className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {Object.entries(selectedMessage).map(([key, value]) => {
+                    if (key === 'id') return null; // Don't show the internal document ID
+                    
+                    const formattedKey = formatKey(key);
+                    const formattedValue = key === 'timestamp' && value?.toDate 
+                        ? new Date(value.toDate()).toLocaleString()
+                        : String(value ?? 'Not provided');
+
+                    return (
+                        <div key={key} style={{ display: 'grid', gridTemplateColumns: 'minmax(100px, max-content) 1fr', gap: '16px'}}>
+                            <strong style={{ color: 'var(--gold)' }}>{formattedKey}:</strong> 
+                            <span style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>{formattedValue}</span>
+                        </div>
+                    )
+                })}
             </div>
           </div>
         </div>
