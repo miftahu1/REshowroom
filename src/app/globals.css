@@ -1,3 +1,4 @@
+
 @import url('https://fonts.googleapis.com/css2?family=Teko:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
 @import url('https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css');
@@ -3270,5 +3271,263 @@ footer {
 
     #events-highlight {
         padding: 60px 20px;
+    }
+}
+
+/* ============================================================
+   FINANCE PAGE — Professional Redesign
+   ============================================================ */
+.finance-partners,
+.emi-calculator-section {
+    max-width: 1100px;
+    margin: 0 auto 64px auto;
+}
+
+.subsection-title {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-primary);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.subsection-title::before {
+    content: '';
+    width: 40px;
+    height: 2px;
+    background: var(--gold);
+}
+
+.company-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.company-card {
+    position: relative;
+    padding: 20px;
+    border-radius: 16px;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-align: center;
+}
+
+.company-card:hover {
+    transform: translateY(-5px);
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+.company-card.selected {
+    background: rgba(201, 168, 76, 0.15);
+    border-color: rgba(201, 168, 76, 0.5);
+    box-shadow: 0 0 25px rgba(201, 168, 76, 0.2);
+}
+
+.company-logo {
+    height: 50px;
+    margin: 0 auto 16px auto;
+    object-fit: contain;
+    filter: brightness(0) invert(1) grayscale(100%) contrast(100%);
+    opacity: 0.8;
+    transition: all 0.25s ease;
+}
+
+.company-card:hover .company-logo,
+.company-card.selected .company-logo {
+    filter: none;
+    opacity: 1;
+}
+
+.company-name {
+    font-weight: bold;
+    color: var(--text-primary);
+    margin-bottom: 4px;
+}
+
+.company-rate {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.check-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    font-size: 1.2rem;
+    color: var(--gold);
+}
+
+/* Calculator Section */
+.calculator-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    align-items: flex-start;
+}
+
+.calculator-inputs {
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.calculator-inputs select {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 14px 15px;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    font-size: 0.95rem;
+}
+
+.input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.input-group label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+}
+
+.input-group span {
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+.input-group span.highlight-text {
+    color: var(--gold);
+    font-size: 1.3rem;
+}
+
+.tenure-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.tenure-options button {
+    padding: 8px 16px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--glass-border);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.tenure-options button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--text-primary);
+}
+
+.tenure-options button.active {
+    background-color: var(--gold);
+    color: var(--text-inverted);
+    border-color: var(--gold);
+    font-weight: bold;
+}
+
+/* Summary side */
+.calculator-summary {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.emi-display {
+    text-align: center;
+    padding: 24px;
+}
+
+.emi-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+}
+
+.emi-value {
+    font-family: var(--font-heading);
+    font-size: clamp(2.5rem, 5vw, 3.5rem);
+    font-weight: 700;
+    color: var(--gold);
+    margin: 8px 0;
+    line-height: 1.1;
+}
+
+.disclaimer {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-align: center;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+}
+
+.summary-card {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.summary-card h4 {
+    font-family: var(--font-heading);
+    font-size: 1.4rem;
+    color: var(--gold);
+    margin-bottom: 8px;
+    border-bottom: 1px solid var(--glass-border);
+    padding-bottom: 8px;
+}
+
+.summary-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+}
+.summary-item span:first-child {
+    color: var(--text-muted);
+}
+.summary-item span:last-child {
+    font-weight: bold;
+}
+
+.calculator-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.calculator-actions .btn-primary,
+.calculator-actions .btn-outline {
+    width: 100%;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+}
+
+@media (max-width: 768px) {
+    .calculator-grid {
+        grid-template-columns: 1fr;
+    }
+    .subsection-title {
+        font-size: 1.6rem;
     }
 }
