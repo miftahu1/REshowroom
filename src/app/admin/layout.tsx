@@ -85,7 +85,6 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 </div>
             </aside>
             <main className="admin-content">
-                <AdminHeader />
                 <div className="admin-page-body">
                     {children}
                 </div>
@@ -93,29 +92,5 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
     );
 };
-
-const AdminHeader = () => {
-  const pathname = usePathname();
-  const titles: { [key: string]: { title: string, subtitle: string } } = {
-    '/admin': { title: "Dashboard", subtitle: "Overview of your dealership's performance." },
-    '/admin/products': { title: "Product Management", subtitle: "Add, edit, or remove motorcycle models." },
-    '/admin/finance/companies': { title: "Finance Companies", subtitle: "Manage your finance partners." },
-    '/admin/finance/settings': { title: "Finance Settings", subtitle: "Configure global finance settings." },
-    '/admin/bookings': { title: "Test Ride Bookings", subtitle: "View and manage all test ride requests." },
-    '/admin/messages': { title: "Contact Messages", subtitle: "Read and archive incoming messages." },
-    '/admin/reviews': { title: "Customer Reviews", subtitle: "Approve, delete, or feature customer reviews." },
-    '/admin/events': { title: "Events & Updates", subtitle: "Manage showroom events, offers, and announcements." },
-    '/admin/settings': { title: "Settings", subtitle: "Configure dealership settings." },
-    '/admin/receipt': { title: "Create Receipt", subtitle: "Generate a new sales receipt." },
-  }
-  const { title, subtitle } = titles[pathname] || { title: "Admin", subtitle: "Welcome to the admin panel." };
-
-  return (
-    <header className="admin-header">
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </header>
-  );
-}
 
 export default AdminLayout;
