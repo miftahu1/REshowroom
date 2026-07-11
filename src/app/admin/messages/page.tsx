@@ -19,6 +19,7 @@ const db = getFirestore(app);
 const MessagesInbox = () => {
   const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedMessage, setSelectedMessage] = useState<any | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -36,22 +37,52 @@ const MessagesInbox = () => {
     fetchData();
   }, []);
 
+  const isFinanceInquiry = (message: any) => {
+    return message.message.toLowerCase().includes("finance form submission");
+  };
+
   if (loading) {
     return <p>Loading messages...</p>
   }
 
   return (
-    <div className="messages-list">
-        {messages.map(message => (
-        <div key={message.id} className="message-item">
-            <div className="message-header">
-            <strong>{message.name} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({message.email})</span></strong>
-            <span style={{ fontSize: '0.8rem' }}>{new Date(message.timestamp?.toDate()).toLocaleString()}</span>
+    <>
+      <div className="messages-list">
+          {messages.map(message => (
+          <div key={message.id} className="message-item">
+              <div className="message-header">
+                  <strong>{message.name} <span style={{ color: 'var(--text-muted)', fontWeight: 'normal' }}>({message.email})</span></strong>
+                  <div>
+                    {isFinanceInquiry(message) && (
+                        <button className="btn-outline" style={{ padding: '5px 10px', marginRight: '10px' }} onClick={() => setSelectedMessage(message)}>
+                            <i className="fas fa-eye"></i> View Application
+                        </button>
+                    )}
+                    <span style={{ fontSize: '0.8rem' }}>{new Date(message.timestamp?.toDate()).toLocaleString()}</span>
+                  </div>
+              </div>
+              <p>{message.message.substring(0, 150)}{message.message.length > 150 ? '...' : ''}</p>
+          </div>
+          ))}
+      </div>
+
+      {selectedMessage && (
+        <div className="modal-overlay open" onClick={() => setSelectedMessage(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Finance Application</h3>
+              <button className="modal-close-btn" onClick={() => setSelectedMessage(null)}>&times;</button>
             </div>
-            <p>{message.message}</p>
+            <div className="modal-body">
+              <p><strong>Name:</strong> {selectedMessage.name}</p>
+              <p><strong>Email:</strong> {selectedMessage.email}</p>
+              <p><strong>Phone:</strong> {selectedMessage.phone}</p>
+              <p><strong>Message:</strong> {selectedMessage.message}</p>
+            </div>
+          </div>
         </div>
-        ))}
-    </div>
+      )}
+    </>
   );
 }
 
