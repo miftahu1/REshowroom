@@ -122,7 +122,7 @@ const MediaLibraryPage = () => {
             </div>
             <div className="dashboard-card">
                 <h3><i className="fas fa-wifi" style={{ color: 'var(--gold)' }}></i> Bandwidth</h3>
-                <p className="dashboard-stat">{formatBytes(usage.bandwidth.used)}</h_p>
+                <p className="dashboard-stat">{formatBytes(usage.bandwidth.used)}</p>
                 <ProgressBar value={usage.bandwidth.used} max={usage.bandwidth.limit} />
                 <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Monthly Limit: {formatBytes(usage.bandwidth.limit)}</p>
             </div>
