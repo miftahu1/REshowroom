@@ -10,6 +10,7 @@ import emailjs from '@emailjs/browser';
 import ReceiptLookup from './components/ReceiptLookup';
 import StatCounter from '@/components/StatCounter';
 import { CLImage } from '@/components/ImageUploader';
+import { buildUrl } from '../utils/cloudinary';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -354,7 +355,7 @@ export default function Home() {
                  <Link key={product.id} href={`/model/${product.id}`} passHref>
                     <article className="model-card" role="article" id={product.name === 'Hunter 350' ? 'hunter-card' : undefined}>
                     <div className="model-card-img">
-                        <img src={product.imageUrl} alt={`Royal Enfield ${product.name}`} loading="lazy" />
+                        <img src={buildUrl(product.imageUrl)} alt={`Royal Enfield ${product.name}`} loading="lazy" />
                         {product.badge && <span className="model-card-badge">{product.badge}</span>}
                     </div>
                     <div className="model-card-body">
@@ -405,7 +406,7 @@ export default function Home() {
                 <div key={ev.id} className="home-event-card glass-card">
                   {ev.imageUrl && (
                     <div className="home-event-card-img">
-                      <img src={ev.imageUrl} alt={ev.title} loading="lazy" />
+                      <img src={buildUrl(ev.imageUrl)} alt={ev.title} loading="lazy" />
                     </div>
                   )}
                   <div className="home-event-card-body">

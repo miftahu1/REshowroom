@@ -6,6 +6,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc } from "firebase/firestore";
 import '../../globals.css';
 import NotFoundPage from '../../not-found';
+import { buildUrl } from '../../../utils/cloudinary';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -59,7 +60,7 @@ const ModelDetailPage = () => {
            </div>
           <div className="about-grid" style={{alignItems: 'center'}}>
                <div className="about-image">
-                  <img src={product?.imageUrl} alt={product?.name} style={{width: '100%', borderRadius: '12px'}} />
+                  <img src={buildUrl(product?.imageUrl)} alt={product?.name} style={{width: '100%', borderRadius: '12px'}} />
               </div>
               <div className="about-content">
                   <span className="section-tag">Model Details</span>
