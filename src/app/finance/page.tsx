@@ -39,6 +39,17 @@ interface FinanceSettings {
     currencySymbol: string;
 }
 
+// Helper function to parse price string
+const parsePrice = (priceString: string): number => {
+    const cleanedString = priceString.toLowerCase().replace(/\s/g, '');
+    const numberPart = parseFloat(cleanedString);
+    if (isNaN(numberPart)) return 0;
+    if (cleanedString.includes('L')) {
+        return numberPart * 100000;
+    }
+    return numberPart;
+};
+
 const FinancePage = () => {
     const [companies, setCompanies] = useState<FinanceCompany[]>([]);
     const [bikes, setBikes] = useState<BikeModel[]>([]);
@@ -61,11 +72,10 @@ const FinancePage = () => {
                 const bikesSnap = await getDocs(bikesQuery);
                 const bikeData = bikesSnap.docs.map(doc => {
                     const priceValue = doc.data().price || '0';
-                    const priceString = typeof priceValue === 'string' ? priceValue : String(priceValue);
                     return {
                         id: doc.id, 
                         name: doc.data().name, 
-                        price: Number(priceString.replace(/[^\d]/g, '')) || 0 
+                        price: parsePrice(priceValue)
                     }
                 });
                 setBikes(bikeData);

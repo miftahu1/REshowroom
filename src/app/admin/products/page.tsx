@@ -10,7 +10,7 @@ interface ProductData {
     id?: string;
     name: string;
     engine: string;
-    price: number;
+    price: string;
     financeEnabled: boolean;
     imageUrl: string; // Cloudinary Public ID
     badge: string;
@@ -46,7 +46,7 @@ const db = getFirestore(app);
 // Modal Component
 const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
     const getInitialFormState = (): Omit<ProductData, 'id' | 'createdAt'> => ({
-        name: '', engine: '', price: 0, financeEnabled: false, imageUrl: '', badge: '', specs: [], category: 'classic'
+        name: '', engine: '', price: '', financeEnabled: false, imageUrl: '', badge: '', specs: [], category: 'classic'
     });
 
     const [formState, setFormState] = useState<Omit<ProductData, 'id' | 'createdAt'>>(getInitialFormState());
@@ -64,7 +64,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
             const { checked } = e.target as HTMLInputElement;
             setFormState(prevState => ({ ...prevState, [name]: checked }));
         } else {
-            setFormState(prevState => ({ ...prevState, [name]: name === 'price' ? (parseInt(value, 10) || 0) : value }));
+            setFormState(prevState => ({ ...prevState, [name]: value }));
         }
     };
 
@@ -132,7 +132,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
                             </div>
                             <div className="form-group">
                                 <label>Price (Starting From)</label>
-                                <input type="number" name="price" value={formState.price} onChange={handleInputChange} placeholder="193000" />
+                                <input type="text" name="price" value={formState.price} onChange={handleInputChange} placeholder="e.g., 1.93 L" />
                             </div>
                              <div className="form-group">
                                 <label>Category</label>
@@ -283,7 +283,7 @@ const ProductManagement = () => {
                                     </td>
                                     <td className="font-semibold">{p.name}</td>
                                     <td><span className="event-type-badge">{p.category}</span></td>
-                                    <td>{new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', minimumFractionDigits: 0 }).format(p.price)}</td>
+                                    <td>{p.price}</td>
                                     <td><span className={`status-badge ${p.financeEnabled ? 'status-active' : 'status-inactive'}`}>{p.financeEnabled ? 'Enabled' : 'Disabled'}</span></td>
                                     <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                         <button onClick={() => handleEditClick(p)} className="btn-outline"><i className="fa-solid fa-pencil"></i> Edit</button>
