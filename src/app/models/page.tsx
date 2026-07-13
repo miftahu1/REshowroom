@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from "firebase/firestore";
 import '../globals.css';
+import { buildUrl } from '../../utils/cloudinary';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -97,10 +98,10 @@ const ModelsPage = () => {
         ) : (
             <div className="models-grid">
                 {filteredModels.map(model => (
-                    <Link href={`/models/${model.id}`} key={model.id} className="model-card-link">
+                    <Link href={`/model/${model.id}`} key={model.id} className="model-card-link">
                         <div className="model-card">
                             <div className="model-card-img">
-                                <img src={model.imageUrl} alt={model.name} />
+                                <img src={buildUrl(model.imageUrl)} alt={model.name} />
                                 {model.badge && <div className="model-card-badge">{model.badge}</div>}
                             </div>
                             <div className="model-card-body">

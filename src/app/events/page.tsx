@@ -6,6 +6,7 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
     getFirestore, collection, getDocs, query, orderBy, where
 } from 'firebase/firestore';
+import { buildUrl } from '../../utils/cloudinary';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -71,7 +72,7 @@ const EventCard = ({ ev }: { ev: EventItem }) => {
         <article className={`event-card ${isPast ? 'event-card--past' : ''}`}>
             {ev.imageUrl && (
                 <div className="event-card-img">
-                    <img src={ev.imageUrl} alt={ev.title} loading="lazy" />
+                    <img src={buildUrl(ev.imageUrl)} alt={ev.title} loading="lazy" />
                     {isPast && <div className="event-card-past-overlay">Past Event</div>}
                 </div>
             )}
