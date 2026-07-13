@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { CldImage } from 'next-cloudinary';
-import { FaCheckCircle, FaRegCircle, FaCloud, FaDatabase } from 'react-icons/fa';
+import { FaCheckCircle, FaRegCircle, FaCloud, FaDatabase, FaTrash, FaSync, FaSpinner, FaImages, FaExclamationTriangle } from 'react-icons/fa';
 
 interface CloudinaryResource {
   public_id: string;
@@ -22,6 +22,25 @@ interface CloudinaryUsage {
     resources: number;
     derived_resources: number;
 }
+
+const StatCard = ({ icon, title, value, detail, progress }: { icon: React.ReactNode, title: string, value: string, detail?: string, progress?: number }) => (
+    <div className="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+        <div className="flex items-center">
+            <div className="mr-4 text-gray-400">{icon}</div>
+            <div>
+                <h3 className="font-semibold text-gray-500">{title}</h3>
+                <p className="text-2xl font-bold text-gray-800">{value}</p>
+                {detail && <p className="text-sm text-gray-500">{detail}</p>}
+            </div>
+        </div>
+        {progress !== undefined && (
+            <div className="w-full bg-gray-200 rounded-full h-2 mt-3">
+                <div className="bg-indigo-600 h-2 rounded-full" style={{ width: `${progress}%` }}></div>
+            </div>
+        )}
+    </div>
+);
+
 
 const MediaLibraryPage = () => {
   const [images, setImages] = useState<CloudinaryResource[]>([]);
@@ -73,13 +92,14 @@ const MediaLibraryPage = () => {
           throw new Error(errorData.message || 'Failed to delete images');
         }
 
-        // Refetch data to get updated usage and image list
         fetchMediaData(); 
-        setSelectedImages([]); // Clear selection
-        alert('Selected images deleted successfully!');
+        setSelectedImages([]);
+        // You might want a more subtle notification system than alert
+        // For now, we'll keep it simple.
+        console.log('Selected images deleted successfully!');
 
       } catch (err: any) {
-        alert(`Error: ${err.message}`);
+          setError(err.message);
       }
     }
   };
@@ -94,60 +114,90 @@ const MediaLibraryPage = () => {
   }
 
   return (
-    <div>
+    <div className="p-6 bg-gray-50 min-h-full">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Media Library</h1>
-        <button onClick={fetchMediaData} className="btn-outline" disabled={loading}>
-          {loading ? <><i className="fa-solid fa-spinner fa-spin" /> Refreshing...</> : <><i className="fa-solid fa-sync" /> Refresh</>}
+        <div>
+            <h1 className="text-3xl font-bold text-gray-800">Media Library</h1>
+            <p className="text-gray-500 mt-1">Manage your cloud-stored images and monitor usage.</p>
+        </div>
+        <button onClick={fetchMediaData} className="btn-secondary" disabled={loading}>
+          {loading ? <><FaSpinner className="animate-spin mr-2" /> Refreshing...</> : <><FaSync className="mr-2" /> Refresh</>}
         </button>
       </div>
       
-      {/* Usage Stats */}
-       {usage && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                <h3 className="font-semibold text-lg text-gray-700 flex items-center"><FaDatabase className="mr-2 text-gray-500"/> Storage Usage</h3>
-                <p className="text-2xl font-bold text-gray-900">{formatBytes(usage.storage.used)} / {formatBytes(usage.storage.limit)}</p>
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
-                    <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: `${usage.storage.used_percent}%` }}></div>
-                </div>
-            </div>
-             <div className="bg-gray-50 p-4 rounded-lg shadow-sm">
-                <h3 className="font-semibold text-lg text-gray-700 flex items-center"><FaCloud className="mr-2 text-gray-500"/> Media Count</h3>
-                <p className="text-2xl font-bold text-gray-900">{images.length} <span className="text-base font-normal text-gray-500">items</span></p>
-                 <p className="text-sm text-gray-500">Displaying the latest {images.length} images.</p>
-            </div>
+      {usage && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
+            <StatCard 
+                icon={<FaDatabase size={24}/>} 
+                title="Storage Usage" 
+                value={`${formatBytes(usage.storage.used)} / ${formatBytes(usage.storage.limit)}`} 
+                progress={usage.storage.used_percent}
+            />
+            <StatCard 
+                icon={<FaCloud size={24}/>} 
+                title="Media Count"
+                value={images.length.toString()}
+                detail={`Displaying the latest ${images.length} assets`}
+            />
+            <StatCard 
+                icon={<FaImages size={24}/>} 
+                title="Transformations"
+                value={`${usage.transformations.used} / ${usage.transformations.limit}`}
+                progress={usage.transformations.used_percent}
+            />
+            <StatCard 
+                icon={<FaDatabase size={24}/>} 
+                title="Bandwidth Usage"
+                value={`${formatBytes(usage.bandwidth.used)} / ${formatBytes(usage.bandwidth.limit)}`}
+                progress={usage.bandwidth.used_percent}
+            />
         </div>
       )}
 
-      {/* Bulk Action Bar */}
       {selectedImages.length > 0 && (
-        <div className="bg-gray-800 text-white rounded-lg p-4 flex justify-between items-center mb-6 sticky top-4 z-10 shadow-lg">
-          <span className="font-semibold">{selectedImages.length} image(s) selected</span>
-          <div>
-            <button onClick={() => setSelectedImages([])} className="btn-secondary mr-2">Deselect All</button>
-            <button onClick={handleBulkDelete} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete Selected</button>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 flex justify-between items-center mb-6 sticky top-4 z-20 shadow-lg">
+          <span className="font-semibold text-indigo-600">{selectedImages.length} image(s) selected</span>
+          <div className="flex items-center">
+            <button onClick={() => setSelectedImages([])} className="btn-secondary">Deselect All</button>
+            <button onClick={handleBulkDelete} className="btn-delete ml-3">
+                <FaTrash className="mr-2"/> Delete Selected
+            </button>
           </div>
         </div>
       )}
 
-      {error && <p className="text-red-500 bg-red-100 p-4 rounded-lg">{error}</p>}
+      {error && (
+        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-md my-6">
+            <div className="flex items-center">
+                <FaExclamationTriangle className="mr-3"/>
+                <div>
+                    <p className="font-bold">An error occurred</p>
+                    <p>{error}</p>
+                </div>
+            </div>
+        </div>
+      )}
 
       {loading && !images.length ? (
-        <p className="text-center py-10">Loading media...</p>
+         <div className="text-center py-20">
+            <FaSpinner className="animate-spin text-4xl text-gray-400 mx-auto" />
+            <p className="mt-4 text-gray-500">Loading your media library...</p>
+        </div>
       ) : !loading && images.length === 0 ? (
-        <div className="text-center py-20 bg-gray-100 rounded-lg">
-            <h3 className="text-lg font-semibold">No media found</h3>
-            <p className="text-gray-500 mb-4">Your media library is empty. Upload images via the product or event pages.</p>
+        <div className="text-center py-20 bg-white rounded-xl border border-dashed border-gray-300">
+            <FaImages className="text-5xl text-gray-400 mx-auto"/>
+            <h3 className="mt-6 text-xl font-semibold text-gray-800">Your Media Library is Empty</h3>
+            <p className="mt-2 text-gray-500">Upload images via the product or event management pages.</p>
+             <button onClick={fetchMediaData} className="btn-primary mt-6">Refresh Library</button>
         </div>
       ) : (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-5">
           {images.map(image => {
             const isSelected = selectedImages.includes(image.public_id);
             return (
               <div 
                 key={image.public_id} 
-                className={`relative rounded-lg overflow-hidden shadow-md cursor-pointer border-4 ${isSelected ? 'border-blue-500' : 'border-transparent'}`}
+                className={`group relative rounded-xl overflow-hidden shadow-sm cursor-pointer border-4 ${isSelected ? 'border-indigo-500' : 'border-transparent hover:border-indigo-300'}`}
                 onClick={() => handleToggleSelect(image.public_id)}
               >
                 <CldImage
@@ -156,17 +206,22 @@ const MediaLibraryPage = () => {
                   height={300}
                   crop="fill"
                   gravity="auto"
-                  alt="Cloudinary Image"
-                  className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
+                  alt={image.public_id}
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                 />
-                <div className="absolute top-2 right-2">
+                <div className="absolute top-2 right-2 transition-opacity duration-200 opacity-0 group-hover:opacity-100">
                   {isSelected ? 
-                    <FaCheckCircle className="text-blue-500 bg-white rounded-full text-2xl" /> :
-                    <FaRegCircle className="text-gray-300 bg-gray-800 bg-opacity-50 rounded-full text-2xl" />
+                    <FaCheckCircle className="text-indigo-500 bg-white rounded-full text-2xl shadow-md" /> :
+                    <FaRegCircle className="text-gray-400 bg-white bg-opacity-70 rounded-full text-2xl" />
                   }
                 </div>
-                 <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-50 text-white text-xs p-2 truncate">
-                    {image.public_id.split('/').pop()}
+                {isSelected && (
+                     <div className="absolute top-2 right-2">
+                        <FaCheckCircle className="text-indigo-500 bg-white rounded-full text-2xl shadow-md" />
+                    </div>
+                )}
+                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs p-3 truncate">
+                    <p className="font-mono text-xs truncate">{image.public_id.split('/').pop()}</p>
                 </div>
               </div>
             );
