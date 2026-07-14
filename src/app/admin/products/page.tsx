@@ -2,7 +2,8 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue, where } from "firebase/firestore";
-import { ImageUploader, CLImage } from '@/components/ImageUploader';
+import ImageUploader from '@/components/ImageUploader';
+import { CldImage } from 'next-cloudinary';
 
 // Type definitions
 type Spec = { value: string; label: string };
@@ -68,8 +69,8 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
         }
     };
 
-    const handleImageUpload = (info: any) => {
-        setFormState(prevState => ({ ...prevState, imageUrl: info.public_id }));
+    const handleImageUpload = (url: string, publicId: string) => {
+        setFormState(prevState => ({ ...prevState, imageUrl: publicId }));
     };
 
     const handleSpecChange = (index: number, field: 'value' | 'label', value: string) => {
@@ -114,14 +115,21 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
                 </div>
                 <div className="modal-body">
                     <form onSubmit={handleSubmit}>
-                        <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+                        <div className="form-group" style={{ gridColumn: '1 / -1' }}>
                                 <label>Model Image</label>
+                                {formState.imageUrl && (
+                                     <div style={{ marginBottom: '1rem' }}>
+                                         <CldImage src={formState.imageUrl} width="400" height="300" alt="Current Image" />
+                                     </div>
+                                )}
                                 <ImageUploader
                                     onUploadSuccess={handleImageUpload}
-                                    initialValue={formState.imageUrl}
+                                    aspectRatio={16/9}
+                                    folder="re_models"
+                                    publicId={isEditing ? formState.imageUrl : undefined}
                                 />
                             </div>
+                        <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <div className="form-group">
                                 <label>Model Name</label>
                                 <input type="text" name="name" value={formState.name} onChange={handleInputChange} placeholder="e.g., Classic 350" required />
@@ -146,24 +154,24 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
                             </div>
                             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                                 <label style={{ marginBottom: 0 }}>Finance Enabled</label>
-                                <input type="checkbox" name="financeEnabled" checked={formState.financeEnabled} onChange={handleInputChange} className="w-6 h-6"/>
+                                <input type="checkbox" name="financeEnabled" checked={formState.financeEnabled} onChange={handleInputChange} style={{width: '1.2rem', height: '1.2rem'}}/>
                             </div>
                         </div>
 
-                        <div className="mt-4">
-                            <h4 className="text-lg font-semibold mb-2">Specifications</h4>
+                        <div style={{marginTop: '1.5rem'}}>
+                            <h4 style={{fontFamily: 'var(--font-heading)', fontSize: '1.4rem', marginBottom: '1rem'}}>Specifications</h4>
                             {formState.specs.map((spec, index) => (
-                                <div key={index} className="grid grid-cols-3 gap-2 mb-2">
-                                    <input type="text" value={spec.value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} placeholder="Value (e.g., 20.2 bhp)" className="col-span-1" />
-                                    <input type="text" value={spec.label} onChange={(e) => handleSpecChange(index, 'label', e.target.value)} placeholder="Label (e.g., Max Power)" className="col-span-1" />
-                                    <button type="button" onClick={() => removeSpecField(index)} className="btn-delete col-span-1">Remove</button>
+                                <div key={index} style={{display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: '10px', marginBottom: '10px'}}>
+                                    <input type="text" value={spec.value} onChange={(e) => handleSpecChange(index, 'value', e.target.value)} placeholder="Value (e.g., 20.2 bhp)" />
+                                    <input type="text" value={spec.label} onChange={(e) => handleSpecChange(index, 'label', e.target.value)} placeholder="Label (e.g., Max Power)" />
+                                    <button type="button" onClick={() => removeSpecField(index)} className="btn-delete">Remove</button>
                                 </div>
                             ))}
                             <button type="button" onClick={addSpecField} className="btn-outline mt-2">Add Spec</button>
                         </div>
 
-                        <div className="modal-footer">
-                            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+                        <div className="modal-footer" style={{paddingTop: '1.5rem', marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)'}}>
+                            <button type="button" onClick={onClose} className="btn-outline">Cancel</button>
                             <button type="submit" className="btn-primary">{isEditing ? 'Save Changes' : 'Create Model'}</button>
                         </div>
                     </form>
@@ -243,23 +251,26 @@ const ProductManagement = () => {
     };
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Product Models</h1>
+        <div className="admin-content">
+            <div className="admin-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                    <h1>Product Models</h1>
+                    <p>Add, edit, and manage all motorcycle models for the catalog.</p>
+                </div>
                 <button onClick={handleAddClick} className="btn-primary">
-                    <i className="fa-solid fa-plus"></i> Add New Model
+                    <i className="fas fa-plus"></i> Add New Model
                 </button>
             </div>
             
             <div className="filter-tabs">
-                <button onClick={() => setActiveFilter('all')} className={activeFilter === 'all' ? 'active' : ''}>All</button>
+                <button onClick={() => setActiveFilter('all')} className={activeFilter === 'all' ? 'active' : ''}>All Models</button>
                 {categories.map(c => (
                     <button key={c.id} onClick={() => setActiveFilter(c.id)} className={activeFilter === c.id ? 'active' : ''}>{c.name}</button>
                 ))}
             </div>
 
-            {loading ? <div className="text-center py-10">Loading...</div> : (
-                <div className="admin-table-container mt-6">
+            {loading ? <div className="loading-container" style={{minHeight: '300px', display:'grid', placeContent:'center'}}><div className='loading-spinner'></div></div> : (
+                <div className="admin-table-container">
                     <table className="admin-table">
                         <thead>
                             <tr>
@@ -276,23 +287,23 @@ const ProductManagement = () => {
                                 <tr key={p.id}>
                                     <td>
                                         {p.imageUrl ? (
-                                            <CLImage publicId={p.imageUrl} alt={p.name} className="w-24 h-16 object-cover rounded-md" />
+                                            <CldImage src={p.imageUrl} alt={p.name} width="120" height="90" style={{objectFit: 'cover', borderRadius: '8px'}} />
                                         ) : (
-                                            <div className="w-24 h-16 bg-gray-200 rounded-md flex items-center justify-center text-xs text-gray-500">No Image</div>
+                                            <div style={{width: '120px', height: '90px', background: 'var(--glass-border)', borderRadius: '8px', display:'grid', placeContent:'center', fontSize:'0.8rem', color:'var(--text-muted)'}}>No Image</div>
                                         )}
                                     </td>
-                                    <td className="font-semibold">{p.name}</td>
-                                    <td><span className="event-type-badge">{p.category}</span></td>
+                                    <td style={{fontWeight: 'bold'}}>{p.name}</td>
+                                    <td><span className="event-admin-type-badge event-type-offer">{p.category}</span></td>
                                     <td>{p.price}</td>
-                                    <td><span className={`status-badge ${p.financeEnabled ? 'status-active' : 'status-inactive'}`}>{p.financeEnabled ? 'Enabled' : 'Disabled'}</span></td>
+                                    <td><span className={`status-badge ${p.financeEnabled ? 'status-approved' : 'status-pending'}`}>{p.financeEnabled ? 'Yes' : 'No'}</span></td>
                                     <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                        <button onClick={() => handleEditClick(p)} className="btn-outline"><i className="fa-solid fa-pencil"></i> Edit</button>
-                                        <button onClick={() => handleDeleteProduct(p)} className="btn-delete"><i className="fa-solid fa-trash"></i> Delete</button>
+                                        <button onClick={() => handleEditClick(p)} className="btn-outline"><i className="fas fa-pencil-alt"></i> Edit</button>
+                                        <button onClick={() => handleDeleteProduct(p)} className="btn-delete"><i className="fas fa-trash"></i> Delete</button>
                                     </td>
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={6} style={{textAlign: 'center', padding: '40px'}}>
+                                    <td colSpan={6} style={{textAlign: 'center', padding: '4rem'}}>
                                         <p>No models found for '{activeFilter}'.</p>
                                     </td>
                                 </tr>

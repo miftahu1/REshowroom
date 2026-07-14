@@ -6,7 +6,8 @@ import {
     getFirestore, collection, getDocs, addDoc, deleteDoc,
     doc, updateDoc, query, orderBy, serverTimestamp, FieldValue
 } from 'firebase/firestore';
-import { ImageUploader, CLImage } from '@/components/ImageUploader';
+import ImageUploader from '@/components/ImageUploader';
+import { CldImage } from 'next-cloudinary';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -35,10 +36,10 @@ interface EventData {
     createdAt?: FieldValue;
 }
 
-const TYPE_CONFIG: Record<EventType, { label: string; color: string; icon: string }> = {
-    event: { label: 'Event', color: '#c9a84c', icon: 'fa-calendar-days' },
-    update: { label: 'Update', color: '#5ac8fa', icon: 'fa-bullhorn' },
-    offer: { label: 'Offer', color: '#32d74b', icon: 'fa-tag' },
+const TYPE_CONFIG: Record<EventType, { label: string; className: string; icon: string }> = {
+    event: { label: 'Event', className: 'event-type-event', icon: 'fa-calendar-days' },
+    update: { label: 'Update', className: 'event-type-update', icon: 'fa-bullhorn' },
+    offer: { label: 'Offer', className: 'event-type-offer', icon: 'fa-tag' },
 };
 
 const getInitialFormState = (): Omit<EventData, 'id' | 'createdAt'> => ({
@@ -75,8 +76,8 @@ const EventModal = (
         setFormState(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
     };
 
-    const handleImageUpload = (info: any) => {
-        setFormState(prevState => ({ ...prevState, imageUrl: info.public_id }));
+    const handleImageUpload = (url: string, publicId: string) => {
+        setFormState(prevState => ({ ...prevState, imageUrl: publicId }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -106,11 +107,16 @@ const EventModal = (
                 </div>
                 <div className="modal-body">
                     <form onSubmit={handleSubmit}>
-                        <div className="form-group mb-4">
+                       <div className="form-group mb-4">
                             <label>Poster Image</label>
-                            <ImageUploader onUploadSuccess={handleImageUpload} initialValue={formState.imageUrl} />
+                             {formState.imageUrl && (
+                                <div style={{ marginBottom: '1rem' }}>
+                                  <CldImage src={formState.imageUrl} width="400" height="300" alt="Current Poster" />
+                                </div>
+                             )}
+                            <ImageUploader onUploadSuccess={handleImageUpload} aspectRatio={4/3} folder="re_events" publicId={isEditing ? formState.imageUrl : undefined} />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem'}}>
                             <div className="form-group">
                                 <label>Title</label>
                                 <input type="text" name="title" value={formState.title} onChange={handleChange} required />
@@ -136,18 +142,18 @@ const EventModal = (
                             <label>Description</label>
                             <textarea name="description" value={formState.description} onChange={handleChange} rows={4}></textarea>
                         </div>
-                        <div className="flex items-center gap-6 mt-4">
-                             <div className="form-group flex items-center gap-2">
-                                <input type="checkbox" id="published" name="published" checked={formState.published} onChange={handleChange} className="w-5 h-5"/>
-                                <label htmlFor="published" className="mb-0">Published</label>
+                        <div style={{display: 'flex', alignItems: 'center', gap: '2rem', marginTop: '1rem'}}>
+                             <div className="form-group" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                <input type="checkbox" id="published" name="published" checked={formState.published} onChange={handleChange} style={{width: '1.2rem', height: '1.2rem'}}/>
+                                <label htmlFor="published" style={{marginBottom: 0}}>Published</label>
                             </div>
-                            <div className="form-group flex items-center gap-2">
-                                <input type="checkbox" id="featured" name="featured" checked={formState.featured} onChange={handleChange} className="w-5 h-5" />
-                                <label htmlFor="featured" className="mb-0">Featured</label>
+                            <div className="form-group" style={{display: 'flex', alignItems: 'center', gap: '10px'}}>
+                                <input type="checkbox" id="featured" name="featured" checked={formState.featured} onChange={handleChange} style={{width: '1.2rem', height: '1.2rem'}} />
+                                <label htmlFor="featured" style={{marginBottom: 0}}>Featured</label>
                             </div>
                         </div>
-                        <div className="modal-footer">
-                            <button type="button" onClick={onClose} className="btn-secondary">Cancel</button>
+                        <div className="modal-footer" style={{paddingTop: '1.5rem', marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)'}}>
+                            <button type="button" onClick={onClose} className="btn-outline">Cancel</button>
                             <button type="submit" className="btn-primary">{isEditing ? 'Save Changes' : 'Create Event'}</button>
                         </div>
                     </form>
@@ -215,18 +221,19 @@ const EventsManagement = () => {
     };
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Events & Updates</h1>
-                <button onClick={handleAddClick} className="btn-primary"><i className="fa-solid fa-plus"></i> Add New</button>
+        <div className="admin-content">
+            <div className="admin-header" style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
+                <div>
+                    <h1>Events & Updates</h1>
+                    <p>Create, manage, and publish company news, events, and special offers.</p>
+                </div>
+                <button onClick={handleAddClick} className="btn-primary"><i className="fas fa-plus"></i> Add New</button>
             </div>
 
-            {loading ? (
-                <div className="text-center py-10">Loading events...</div>
-            ) : events.length === 0 ? (
-                <div className="text-center py-20 bg-gray-50 rounded-lg">
-                    <h3 className="text-lg font-semibold">No events found</h3>
-                    <p className="text-gray-500 mb-4">Get started by adding a new event, offer, or update.</p>
+            {loading ? <div className="loading-container" style={{minHeight: '300px', display:'grid', placeContent:'center'}}><div className='loading-spinner'></div></div> : events.length === 0 ? (
+                <div className="glass-card text-center" style={{padding: '4rem'}}>
+                    <h3>No Events Yet</h3>
+                    <p className="text-muted mb-4">Get started by creating your first event, update, or offer.</p>
                     <button onClick={handleAddClick} className="btn-primary">Add First Event</button>
                 </div>
             ) : (
@@ -235,7 +242,7 @@ const EventsManagement = () => {
                         <thead>
                             <tr>
                                 <th>Poster</th>
-                                <th>Event</th>
+                                <th>Title</th>
                                 <th>Type</th>
                                 <th>Date</th>
                                 <th>Status</th>
@@ -249,27 +256,27 @@ const EventsManagement = () => {
                                     <tr key={ev.id}>
                                         <td>
                                             {ev.imageUrl ? 
-                                                <CLImage publicId={ev.imageUrl} alt={ev.title} className="w-24 h-16 object-cover rounded-md"/> :
-                                                <div className="w-24 h-16 bg-gray-200 rounded-md flex items-center justify-center text-xs text-gray-500">No Image</div>
+                                                <CldImage src={ev.imageUrl} alt={ev.title} width="120" height="90" style={{objectFit: 'cover', borderRadius: '8px'}}/> :
+                                                <div style={{width: '120px', height: '90px', background: 'var(--glass-border)', borderRadius: '8px', display:'grid', placeContent:'center', fontSize:'0.8rem', color:'var(--text-muted)'}}>No Image</div>
                                             }
                                         </td>
-                                        <td className="font-semibold">{ev.title}</td>
+                                        <td style={{fontWeight: 'bold'}}>{ev.title}</td>
                                         <td>
-                                            <span className="event-type-badge" style={{ color: typeCfg.color, borderColor: typeCfg.color }}>
-                                                <i className={`fa-solid ${typeCfg.icon}`}/>&nbsp;{typeCfg.label}
+                                            <span className={`event-admin-type-badge ${typeCfg.className}`}>
+                                                <i className={`fas ${typeCfg.icon}`}/>&nbsp;{typeCfg.label}
                                             </span>
                                         </td>
                                         <td>{formatDate(ev.date)}</td>
                                         <td>
-                                            <div className="flex flex-col gap-1">
-                                                <span className={`status-badge ${ev.published ? 'status-active' : 'status-inactive'}`}>{ev.published ? 'Published' : 'Draft'}</span>
-                                                {ev.featured && <span className="status-badge status-featured">Featured</span>}
+                                             <div style={{display:'flex', flexDirection:'column', gap: '4px'}}>
+                                                <span className={`status-badge ${ev.published ? 'status-approved' : 'status-pending'}`}>{ev.published ? 'Published' : 'Draft'}</span>
+                                                {ev.featured && <span className={`status-badge event-type-event`}>Featured</span>}
                                             </div>
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                                                <button onClick={() => handleEditClick(ev)} className="btn-outline"><i className="fa-solid fa-pencil" /></button>
-                                                <button onClick={() => handleDelete(ev)} className="btn-delete"><i className="fa-solid fa-trash" /></button>
+                                                <button onClick={() => handleEditClick(ev)} className="btn-outline"><i className="fas fa-pencil-alt" /></button>
+                                                <button onClick={() => handleDelete(ev)} className="btn-delete"><i className="fas fa-trash" /></button>
                                             </div>
                                         </td>
                                     </tr>
