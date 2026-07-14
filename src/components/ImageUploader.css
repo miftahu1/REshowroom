@@ -1,4 +1,3 @@
-'''
 .image-uploader-container {
     background: var(--bg-secondary);
     border: 1px solid var(--glass-border);
@@ -85,5 +84,3 @@
     justify-content: flex-end;
     gap: 16px;
 }
-
-'''

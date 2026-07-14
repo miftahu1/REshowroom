@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc, query, orderBy, serverTimestamp, FieldValue } from "firebase/firestore";
-import { ImageUploader, CLImage } from '@/components/ImageUploader';
+import ImageUploader from '@/components/ImageUploader';
+import { CldImage } from 'next-cloudinary';
 
 interface FinanceCompany {
     id?: string;
@@ -66,8 +67,8 @@ const FinanceCompanyModal = ({ isOpen, onClose, company, onSave }: { isOpen: boo
         setFormState(prevState => ({ ...prevState, allowedTenures: newTenures.sort((a, b) => a - b) }));
     };
 
-    const handleImageUpload = (info: any) => {
-        setFormState(prevState => ({ ...prevState, logo: info.public_id }));
+    const handleImageUpload = (url: string, publicId: string) => {
+        setFormState(prevState => ({ ...prevState, logo: publicId }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
@@ -95,7 +96,8 @@ const FinanceCompanyModal = ({ isOpen, onClose, company, onSave }: { isOpen: boo
                         <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                             <div className="form-group" style={{gridColumn: '1 / -1'}}>
                                 <label>Company Logo</label>
-                                <ImageUploader onUploadSuccess={handleImageUpload} initialValue={formState.logo} />
+                                {formState.logo && <CldImage src={formState.logo} width="200" height="100" alt="logo" />}
+                                <ImageUploader onUploadSuccess={handleImageUpload} aspectRatio={1} folder="re_finance_logos" publicId={isEditing ? formState.logo : undefined} />
                             </div>
                             <div className="form-group" style={{gridColumn: '1 / -1'}}><label>Company Name</label><input name="name" type="text" value={formState.name} onChange={handleInputChange} required /></div>
                             <div className="form-group" style={{gridColumn: '1 / -1'}}><label>Description</label><textarea name="description" value={formState.description} onChange={handleInputChange}></textarea></div>
@@ -171,7 +173,7 @@ const FinanceCompaniesPage = () => {
                         <tbody>
                             {companies.map(c => (
                                 <tr key={c.id}>
-                                    <td>{c.logo && <CLImage publicId={c.logo} alt={c.name} className="w-24 h-16 object-contain" />}</td>
+                                    <td>{c.logo && <CldImage src={c.logo} alt={c.name} width={100} height={100} style={{objectFit: 'contain'}} />}</td>
                                     <td>{c.name}</td>
                                     <td>{c.interestRate}%</td>
                                     <td>{c.allowedTenures.join(', ')}</td>

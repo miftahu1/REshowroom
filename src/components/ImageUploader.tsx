@@ -1,4 +1,3 @@
-'''
 'use client';
 
 import { useState, useRef } from 'react';
@@ -172,4 +171,3 @@ const ImageUploader = ({ onUploadSuccess, aspectRatio = 1, folder, publicId }: I
 };
 
 export default ImageUploader;
-'''

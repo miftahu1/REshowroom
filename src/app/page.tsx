@@ -9,7 +9,7 @@ import { getFirestore, collection, addDoc, serverTimestamp, getDocs, query, orde
 import emailjs from '@emailjs/browser';
 import ReceiptLookup from './components/ReceiptLookup';
 import StatCounter from '@/components/StatCounter';
-import { CLImage } from '@/components/ImageUploader';
+import { CldImage } from 'next-cloudinary';
 import { buildUrl } from '../utils/cloudinary';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -658,7 +658,7 @@ export default function Home() {
                 <div className="finance-partners-list">
                     {financeCompanies.map(c => (
                         <div key={c.id} className="partner-logo-card">
-                            <CLImage publicId={c.logo} alt={c.name} />
+                            <CldImage src={c.logo} alt={c.name} width={100} height={100} style={{objectFit: 'contain'}} />
                         </div>
                     ))}
                 </div>

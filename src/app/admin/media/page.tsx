@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { CldImage } from 'next-cloudinary';
+import ImageUploader from '@/components/ImageUploader';
 
 interface CloudinaryResource {
   public_id: string;
@@ -59,6 +60,10 @@ const MediaLibraryPage = () => {
     fetchMediaData();
   }, []);
 
+  const handleUploadSuccess = () => {
+    fetchMediaData(); // Refresh the media library after a new upload
+  };
+
   const handleToggleSelect = (publicId: string) => {
     setSelectedImages(prev =>
       prev.includes(publicId)
@@ -106,6 +111,12 @@ const MediaLibraryPage = () => {
         <h1>Media Library</h1>
         <p>Manage your cloud-stored images and monitor usage.</p>
       </div>
+
+      <div className="glass-card" style={{ padding: '1.5rem', marginBottom: '2rem' }}>
+        <h3 style={{ marginTop: 0, fontFamily: 'var(--font-heading)', color: 'var(--gold)' }}>Upload New Image</h3>
+        <p className="text-muted" style={{marginTop: '-0.5rem', marginBottom: '1rem'}}>Upload a new image directly to the media library. Images will be placed in the 're_media' folder.</p>
+        <ImageUploader onUploadSuccess={handleUploadSuccess} folder="re_media" />
+      </div>
       
        {usage && (
         <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
@@ -146,7 +157,7 @@ const MediaLibraryPage = () => {
       ) : !loading && images.length === 0 ? (
         <div className="glass-card text-center" style={{padding: '4rem'}}>
             <h3>No Media Found</h3>
-            <p className="text-muted mb-4">Your media library is empty. Upload images via the product or event pages.</p>
+            <p className="text-muted mb-4">Your media library is empty. Use the uploader above to add images.</p>
              <button onClick={fetchMediaData} className="btn-primary"><i className="fas fa-sync"></i> Refresh</button>
         </div>
       ) : (
