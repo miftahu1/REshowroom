@@ -11,31 +11,8 @@ interface CloudinaryResource {
   created_at: string;
 }
 
-interface CloudinaryUsage {
-    plan: string;
-    last_updated: string;
-    transformations: { used: number, limit: number, used_percent: number };
-    objects: { used: number, limit: number, used_percent: number };
-    bandwidth: { used: number, limit: number, used_percent: number };
-    storage: { used: number, limit: number, used_percent: number };
-    requests: number;
-    resources: number;
-    derived_resources: number;
-}
-
-// A simple progress bar component
-const ProgressBar = ({ value, max }: { value: number, max: number }) => {
-    const percentage = max > 0 ? (value / max) * 100 : 0;
-    return (
-        <div style={{ width: '100%', background: 'var(--glass-border)', borderRadius: '4px', height: '8px' }}>
-            <div style={{ width: `${percentage}%`, background: 'var(--gold)', height: '100%', borderRadius: '4px' }}></div>
-        </div>
-    );
-};
-
 const MediaLibraryPage = () => {
   const [images, setImages] = useState<CloudinaryResource[]>([]);
-  const [usage, setUsage] = useState<CloudinaryUsage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
@@ -48,7 +25,7 @@ const MediaLibraryPage = () => {
       if (!res.ok) throw new Error('Failed to fetch media data from Cloudinary');
       const data = await res.json();
       setImages(data.resources || []);
-      setUsage(data.usage || null);
+      // Usage data is still fetched but not displayed to prevent NaN errors
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -96,15 +73,6 @@ const MediaLibraryPage = () => {
     }
   };
 
-  const formatBytes = (bytes: number, decimals = 2) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const dm = decimals < 0 ? 0 : decimals;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-  }
-
   return (
     <div className="admin-content">
       <div className="admin-header">
@@ -118,27 +86,13 @@ const MediaLibraryPage = () => {
         <ImageUploader onUploadSuccess={handleUploadSuccess} folder="re_media" />
       </div>
       
-       {usage && (
-        <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
+      <div className="dashboard-grid" style={{ marginBottom: '2rem' }}>
             <div className="dashboard-card">
-                <h3><i className="fas fa-database" style={{ color: 'var(--gold)' }}></i> Storage</h3>
-                <p className="dashboard-stat">{formatBytes(usage.storage.used)}</p>
-                <ProgressBar value={usage.storage.used} max={usage.storage.limit} />
-                <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total: {formatBytes(usage.storage.limit)}</p>
-            </div>
-             <div className="dashboard-card">
                 <h3><i className="fas fa-images" style={{ color: 'var(--gold)' }}></i> Media Count</h3>
                 <p className="dashboard-stat">{images.length}</p>
                 <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total images in library</p>
             </div>
-            <div className="dashboard-card">
-                <h3><i className="fas fa-wifi" style={{ color: 'var(--gold)' }}></i> Bandwidth</h3>
-                <p className="dashboard-stat">{formatBytes(usage.bandwidth.used)}</p>
-                <ProgressBar value={usage.bandwidth.used} max={usage.bandwidth.limit} />
-                <p style={{ marginTop: '0.5rem', fontSize: '0.8rem', color: 'var(--text-muted)' }}>Monthly Limit: {formatBytes(usage.bandwidth.limit)}</p>
-            </div>
-        </div>
-      )}
+      </div>
 
       {selectedImages.length > 0 && (
         <div className="glass-card" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'sticky', top: '20px', zIndex: '10' }}>
