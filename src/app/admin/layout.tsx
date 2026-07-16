@@ -62,6 +62,7 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                 <nav>
                     <ul>
                         <li><Link href="/admin" className={pathname === '/admin' ? 'active' : ''}><i className="fas fa-tachometer-alt"></i> Dashboard</Link></li>
+                        <li><Link href="/admin/analytics" className={pathname.startsWith('/admin/analytics') ? 'active' : ''}><i className="fas fa-chart-line"></i> Analytics</Link></li>
                         <li><Link href="/admin/bookings" className={pathname.startsWith('/admin/bookings') ? 'active' : ''}><i className="fas fa-calendar-check"></i> Bookings</Link></li>
                         <li><Link href="/admin/messages" className={pathname.startsWith('/admin/messages') ? 'active' : ''}><i className="fas fa-envelope"></i> Messages</Link></li>
                         <li><Link href="/admin/reviews" className={pathname.startsWith('/admin/reviews') ? 'active' : ''}><i className="fas fa-star"></i> Reviews</Link></li>

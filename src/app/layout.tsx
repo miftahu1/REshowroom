@@ -1,5 +1,6 @@
 import './globals.css';
 import type { Metadata } from 'next';
+import { Analytics } from '@/components/Analytics';
 import SectionPageShell from '@/components/SectionPageShell';
 
 export const metadata: Metadata = {
@@ -25,6 +26,7 @@ export default function RootLayout({
       </head>
       <body>
         <SectionPageShell>{children}</SectionPageShell>
+        <Analytics />
       </body>
     </html>
   );
