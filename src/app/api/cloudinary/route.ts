@@ -8,6 +8,27 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Handler to get a signature for client-side uploads
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { paramsToSign } = body;
+
+    if (!paramsToSign) {
+      return NextResponse.json({ message: "Parameters to sign are required" }, { status: 400 });
+    }
+
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET as string);
+    
+    return NextResponse.json({ signature });
+
+  } catch (error) {
+    console.error("Error signing upload widget params", error);
+    return NextResponse.json({ message: "Failed to sign upload parameters" }, { status: 500 });
+  }
+}
+
+
 // Get all images and usage data from Cloudinary
 export async function GET() {
   try {
