@@ -2,6 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Analytics } from '@/components/Analytics';
 import SectionPageShell from '@/components/SectionPageShell';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
   title: 'Royal Enfield Showroom - Funshine Getaways pvt ltd',
@@ -26,7 +27,9 @@ export default function RootLayout({
       </head>
       <body>
         <SectionPageShell>{children}</SectionPageShell>
-        <Analytics />
+        <Suspense fallback={null}>
+          <Analytics />
+        </Suspense>
       </body>
     </html>
   );
