@@ -3746,3 +3746,35 @@ footer {
         padding: 40px;
     }
 }
+
+/* ===================================================================
+   UNIFIED CARD GRID SYSTEM (Models & Events)
+   Overrides previous flexible grids for consistent fixed widths.
+   =================================================================== */
+
+.models-grid,
+.home-events-grid,
+.events-grid {
+    display: grid;
+    gap: 24px;
+    /* MOBILE: Single column by default */
+    grid-template-columns: 1fr;
+}
+
+/* TABLET: Two columns */
+@media (min-width: 768px) {
+    .models-grid,
+    .home-events-grid,
+    .events-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* DESKTOP: Three columns */
+@media (min-width: 1024px) {
+    .models-grid,
+    .home-events-grid,
+    .events-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}

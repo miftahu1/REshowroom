@@ -10,7 +10,6 @@ import emailjs from '@emailjs/browser';
 import ReceiptLookup from './components/ReceiptLookup';
 import StatCounter from '@/components/StatCounter';
 import { CldImage } from 'next-cloudinary';
-import { buildUrl } from '../utils/cloudinary';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -326,8 +325,15 @@ export default function Home() {
               <span>Flexible finance</span>
             </div>
             <div className="hero-bike-wrap">
-              {heroImage ? (
-                    <img id="hero-bike" src={buildUrl(heroImage)} alt="Royal Enfield Motorcycle Showcase" loading="eager" />
+                {heroImage ? (
+                    <CldImage
+                        id="hero-bike"
+                        src={heroImage}
+                        alt="Royal Enfield Motorcycle Showcase"
+                        priority
+                        width={500}
+                        height={500}
+                    />
                 ) : (
                     <img id="hero-bike" src="/assets/images/hunter350.png" alt="Royal Enfield Hunter 350 — hero showcase" loading="eager" />
                 )}
@@ -365,7 +371,7 @@ export default function Home() {
                  <Link key={product.id} href={`/model/${product.id}`} passHref>
                     <article className="model-card" role="article" id={product.name === 'Hunter 350' ? 'hunter-card' : undefined}>
                     <div className="model-card-img">
-                        <img src={buildUrl(product.imageUrl)} alt={`Royal Enfield ${product.name}`} loading="lazy" />
+                        <CldImage src={product.imageUrl} width="400" height="400" alt={`Royal Enfield ${product.name}`} loading="lazy" />
                         {product.badge && <span className="model-card-badge">{product.badge}</span>}
                     </div>
                     <div className="model-card-body">
@@ -416,7 +422,7 @@ export default function Home() {
                 <div key={ev.id} className="home-event-card glass-card">
                   {ev.imageUrl && (
                     <div className="home-event-card-img">
-                      <img src={buildUrl(ev.imageUrl)} alt={ev.title} loading="lazy" />
+                       <CldImage src={ev.imageUrl} alt={ev.title} loading="lazy" width="400" height="200" style={{objectFit: 'cover'}} />
                     </div>
                   )}
                   <div className="home-event-card-body">
