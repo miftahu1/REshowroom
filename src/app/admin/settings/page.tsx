@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import ImageUploader from '@/components/ImageUploader';
+import { CldImage } from 'next-cloudinary';
 
 const firebaseConfig = {
     apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -80,8 +82,10 @@ const Settings = () => {
     const [managerEmail, setManagerEmail] = useState('');
     const [isEmailModalOpen, setEmailModalOpen] = useState(false);
     const [promoBanner, setPromoBanner] = useState({ enabled: false, text: '', link: '' });
+    const [heroImage, setHeroImage] = useState('');
     const [loading, setLoading] = useState(true);
     const [message, setMessage] = useState('');
+    const [successMessage, setSuccessMessage] = useState('');
 
     useEffect(() => {
         fetchSettings();
@@ -97,30 +101,46 @@ const Settings = () => {
         if (promoDoc.exists()) {
             setPromoBanner(promoDoc.data() as { enabled: boolean; text: string; link: string; });
         }
+        const homepageDoc = await getDoc(doc(db, 'settings', 'homepage'));
+        if (homepageDoc.exists()) {
+            setHeroImage(homepageDoc.data().heroImage || '');
+        }
         setLoading(false);
     };
 
     const handleUpdateEmail = async (newEmail: string) => {
-        setMessage('');
+        setSuccessMessage('');
         try {
             await setDoc(doc(db, 'settings', 'managerDetails'), { email: newEmail });
             setManagerEmail(newEmail);
-            fetchSettings(); // Re-fetch to confirm
+            fetchSettings();
         } catch (error) {
             console.error(error);
-            throw error; // Re-throw to be caught in the modal
+            throw error;
         }
     };
 
     const handleUpdateBanner = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMessage('');
+        setSuccessMessage('');
         try {
             await setDoc(doc(db, 'settings', 'promoBanner'), promoBanner);
-            setMessage('Promotional banner updated successfully!');
+            setSuccessMessage('Promotional banner updated successfully!');
         } catch (error) {
             setMessage('Failed to update promotional banner. Please try again.');
             console.error(error);
+        }
+    };
+
+    const handleHeroImageUpload = async (publicId: string) => {
+        setSuccessMessage('');
+        try {
+            await setDoc(doc(db, 'settings', 'homepage'), { heroImage: publicId });
+            setHeroImage(publicId);
+            setSuccessMessage('Homepage hero image updated successfully!');
+        } catch (error) {
+            console.error('Failed to update hero image:', error);
+            setMessage('Failed to update hero image. Please try again.');
         }
     };
 
@@ -129,13 +149,42 @@ const Settings = () => {
     }
 
     return (
-        <div>
+        <div className="admin-content">
+            <div className="admin-header">
+                <h1>Site Settings</h1>
+                <p>Manage global configurations and content for your website.</p>
+            </div>
+
+            {successMessage && <div className="success-message" style={{marginBottom: '1.5rem'}}>{successMessage}</div>}
+            {message && <div className="error-message" style={{marginBottom: '1.5rem'}}>{message}</div>}
+
             <div className="glass-card" style={{padding: '30px', marginBottom: '30px'}}>
                 <h3>Manager Notification Email</h3>
                 <p>This is the email address that receives notifications for new test ride bookings and contact messages.</p>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '20px' }}>
                     <p style={{ margin: 0, fontSize: '1.1rem' }}><strong>{managerEmail || "Not Set"}</strong></p>
                     <button onClick={() => setEmailModalOpen(true)} className="btn-outline" style={{padding: '8px 12px'}}><i className="fa-solid fa-pencil"></i></button>
+                </div>
+            </div>
+
+            <div className="glass-card" style={{padding: '30px', marginBottom: '30px'}}>
+                <h3>Homepage Content</h3>
+                <p>Control the dynamic content on your main homepage.</p>
+                <div className="form-group" style={{marginTop: '20px'}}>
+                    <label>Hero Section Bike Image</label>
+                    <p className="text-muted" style={{fontSize: '0.9rem', marginTop: '-5px', marginBottom: '15px'}}>Recommended aspect ratio: 4:3. This image replaces the default bike image in the hero section.</p>
+                    {heroImage && (
+                        <div style={{marginBottom: '1rem'}}>
+                            <p style={{marginBottom: '0.5rem', fontSize: '0.8rem'}}>Current Image:</p>
+                            <CldImage src={heroImage} width="400" height="300" alt="Current Hero Image" style={{borderRadius: '8px'}} />
+                        </div>
+                    )}
+                    <ImageUploader
+                        onUploadSuccess={(url, publicId) => handleHeroImageUpload(publicId)}
+                        aspectRatio={4/3}
+                        folder="re_homepage"
+                        publicId={heroImage || undefined}
+                    />
                 </div>
             </div>
 
@@ -160,7 +209,6 @@ const Settings = () => {
                     <button type="submit" className="btn-primary">Save Banner Settings</button>
                 </form>
             </div>
-            {message && <p className="success-message" style={{marginTop: '15px'}}>{message}</p>}
             <EmailUpdateModal isOpen={isEmailModalOpen} onClose={() => setEmailModalOpen(false)} currentEmail={managerEmail} onSave={handleUpdateEmail} />
         </div>
     );

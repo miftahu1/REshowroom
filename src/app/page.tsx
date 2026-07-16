@@ -56,6 +56,7 @@ export default function Home() {
   const [financeCompanies, setFinanceCompanies] = useState<any[]>([]);
   const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
   const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
+  const [heroImage, setHeroImage] = useState('');
   const [bookingFormData, setBookingFormData] = useState({
     name: '',
     phone: '',
@@ -98,6 +99,11 @@ export default function Home() {
             setPromoBanner(bannerData as any);
             setShowPromoBanner(true);
           }
+      }
+
+      const homepageDoc = await getDoc(doc(db, 'settings', 'homepage'));
+        if (homepageDoc.exists()) {
+            setHeroImage(homepageDoc.data().heroImage || '');
       }
 
       const featuredReviewsQuery = query(collection(db, "reviews"), where("featured", "==", true), orderBy("timestamp", "desc"));
@@ -320,7 +326,11 @@ export default function Home() {
               <span>Flexible finance</span>
             </div>
             <div className="hero-bike-wrap">
-              <img id="hero-bike" src="/assets/images/hunter350.png" alt="Royal Enfield Hunter 350 — hero showcase" loading="eager" />
+              {heroImage ? (
+                    <img id="hero-bike" src={buildUrl(heroImage)} alt="Royal Enfield Motorcycle Showcase" loading="eager" />
+                ) : (
+                    <img id="hero-bike" src="/assets/images/hunter350.png" alt="Royal Enfield Hunter 350 — hero showcase" loading="eager" />
+                )}
               <div className="hero-bike-shadow"></div>
             </div>
           </div>
