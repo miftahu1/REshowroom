@@ -4,61 +4,74 @@
 import { useState, useEffect } from 'react';
 import './analytics.css';
 
-// Define types for the analytics data for better type-checking
-interface Metric {
+// Types for Google Analytics Data
+interface GaMetric {
   name: string;
   value: string;
 }
 
-interface ReportRow {
-  dimensionValues: { value: string; one_value?: string }[];
-  metricValues: { value: string; one_value?: string }[];
+interface GaReportRow {
+  dimensionValues: { value: string }[];
+  metricValues: { value: string }[];
 }
 
+interface GaData {
+  mainReport?: { totals: { metricValues: GaMetric[] }[] };
+  pagesReport?: { rows: GaReportRow[] };
+}
+
+// Types for Firebase Booking Data
+interface BookingData {
+  total: number;
+  approved: number;
+  cancelled: number;
+  pending: number;
+}
+
+// Combined data structure
 interface AnalyticsData {
-  mainReport?: { totals: { metricValues: Metric[] }[] };
-  pagesReport?: { rows: ReportRow[] };
-  devicesReport?: { rows: ReportRow[] };
-  countriesReport?: { rows: ReportRow[] };
+  googleAnalytics: GaData | null;
+  firebase: BookingData | null;
 }
 
-// Reusable component for displaying a metric card
-const MetricCard = ({ title, metric }: { title: string; metric: string }) => (
+// --- Reusable Components ---
+const MetricCard = ({ title, metric, helpText }: { title: string; metric: string; helpText?: string }) => (
   <div className="analytics-card">
     <p className="card-title">{title}</p>
     <p className="card-metric">{metric}</p>
+    {helpText && <p className="text-xs text-gray-500 mt-2">{helpText}</p>}
   </div>
 );
 
-// Reusable component for displaying a data table
 const DataTable = ({ title, headers, data }: { title: string; headers: string[]; data: (string | number)[][] }) => (
-  <div className="analytics-card table-card full-width-card">
-    <h3 className="font-semibold text-lg mb-4">{title}</h3>
-    <div className="overflow-x-auto">
-      <table className="table">
-        <thead>
-          <tr>
-            {headers.map((header) => (
-              <th key={header}>{header}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, i) => (
-            <tr key={i}>
-              {row.map((cell, j) => (
-                <td key={j} className={j === row.length - 1 ? 'value-cell' : ''}>
-                  {cell}
-                </td>
+    <div className="analytics-card table-card full-width-card">
+      <h3 className="font-semibold text-lg mb-4">{title}</h3>
+      <div className="overflow-x-auto">
+        <table className="table">
+          <thead>
+            <tr>
+              {headers.map((header) => (
+                <th key={header}>{header}</th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {data.map((row, i) => (
+              <tr key={i}>
+                {row.map((cell, j) => (
+                  <td key={j} className={j === row.length - 1 ? 'value-cell' : ''}>
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
-  </div>
-);
+  );
 
+// --- Main Page Component ---
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -68,13 +81,21 @@ export default function AnalyticsPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        const res = await fetch('/api/analytics');
-        if (!res.ok) {
-          const errorData = await res.json();
-          throw new Error(errorData.details || 'Failed to fetch analytics data');
+        // Fetch from both APIs in parallel
+        const [gaResponse, fbResponse] = await Promise.all([
+          fetch('/api/analytics'),
+          fetch('/api/bookings')
+        ]);
+
+        if (!gaResponse.ok || !fbResponse.ok) {
+          throw new Error('Failed to fetch all analytics data');
         }
-        const jsonData = await res.json();
-        setData(jsonData);
+
+        const googleAnalytics = await gaResponse.json();
+        const firebase = await fbResponse.json();
+
+        setData({ googleAnalytics, firebase });
+
       } catch (e: any) {
         setError(e.message);
       } finally {
@@ -84,18 +105,12 @@ export default function AnalyticsPage() {
     fetchData();
   }, []);
 
-  // Utility to format seconds into MM:SS
-  const formatDuration = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = Math.round(seconds % 60);
-    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-  };
+  // --- Helper functions for formatting ---
+  const formatRate = (rate: number | undefined) => rate ? `${(rate * 100).toFixed(1)}%` : '0%';
 
-  // Utility to format a rate as a percentage
-  const formatRate = (rate: number) => `${(rate * 100).toFixed(1)}%`;
-
+  // --- Render Logic ---
   if (loading) {
-    return <div>Loading analytics data...</div>;
+    return <div>Loading comprehensive analytics data...</div>;
   }
 
   if (error) {
@@ -106,43 +121,43 @@ export default function AnalyticsPage() {
     return <div>No analytics data available.</div>;
   }
 
-  // Extracting metrics safely with fallbacks
-  const [activeUsers, pageViews, newUsers, sessions, avgSessionDuration, engagementRate] = data.mainReport?.totals?.[0]?.metricValues.map(m => m.value) || ['0', '0', '0', '0', '0', '0'];
-  const pagesData = data.pagesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
-  const devicesData = data.devicesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
-  const countriesData = data.countriesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
+  // --- Data Processing ---
+  const ga = data.googleAnalytics;
+  const fb = data.firebase;
+
+  const [activeUsers, pageViews, newUsers, sessions, avgSessionDuration, engagementRate] = ga?.mainReport?.totals?.[0]?.metricValues.map(m => m.value) || Array(6).fill('0');
+  const pagesData = ga?.pagesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
+
+  // Calculate Business KPIs
+  const totalVisitors = parseInt(sessions, 10);
+  const totalBookings = fb?.total || 0;
+  const visitorToBookingRatio = totalVisitors > 0 ? (totalBookings / totalVisitors) : 0;
+  const approvalRate = totalBookings > 0 ? ((fb?.approved || 0) / totalBookings) : 0;
 
   return (
     <div>
-      <h1 className="text-2xl font-bold mb-6">Website Analytics (Last 7 Days)</h1>
+      {/* --- Section 1: Business Operations --- */}
+      <h1 className="text-2xl font-bold mb-4">Business Operations (All Time)</h1>
+      <div className="analytics-grid mb-8">
+        <MetricCard title="Total Test Ride Bookings" metric={totalBookings.toString()} />
+        <MetricCard title="Approved Bookings" metric={fb?.approved.toString() || '0'} />
+        <MetricCard title="Cancelled Bookings" metric={fb?.cancelled.toString() || '0'} />
+        <MetricCard title="Pending Review" metric={fb?.pending.toString() || '0'} helpText="Action required by your team" />
+        <MetricCard title="Visitor-to-Booking Ratio" metric={formatRate(visitorToBookingRatio)} helpText="How many visitors become leads"/>
+        <MetricCard title="Booking Approval Rate" metric={formatRate(approvalRate)} helpText="Percentage of leads approved" />
+      </div>
+
+      {/* --- Section 2: Website Performance --- */}
+      <h1 className="text-2xl font-bold mb-4">Website Performance (Last 7 Days)</h1>
       <div className="analytics-grid">
         <MetricCard title="Active Users" metric={activeUsers} />
         <MetricCard title="Page Views" metric={pageViews} />
-        <MetricCard title="New Users" metric={newUsers} />
-        <MetricCard title="Total Sessions" metric={sessions} />
-        
-        {/* New Engagement Metrics */}
         <MetricCard title="Engagement Rate" metric={formatRate(parseFloat(engagementRate))} />
-        <MetricCard title="Avg. Session Duration" metric={formatDuration(parseFloat(avgSessionDuration))} />
-
         <DataTable 
           title="Top Pages by Views" 
           headers={['Page Title', 'Views']}
           data={pagesData} 
         />
-
-        <div className="analytics-grid full-width-card" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
-            <DataTable 
-              title="Audience by Device"
-              headers={['Device Type', 'Users']}
-              data={devicesData} 
-            />
-            <DataTable 
-              title="Audience by Country"
-              headers={['Country', 'Users']}
-              data={countriesData} 
-            />
-        </div>
       </div>
     </div>
   );
