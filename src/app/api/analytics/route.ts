@@ -35,7 +35,7 @@ export async function GET() {
     ];
 
     // Parallel requests to the Google Analytics Data API
-    const [mainReport, pagesReport, devicesReport, citiesReport] = await Promise.all([
+    const [mainReport, pagesReport, devicesReport, citiesReport, osReport] = await Promise.all([
       // Main metrics report
       analyticsData.properties.runReport({
         property: `properties/${propertyId}`,
@@ -71,12 +71,23 @@ export async function GET() {
           orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
         },
       }),
-      // Cities report (changed from 'country' to 'city')
+      // Cities report
       analyticsData.properties.runReport({
         property: `properties/${propertyId}`,
         requestBody: {
           dateRanges,
           dimensions: [{ name: 'city' }],
+          metrics: [{ name: 'activeUsers' }],
+          orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+          limit: '7',
+        },
+      }),
+      // Operating System report
+      analyticsData.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: 'operatingSystem' }],
           metrics: [{ name: 'activeUsers' }],
           orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
           limit: '7',
@@ -88,7 +99,8 @@ export async function GET() {
       mainReport: mainReport.data,
       pagesReport: pagesReport.data,
       devicesReport: devicesReport.data,
-      citiesReport: citiesReport.data, // Now sending city data
+      citiesReport: citiesReport.data,
+      osReport: osReport.data, // Now sending OS data
     });
 
   } catch (error) {

@@ -11,7 +11,8 @@ interface GaData {
   mainReport?: { totals: { metricValues: GaMetric[] }[] };
   pagesReport?: { rows: GaReportRow[] };
   devicesReport?: { rows: GaReportRow[] };
-  citiesReport?: { rows: GaReportRow[] }; // Changed from countries to cities
+  citiesReport?: { rows: GaReportRow[] };
+  osReport?: { rows: GaReportRow[] }; // Added for OS data
 }
 interface BookingData { total: number; approved: number; cancelled: number; pending: number; }
 interface AnalyticsData { googleAnalytics: GaData | null; firebase: BookingData | null; }
@@ -94,6 +95,7 @@ export default function AnalyticsPage() {
   const pagesData = ga?.pagesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
   const devicesData = ga?.devicesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
   const citiesData = ga?.citiesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
+  const osData = ga?.osReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
 
   const totalVisitors = parseInt(sessions, 10);
   const totalBookings = fb?.total || 0;
@@ -142,6 +144,11 @@ export default function AnalyticsPage() {
               title="Audience by City"
               headers={['City', 'Users']}
               data={citiesData} 
+            />
+            <DataTable 
+              title="Audience by OS"
+              headers={['Operating System', 'Users']}
+              data={osData} 
             />
         </div>
       </section>
