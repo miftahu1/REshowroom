@@ -9,9 +9,7 @@ export async function GET() {
       throw new Error("The GOOGLE_PRIVATE_KEY environment variable is not set.");
     }
 
-    // This is the definitive fix. Vercel stores the key as a single line, 
-    // so we must replace the literal '\n' characters with actual newlines.
-    const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+    const formattedPrivateKey = privateKey.replace(/\n/g, '\n');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -29,23 +27,69 @@ export async function GET() {
       throw new Error('Missing GOOGLE_ANALYTICS_PROPERTY_ID');
     }
 
-    const response = await analyticsData.properties.runReport({
-      property: `properties/${propertyId}`,
-      requestBody: {
-        dateRanges: [
-          {
-            startDate: '7daysAgo',
-            endDate: 'today',
-          },
-        ],
-        metrics: [
-          { name: 'activeUsers' },
-          { name: 'screenPageViews' },
-        ],
+    const dateRanges = [
+      {
+        startDate: '7daysAgo',
+        endDate: 'today',
       },
+    ];
+
+    // Parallel requests to the Google Analytics Data API
+    const [mainReport, pagesReport, devicesReport, countriesReport] = await Promise.all([
+      // Main metrics report
+      analyticsData.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges,
+          metrics: [
+            { name: 'activeUsers' },
+            { name: 'screenPageViews' },
+            { name: 'newUsers' },
+            { name: 'sessions' },
+          ],
+        },
+      }),
+      // Top pages report
+      analyticsData.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: 'pageTitle' }, { name: 'pagePath' }],
+          metrics: [{ name: 'screenPageViews' }],
+          orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
+          limit: 7,
+        },
+      }),
+      // Devices report
+      analyticsData.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: 'deviceCategory' }],
+          metrics: [{ name: 'activeUsers' }],
+          orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+        },
+      }),
+      // Countries report
+      analyticsData.properties.runReport({
+        property: `properties/${propertyId}`,
+        requestBody: {
+          dateRanges,
+          dimensions: [{ name: 'country' }],
+          metrics: [{ name: 'activeUsers' }],
+          orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
+          limit: 7,
+        },
+      }),
+    ]);
+
+    return NextResponse.json({
+      mainReport: mainReport.data,
+      pagesReport: pagesReport.data,
+      devicesReport: devicesReport.data,
+      countriesReport: countriesReport.data,
     });
 
-    return NextResponse.json(response.data);
   } catch (error) {
     console.error('Error fetching analytics data:', error);
     const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred';

@@ -1,0 +1,90 @@
+
+.analytics-grid {
+    display: grid;
+    gap: 1.5rem;
+    grid-template-columns: repeat(1, 1fr);
+}
+
+@media (min-width: 640px) {
+    .analytics-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .analytics-grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+}
+
+.card {
+    background-color: #ffffff;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+    color: #1f2937;
+}
+
+.card-title {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.card-metric {
+    font-size: 2.25rem;
+    font-weight: 700;
+    color: #111827;
+}
+
+.table-card {
+    grid-column: span 1 / span 1;
+}
+
+@media (min-width: 640px) {
+    .table-card {
+        grid-column: span 2 / span 2;
+    }
+}
+
+.full-width-card {
+    grid-column: 1 / -1;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.table thead {
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.table th {
+    text-align: left;
+    font-size: 0.75rem;
+    color: #6b7280;
+    padding: 0.75rem 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.table tbody tr:nth-child(even) {
+    background-color: #f9fafb;
+}
+
+.table td {
+    padding: 1rem;
+    font-size: 0.875rem;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.table td.value-cell {
+    font-weight: 600;
+    text-align: right;
+}
