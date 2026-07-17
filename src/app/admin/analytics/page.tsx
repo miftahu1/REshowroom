@@ -102,11 +102,11 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      <h1 class="text-3xl font-bold mb-6">Analytics Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">Analytics Dashboard</h1>
 
       {/* --- Business Operations Section --- */}
       <section className='mb-12'>
-        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Business Operations (All Time)</h2>
+        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Business Operations (All Time)</h2>
         <div className="analytics-grid">
           <MetricCard title="Total Test Ride Bookings" metric={totalBookings.toString()} />
           <MetricCard title="Approved Bookings" metric={fb?.approved.toString() || '0'} />
@@ -119,7 +119,7 @@ export default function AnalyticsPage() {
 
       {/* --- Website Performance Section --- */}
       <section>
-        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Website Performance (Last 7 Days)</h2>
+        <h2 className="text-2xl font-semibold mb-4 border-b pb-2">Website Performance (Last 7 Days)</h2>
         <div className="analytics-grid">
           <MetricCard title="Active Users" metric={activeUsers} />
           <MetricCard title="Total Sessions" metric={sessions} />
