@@ -35,8 +35,8 @@ export async function GET() {
     ];
 
     // Parallel requests to the Google Analytics Data API
-    const [mainReport, pagesReport, devicesReport, countriesReport] = await Promise.all([
-      // Main metrics report, now including engagement metrics
+    const [mainReport, pagesReport, devicesReport, citiesReport] = await Promise.all([
+      // Main metrics report
       analyticsData.properties.runReport({
         property: `properties/${propertyId}`,
         requestBody: {
@@ -44,10 +44,9 @@ export async function GET() {
           metrics: [
             { name: 'activeUsers' },
             { name: 'screenPageViews' },
-            { name: 'newUsers' },
             { name: 'sessions' },
-            { name: 'averageSessionDuration' }, // New engagement metric
-            { name: 'engagementRate' },       // New engagement metric
+            { name: 'averageSessionDuration' },
+            { name: 'engagementRate' },
           ],
         },
       }),
@@ -72,12 +71,12 @@ export async function GET() {
           orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
         },
       }),
-      // Countries report
+      // Cities report (changed from 'country' to 'city')
       analyticsData.properties.runReport({
         property: `properties/${propertyId}`,
         requestBody: {
           dateRanges,
-          dimensions: [{ name: 'country' }],
+          dimensions: [{ name: 'city' }],
           metrics: [{ name: 'activeUsers' }],
           orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
           limit: '7',
@@ -89,7 +88,7 @@ export async function GET() {
       mainReport: mainReport.data,
       pagesReport: pagesReport.data,
       devicesReport: devicesReport.data,
-      countriesReport: countriesReport.data,
+      citiesReport: citiesReport.data, // Now sending city data
     });
 
   } catch (error) {

@@ -4,35 +4,17 @@
 import { useState, useEffect } from 'react';
 import './analytics.css';
 
-// Types for Google Analytics Data
-interface GaMetric {
-  name: string;
-  value: string;
-}
-
-interface GaReportRow {
-  dimensionValues: { value: string }[];
-  metricValues: { value: string }[];
-}
-
+// --- Type Definitions ---
+interface GaMetric { name: string; value: string; }
+interface GaReportRow { dimensionValues: { value: string }[]; metricValues: { value: string }[]; }
 interface GaData {
   mainReport?: { totals: { metricValues: GaMetric[] }[] };
   pagesReport?: { rows: GaReportRow[] };
+  devicesReport?: { rows: GaReportRow[] };
+  citiesReport?: { rows: GaReportRow[] }; // Changed from countries to cities
 }
-
-// Types for Firebase Booking Data
-interface BookingData {
-  total: number;
-  approved: number;
-  cancelled: number;
-  pending: number;
-}
-
-// Combined data structure
-interface AnalyticsData {
-  googleAnalytics: GaData | null;
-  firebase: BookingData | null;
-}
+interface BookingData { total: number; approved: number; cancelled: number; pending: number; }
+interface AnalyticsData { googleAnalytics: GaData | null; firebase: BookingData | null; }
 
 // --- Reusable Components ---
 const MetricCard = ({ title, metric, helpText }: { title: string; metric: string; helpText?: string }) => (
@@ -50,18 +32,14 @@ const DataTable = ({ title, headers, data }: { title: string; headers: string[];
         <table className="table">
           <thead>
             <tr>
-              {headers.map((header) => (
-                <th key={header}>{header}</th>
-              ))}
+              {headers.map((header) => (<th key={header}>{header}</th>))}
             </tr>
           </thead>
           <tbody>
             {data.map((row, i) => (
               <tr key={i}>
                 {row.map((cell, j) => (
-                  <td key={j} className={j === row.length - 1 ? 'value-cell' : ''}>
-                    {cell}
-                  </td>
+                  <td key={j} className={j === row.length - 1 ? 'value-cell' : ''}>{cell}</td>
                 ))}
               </tr>
             ))}
@@ -69,7 +47,7 @@ const DataTable = ({ title, headers, data }: { title: string; headers: string[];
         </table>
       </div>
     </div>
-  );
+);
 
 // --- Main Page Component ---
 export default function AnalyticsPage() {
@@ -81,7 +59,6 @@ export default function AnalyticsPage() {
     async function fetchData() {
       try {
         setLoading(true);
-        // Fetch from both APIs in parallel
         const [gaResponse, fbResponse] = await Promise.all([
           fetch('/api/analytics'),
           fetch('/api/bookings')
@@ -93,7 +70,6 @@ export default function AnalyticsPage() {
 
         const googleAnalytics = await gaResponse.json();
         const firebase = await fbResponse.json();
-
         setData({ googleAnalytics, firebase });
 
       } catch (e: any) {
@@ -105,30 +81,20 @@ export default function AnalyticsPage() {
     fetchData();
   }, []);
 
-  // --- Helper functions for formatting ---
+  // -- Render & Formatting Logic --
+  if (loading) return <div>Loading comprehensive analytics data...</div>;
+  if (error) return <div className="text-red-500">Error: {error}</div>;
+  if (!data) return <div>No analytics data available.</div>;
+
   const formatRate = (rate: number | undefined) => rate ? `${(rate * 100).toFixed(1)}%` : '0%';
-
-  // --- Render Logic ---
-  if (loading) {
-    return <div>Loading comprehensive analytics data...</div>;
-  }
-
-  if (error) {
-    return <div className="text-red-500">Error: {error}</div>;
-  }
-
-  if (!data) {
-    return <div>No analytics data available.</div>;
-  }
-
-  // --- Data Processing ---
   const ga = data.googleAnalytics;
   const fb = data.firebase;
 
-  const [activeUsers, pageViews, newUsers, sessions, avgSessionDuration, engagementRate] = ga?.mainReport?.totals?.[0]?.metricValues.map(m => m.value) || Array(6).fill('0');
+  const [activeUsers, pageViews, sessions, avgSessionDuration, engagementRate] = ga?.mainReport?.totals?.[0]?.metricValues.map(m => m.value) || Array(5).fill('0');
   const pagesData = ga?.pagesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
+  const devicesData = ga?.devicesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
+  const citiesData = ga?.citiesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
 
-  // Calculate Business KPIs
   const totalVisitors = parseInt(sessions, 10);
   const totalBookings = fb?.total || 0;
   const visitorToBookingRatio = totalVisitors > 0 ? (totalBookings / totalVisitors) : 0;
@@ -136,29 +102,49 @@ export default function AnalyticsPage() {
 
   return (
     <div>
-      {/* --- Section 1: Business Operations --- */}
-      <h1 className="text-2xl font-bold mb-4">Business Operations (All Time)</h1>
-      <div className="analytics-grid mb-8">
-        <MetricCard title="Total Test Ride Bookings" metric={totalBookings.toString()} />
-        <MetricCard title="Approved Bookings" metric={fb?.approved.toString() || '0'} />
-        <MetricCard title="Cancelled Bookings" metric={fb?.cancelled.toString() || '0'} />
-        <MetricCard title="Pending Review" metric={fb?.pending.toString() || '0'} helpText="Action required by your team" />
-        <MetricCard title="Visitor-to-Booking Ratio" metric={formatRate(visitorToBookingRatio)} helpText="How many visitors become leads"/>
-        <MetricCard title="Booking Approval Rate" metric={formatRate(approvalRate)} helpText="Percentage of leads approved" />
-      </div>
+      <h1 class="text-3xl font-bold mb-6">Analytics Dashboard</h1>
 
-      {/* --- Section 2: Website Performance --- */}
-      <h1 className="text-2xl font-bold mb-4">Website Performance (Last 7 Days)</h1>
-      <div className="analytics-grid">
-        <MetricCard title="Active Users" metric={activeUsers} />
-        <MetricCard title="Page Views" metric={pageViews} />
-        <MetricCard title="Engagement Rate" metric={formatRate(parseFloat(engagementRate))} />
-        <DataTable 
-          title="Top Pages by Views" 
-          headers={['Page Title', 'Views']}
-          data={pagesData} 
-        />
-      </div>
+      {/* --- Business Operations Section --- */}
+      <section className='mb-12'>
+        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Business Operations (All Time)</h2>
+        <div className="analytics-grid">
+          <MetricCard title="Total Test Ride Bookings" metric={totalBookings.toString()} />
+          <MetricCard title="Approved Bookings" metric={fb?.approved.toString() || '0'} />
+          <MetricCard title="Cancelled Bookings" metric={fb?.cancelled.toString() || '0'} />
+          <MetricCard title="Pending Review" metric={fb?.pending.toString() || '0'} helpText="Action required by your team" />
+          <MetricCard title="Visitor-to-Booking Ratio" metric={formatRate(visitorToBookingRatio)} helpText="How many website visitors become leads"/>
+          <MetricCard title="Booking Approval Rate" metric={formatRate(approvalRate)} helpText="Percentage of valid leads approved" />
+        </div>
+      </section>
+
+      {/* --- Website Performance Section --- */}
+      <section>
+        <h2 class="text-2xl font-semibold mb-4 border-b pb-2">Website Performance (Last 7 Days)</h2>
+        <div className="analytics-grid">
+          <MetricCard title="Active Users" metric={activeUsers} />
+          <MetricCard title="Total Sessions" metric={sessions} />
+          <MetricCard title="Engagement Rate" metric={formatRate(parseFloat(engagementRate))} />
+        </div>
+        <div className="mt-6">
+            <DataTable 
+              title="Top Pages by Views" 
+              headers={['Page Title', 'Views']}
+              data={pagesData} 
+            />
+        </div>
+        <div className="analytics-grid mt-6" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+            <DataTable 
+              title="Audience by Device"
+              headers={['Device Type', 'Users']}
+              data={devicesData} 
+            />
+            <DataTable 
+              title="Audience by City"
+              headers={['City', 'Users']}
+              data={citiesData} 
+            />
+        </div>
+      </section>
     </div>
   );
 }
