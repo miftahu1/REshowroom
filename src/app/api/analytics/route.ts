@@ -9,7 +9,7 @@ export async function GET() {
       throw new Error("The GOOGLE_PRIVATE_KEY environment variable is not set.");
     }
 
-    const formattedPrivateKey = privateKey.replace(/\n/g, '\n');
+    const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
 
     const auth = new google.auth.GoogleAuth({
       credentials: {
@@ -57,7 +57,7 @@ export async function GET() {
           dimensions: [{ name: 'pageTitle' }, { name: 'pagePath' }],
           metrics: [{ name: 'screenPageViews' }],
           orderBys: [{ metric: { metricName: 'screenPageViews' }, desc: true }],
-          limit: 7,
+          limit: '7',
         },
       }),
       // Devices report
@@ -78,7 +78,7 @@ export async function GET() {
           dimensions: [{ name: 'country' }],
           metrics: [{ name: 'activeUsers' }],
           orderBys: [{ metric: { metricName: 'activeUsers' }, desc: true }],
-          limit: 7,
+          limit: '7',
         },
       }),
     ]);
