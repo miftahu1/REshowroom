@@ -36,7 +36,7 @@ export async function GET() {
 
     // Parallel requests to the Google Analytics Data API
     const [mainReport, pagesReport, devicesReport, countriesReport] = await Promise.all([
-      // Main metrics report
+      // Main metrics report, now including engagement metrics
       analyticsData.properties.runReport({
         property: `properties/${propertyId}`,
         requestBody: {
@@ -46,6 +46,8 @@ export async function GET() {
             { name: 'screenPageViews' },
             { name: 'newUsers' },
             { name: 'sessions' },
+            { name: 'averageSessionDuration' }, // New engagement metric
+            { name: 'engagementRate' },       // New engagement metric
           ],
         },
       }),

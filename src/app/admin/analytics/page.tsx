@@ -24,7 +24,7 @@ interface AnalyticsData {
 
 // Reusable component for displaying a metric card
 const MetricCard = ({ title, metric }: { title: string; metric: string }) => (
-  <div className="card">
+  <div className="analytics-card">
     <p className="card-title">{title}</p>
     <p className="card-metric">{metric}</p>
   </div>
@@ -32,7 +32,7 @@ const MetricCard = ({ title, metric }: { title: string; metric: string }) => (
 
 // Reusable component for displaying a data table
 const DataTable = ({ title, headers, data }: { title: string; headers: string[]; data: (string | number)[][] }) => (
-  <div className="card table-card full-width-card">
+  <div className="analytics-card table-card full-width-card">
     <h3 className="font-semibold text-lg mb-4">{title}</h3>
     <div className="overflow-x-auto">
       <table className="table">
@@ -84,6 +84,16 @@ export default function AnalyticsPage() {
     fetchData();
   }, []);
 
+  // Utility to format seconds into MM:SS
+  const formatDuration = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.round(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+
+  // Utility to format a rate as a percentage
+  const formatRate = (rate: number) => `${(rate * 100).toFixed(1)}%`;
+
   if (loading) {
     return <div>Loading analytics data...</div>;
   }
@@ -97,7 +107,7 @@ export default function AnalyticsPage() {
   }
 
   // Extracting metrics safely with fallbacks
-  const [activeUsers, pageViews, newUsers, sessions] = data.mainReport?.totals?.[0]?.metricValues.map(m => m.value) || ['0', '0', '0', '0'];
+  const [activeUsers, pageViews, newUsers, sessions, avgSessionDuration, engagementRate] = data.mainReport?.totals?.[0]?.metricValues.map(m => m.value) || ['0', '0', '0', '0', '0', '0'];
   const pagesData = data.pagesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
   const devicesData = data.devicesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
   const countriesData = data.countriesReport?.rows?.map(row => [row.dimensionValues[0].value, parseInt(row.metricValues[0].value, 10)]) || [];
@@ -110,6 +120,10 @@ export default function AnalyticsPage() {
         <MetricCard title="Page Views" metric={pageViews} />
         <MetricCard title="New Users" metric={newUsers} />
         <MetricCard title="Total Sessions" metric={sessions} />
+        
+        {/* New Engagement Metrics */}
+        <MetricCard title="Engagement Rate" metric={formatRate(parseFloat(engagementRate))} />
+        <MetricCard title="Avg. Session Duration" metric={formatDuration(parseFloat(avgSessionDuration))} />
 
         <DataTable 
           title="Top Pages by Views" 
