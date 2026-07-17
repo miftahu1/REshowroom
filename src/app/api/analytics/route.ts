@@ -4,11 +4,19 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
+    const privateKey = process.env.GOOGLE_PRIVATE_KEY;
+    if (!privateKey) {
+      throw new Error("The GOOGLE_PRIVATE_KEY environment variable is not set.");
+    }
+
+    // This is the definitive fix. Vercel stores the key as a single line, 
+    // so we must replace the literal '\n' characters with actual newlines.
+    const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+
     const auth = new google.auth.GoogleAuth({
       credentials: {
         client_email: process.env.GOOGLE_CLIENT_EMAIL,
-        // No more string replacement. Pass the key directly from the environment.
-        private_key: process.env.GOOGLE_PRIVATE_KEY,
+        private_key: formattedPrivateKey,
       },
       scopes: ['https://www.googleapis.com/auth/analytics.readonly'],
     });
