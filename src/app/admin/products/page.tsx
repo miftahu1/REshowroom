@@ -174,7 +174,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
                             </div>
                             <div className="form-group">
                                 <label>Price (Starting From)</label>
-                                <input type="text" name="price" value={formState.price} onChange={handleInputChange} placeholder="e.g., 1.93 L" />
+                                <input type="text" name="price" value={formState.price} onChange={handleInputChange} placeholder="e.g., 150000" />
                             </div>
                              <div className="form-group">
                                 <label>Category</label>

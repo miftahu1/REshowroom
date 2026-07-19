@@ -11,6 +11,7 @@ import ReceiptLookup from './components/ReceiptLookup';
 import StatCounter from '@/components/StatCounter';
 import { CldImage } from 'next-cloudinary';
 import { CampaignData, ProductData } from '@/types';
+import { getEffectivePrice } from '@/lib/pricing';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -104,7 +105,7 @@ export default function Home() {
     const fetchSiteData = async () => {
       const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
       const productsSnapshot = await getDocs(productsQuery);
-      setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductData)));
+      setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), price: doc.data().price || 0 } as ProductData)));
 
       const campaignsQuery = query(collection(db, "campaigns"), where("enabled", "==", true));
       const campaignsSnapshot = await getDocs(campaignsQuery);
@@ -119,6 +120,7 @@ export default function Home() {
         // Assuming highest priority is the first one for now.
         setActiveCampaign(activeCampaigns[0]);
       }
+      setCampaigns(activeCampaigns);
 
       const financeCompaniesQuery = query(collection(db, "finance_companies"), where("isActive", "==", true), orderBy("displayOrder"));
       const financeCompaniesSnapshot = await getDocs(financeCompaniesQuery);
@@ -403,12 +405,14 @@ export default function Home() {
         </div>
         {activeCampaign && <CampaignBanner campaign={activeCampaign} />}
         <div className="models-grid">
-            {products.map(product => (
+            {products.map(product => {
+                const pricing = getEffectivePrice(product, campaigns);
+                return (
                  <Link key={product.id} href={`/model/${product.id}`} passHref>
                     <article className="model-card" role="article" id={product.name === 'Hunter 350' ? 'hunter-card' : undefined}>
                     <div className="model-card-img">
                         <CldImage src={product.imageUrl} width="400" height="400" alt={`Royal Enfield ${product.name}`} loading="lazy" format="auto" quality="auto" />
-                        {product.badge && <span className="model-card-badge">{product.badge}</span>}
+                        {pricing.badge?.text && <span className="model-card-badge" style={{ backgroundColor: pricing.badge?.color || 'var(--gold)' }}>{pricing.badge.text}</span>}
                     </div>
                     <div className="model-card-body">
                         <h3 className="model-card-name">{product.name}</h3>
@@ -424,13 +428,22 @@ export default function Home() {
                             </div>
                         )}
                         <div className="model-card-footer">
-                        <div className="model-price">{product.price} <span>onwards</span></div>
+                            <div className="model-price">
+                                {pricing.finalPrice !== pricing.originalPrice ? (
+                                    <>
+                                        <span className="original-price" style={{textDecoration: 'line-through', color: 'var(--text-muted)'}}>₹{pricing.formattedOriginalPrice}</span>
+                                        <span className="final-price">₹{pricing.formattedFinalPrice}</span>
+                                    </>
+                                ) : (
+                                    <span>₹{pricing.formattedOriginalPrice} onwards</span>
+                                )}
+                            </div>
                         <button className="model-explore-btn">Explore <i className="fa-solid fa-arrow-right"></i></button>
                         </div>
                     </div>
                     </article>
               </Link>
-            ))}
+            ) })}
         </div>
       </section>
 
