@@ -100,6 +100,12 @@ const BookingsManagement = () => {
         const bookingRef = doc(db, "bookings", updatedBooking.id);
         try {
             const { id, ...bookingData } = updatedBooking;
+            const originalBooking = bookings.find(b => b.id === id);
+
+            if (originalBooking && !originalBooking.userPreferredDate && originalBooking.date !== bookingData.date) {
+                bookingData.userPreferredDate = originalBooking.date;
+            }
+
             await updateDoc(bookingRef, bookingData);
             fetchData(); 
         } catch (error) {
@@ -107,8 +113,7 @@ const BookingsManagement = () => {
         }
     };
 
-    const getStyledEmailBody = (status: 'Approved' | 'Disapproved', booking: any, managerNote?: string) => {
-        const currentYear = new Date().getFullYear();
+    const getStyledEmailBody = (status: 'Approved' | 'Disapproved', booking: any) => {
         const approvedStyles = {
             headingColor: '#32d74b',
             badgeBg: 'rgba(50, 215, 75, 0.15)',
@@ -135,10 +140,15 @@ const BookingsManagement = () => {
             `;
         }
         
+        const isRescheduled = booking.userPreferredDate && booking.userPreferredDate !== booking.date;
+        const reschedulingText = isRescheduled ? `
+            <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Please note, your preferred date of <strong>${booking.userPreferredDate}</strong> has been rescheduled to <strong>${booking.date}</strong> due to scheduling constraints. We apologize for any inconvenience.</p>
+        ` : '';
+
         const mainContent = status === 'Approved' ? `
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Great news! Your test ride for the <strong>Royal Enfield ${booking.model}</strong> has been confirmed.</p>
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Our team will contact you shortly to finalize the details for your ride on or around <strong>${booking.date || 'your selected date'}</strong>.</p>
-            <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">However, due to scheduling constraints, we have rescheduled your test ride to the following date: <strong>${booking.date}</strong>. We apologize for any inconvenience this may cause.</p>
+            ${reschedulingText}
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Get ready to feel the thunder!</p>
         ` : `
             <p style="font-size: 16px; color: #e0e0e0; line-height: 1.6;">Thank you for your interest in the <strong>Royal Enfield ${booking.model}</strong>.</p>
