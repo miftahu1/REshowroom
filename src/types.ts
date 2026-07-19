@@ -7,7 +7,7 @@ export interface ProductData {
     id?: string;
     name: string;
     engine: string;
-    price: string;
+    price: number;
     financeEnabled: boolean;
     imageUrl: string; // Cloudinary Public ID
     badge: string;

@@ -55,7 +55,14 @@ const ModelsPage = () => {
       try {
         const modelsQuery = query(collection(db, "products"), orderBy("createdAt"));
         const modelsSnapshot = await getDocs(modelsQuery);
-        const models = modelsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as ProductData);
+        const models = modelsSnapshot.docs.map(doc => {
+            const data = doc.data();
+            return { 
+                id: doc.id, 
+                ...data,
+                price: data.price || 0 // Ensure price is a number
+            } as ProductData;
+        });
         setAllModels(models);
         setFilteredModels(models);
 
@@ -103,7 +110,7 @@ const ModelsPage = () => {
       </div>
 
         {loading ? (
-            <div style={{textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)'}}>Loading models...</div>
+             <div className="page-shell loading-container"><div></div><div></div><div></div></div>
         ) : (
             <div className="models-grid">
                 {filteredModels.map(model => {
@@ -124,14 +131,14 @@ const ModelsPage = () => {
                                 <p className="model-card-engine">{model.engine}</p>
                                 
                                 <div className="model-card-footer">
-                                    <div className="model-price">
+                                     <div className="model-price">
                                         {pricing.finalPrice !== pricing.originalPrice ? (
                                             <>
-                                                <span className="original-price" style={{fontSize: '0.9rem'}}>₹{pricing.originalPrice}</span>
-                                                <span className="final-price" style={{fontSize: '1.2rem'}}>₹{pricing.finalPrice}</span>
+                                                <span className="original-price" style={{textDecoration: 'line-through', fontSize: '0.9rem', color: 'var(--text-muted)'}}>₹{pricing.formattedOriginalPrice}</span>
+                                                <span className="final-price" style={{fontSize: '1.2rem'}}>₹{pricing.formattedFinalPrice}</span>
                                             </>
                                         ) : (
-                                            <span className="final-price" style={{fontSize: '1.2rem'}}>₹{pricing.originalPrice} onwards</span>
+                                            <span className="final-price" style={{fontSize: '1.2rem'}}>₹{pricing.formattedOriginalPrice} onwards</span>
                                         )}
                                     </div>
                                     <div className="model-explore-btn">Explore &rarr;</div>

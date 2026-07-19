@@ -1,4 +1,5 @@
-import { ProductData, CampaignData } from '@/types'; // Assuming you have a types file
+import { ProductData, CampaignData } from '@/types';
+import { formatPrice } from '@/utils/format';
 
 export const getEffectivePrice = (product: ProductData, campaigns: CampaignData[]) => {
     const now = new Date();
@@ -31,7 +32,7 @@ export const getEffectivePrice = (product: ProductData, campaigns: CampaignData[
     for (const campaign of applicableCampaigns) {
         let campaignDiscountValue = 0;
         if (campaign.discountType === 'percentage') {
-            campaignDiscountValue = (parseFloat(product.price) * campaign.discountValue) / 100;
+            campaignDiscountValue = (product.price * campaign.discountValue) / 100;
         } else {
             campaignDiscountValue = campaign.discountValue;
         }
@@ -39,7 +40,7 @@ export const getEffectivePrice = (product: ProductData, campaigns: CampaignData[
         let currentDiscountValue = 0;
         if (effectiveDiscount) {
             if (effectiveDiscount.type === 'percentage') {
-                currentDiscountValue = (parseFloat(product.price) * effectiveDiscount.value) / 100;
+                currentDiscountValue = (product.price * effectiveDiscount.value) / 100;
             } else {
                 currentDiscountValue = effectiveDiscount.value;
             }
@@ -64,23 +65,25 @@ export const getEffectivePrice = (product: ProductData, campaigns: CampaignData[
             offerTitle: null,
             offerSource: null,
             countdown: null,
-            badge: null
+            badge: null,
+            formattedOriginalPrice: formatPrice(product.price),
+            formattedFinalPrice: formatPrice(product.price)
         };
     }
 
-    let finalPrice = parseFloat(product.price);
+    let finalPrice = product.price;
     let discountPercentage = 0;
     if (effectiveDiscount.type === 'percentage') {
         discountPercentage = effectiveDiscount.value;
         finalPrice -= (finalPrice * discountPercentage) / 100;
     } else {
         finalPrice -= effectiveDiscount.value;
-        discountPercentage = (effectiveDiscount.value / parseFloat(product.price)) * 100;
+        discountPercentage = (effectiveDiscount.value / product.price) * 100;
     }
 
     return {
         originalPrice: product.price,
-        finalPrice: finalPrice.toFixed(2),
+        finalPrice: finalPrice,
         discountPercentage: Math.round(discountPercentage),
         offerTitle: effectiveDiscount.title,
         offerSource: effectiveDiscount.source,
@@ -88,6 +91,8 @@ export const getEffectivePrice = (product: ProductData, campaigns: CampaignData[
         badge: {
             text: `${Math.round(discountPercentage)}% OFF`,
             color: effectiveDiscount.badgeColor || '#FF0000'
-        }
+        },
+        formattedOriginalPrice: formatPrice(product.price),
+        formattedFinalPrice: formatPrice(finalPrice)
     };
 };

@@ -40,17 +40,6 @@ interface FinanceSettings {
     currencySymbol: string;
 }
 
-// Helper function to parse price string
-const parsePrice = (priceString: string): number => {
-    const cleanedString = priceString.toLowerCase().replace(/\s/g, '');
-    const numberPart = parseFloat(cleanedString);
-    if (isNaN(numberPart)) return 0;
-    if (cleanedString.includes('L')) {
-        return numberPart * 100000;
-    }
-    return numberPart;
-};
-
 const FinancePage = () => {
     const [companies, setCompanies] = useState<FinanceCompany[]>([]);
     const [bikes, setBikes] = useState<BikeModel[]>([]);
@@ -72,14 +61,14 @@ const FinancePage = () => {
                 const bikesQuery = query(collection(db, "products"), where("financeEnabled", "==", true));
                 const bikesSnap = await getDocs(bikesQuery);
                 const bikeData = bikesSnap.docs.map(doc => {
-                    const priceValue = doc.data().price || '0';
+                    const data = doc.data();
                     return {
-                        id: doc.id, 
-                        name: doc.data().name, 
-                        price: parsePrice(priceValue)
-                    }
+                        id: doc.id,
+                        name: data.name,
+                        price: data.price || 0
+                    };
                 });
-                setBikes(bikeData);
+                setBikes(bikeData as BikeModel[]);
 
                 // In a real app, you would fetch settings from a 'settings' collection
                 setSettings({ defaultDisclaimer: 'EMI is estimated and subject to final approval.', currencySymbol: '₹' });
@@ -98,7 +87,7 @@ const FinancePage = () => {
         if (company.allowedTenures?.length > 0) {
             setTenure(company.allowedTenures[0]);
         } else {
-            setTenure(0) // Reset tenure if not allowed
+            setTenure(0); // Reset tenure if not allowed
         }
         setSelectedBike(null); // Reset bike selection
         setDownPayment(0);
@@ -166,7 +155,6 @@ const FinancePage = () => {
                                     <div className="input-group">
                                         <label>Down Payment ({settings?.currencySymbol}{downPayment.toLocaleString('en-IN')})</label>
                                         <input type="range" min={0} max={selectedBike.price * 0.8} value={downPayment} onChange={(e) => setDownPayment(Number(e.target.value))} />
-                                        
                                     </div>
                                     <div className="input-group">
                                         <label>Loan Amount</label>

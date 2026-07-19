@@ -45,7 +45,12 @@ const ModelDetailPage = () => {
                 const docRef = doc(db, "products", id as string);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    setProduct({ id: docSnap.id, ...docSnap.data() } as ProductData);
+                    const data = docSnap.data();
+                    setProduct({ 
+                        id: docSnap.id, 
+                        ...data, 
+                        price: data.price || 0 
+                    } as ProductData);
                 } else {
                     setNotFound(true);
                 }
@@ -62,7 +67,7 @@ const ModelDetailPage = () => {
     }, [id]);
 
     if (loading) {
-        return <div className="loading-container" style={{minHeight: '100vh', display: 'grid', placeContent: 'center'}}><div className="loading-spinner"></div></div>;
+        return <div className="page-shell loading-container"><div></div><div></div><div></div></div>;
     }
 
     if (notFound) {
@@ -110,12 +115,12 @@ const ModelDetailPage = () => {
                     <div className="model-price" style={{marginBottom: '32px'}}>
                          {pricing.finalPrice !== pricing.originalPrice ? (
                             <div>
-                                <span className="original-price">₹{pricing.originalPrice}</span>
-                                <span className="final-price">₹{pricing.finalPrice} onwards</span>
+                                <span className="original-price" style={{textDecoration: 'line-through', color: 'var(--text-muted)', marginRight: '12px'}}>₹{pricing.formattedOriginalPrice}</span>
+                                <span className="final-price">₹{pricing.formattedFinalPrice} onwards</span>
                             </div>
                         ) : (
                             <div>
-                                <span className="final-price">₹{pricing.originalPrice} onwards</span>
+                                <span className="final-price">₹{pricing.formattedOriginalPrice} onwards</span>
                             </div>
                         )}
                     </div>
