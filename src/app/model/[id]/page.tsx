@@ -24,6 +24,13 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
+interface TimeLeft {
+    days?: number;
+    hours?: number;
+    minutes?: number;
+    seconds?: number;
+}
+
 const ModelDetailPage = () => {
     const { id } = useParams();
     const [product, setProduct] = useState<ProductData | null>(null);
@@ -122,9 +129,9 @@ const ModelDetailPage = () => {
     };
 
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
-    const calculateTimeLeft = () => {
+    const calculateTimeLeft = (): TimeLeft => {
         const difference = +new Date(endDate) - +new Date();
-        let timeLeft = {};
+        let timeLeft: TimeLeft = {};
 
         if (difference > 0) {
             timeLeft = {
@@ -138,7 +145,7 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
         return timeLeft;
     };
 
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+    const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft());
 
     useEffect(() => {
         const timer = setTimeout(() => {
