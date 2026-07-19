@@ -10,6 +10,7 @@ import emailjs from '@emailjs/browser';
 import ReceiptLookup from './components/ReceiptLookup';
 import StatCounter from '@/components/StatCounter';
 import { CldImage } from 'next-cloudinary';
+import { CampaignData, ProductData } from '@/types';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -47,11 +48,29 @@ const PromoBanner = ({ banner, onClose }: { banner: { enabled: boolean, text: st
     );
 };
 
+const CampaignBanner = ({ campaign }: { campaign: CampaignData }) => {
+    if (!campaign) return null;
+
+    return (
+        <div className="campaign-banner-home">
+            <p>
+                <span>🎉</span> {campaign.campaignName} <span>🎉</span>
+            </p>
+            <p>
+                UP TO {campaign.discountValue}% OFF
+            </p>
+            <Link href="/models" className="btn-primary">Explore Offers</Link>
+        </div>
+    );
+};
+
 export default function Home() {
   const main = useRef(null);
   const [isMenuOpen, setMenuOpen] = useState(false);
   const [isReceiptModalOpen, setReceiptModalOpen] = useState(false);
-  const [products, setProducts] = useState<any[]>([]);
+  const [products, setProducts] = useState<ProductData[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
+  const [activeCampaign, setActiveCampaign] = useState<CampaignData | null>(null);
   const [financeCompanies, setFinanceCompanies] = useState<any[]>([]);
   const [featuredReviews, setFeaturedReviews] = useState<any[]>([]);
   const [featuredEvents, setFeaturedEvents] = useState<any[]>([]);
@@ -85,7 +104,21 @@ export default function Home() {
     const fetchSiteData = async () => {
       const productsQuery = query(collection(db, "products"), orderBy("createdAt"));
       const productsSnapshot = await getDocs(productsQuery);
-      setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      setProducts(productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ProductData)));
+
+      const campaignsQuery = query(collection(db, "campaigns"), where("enabled", "==", true));
+      const campaignsSnapshot = await getDocs(campaignsQuery);
+      const activeCampaigns = campaignsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as CampaignData)).filter(c => {
+          const now = new Date();
+          const startDate = new Date(c.startDate);
+          const endDate = new Date(c.endDate);
+          return now >= startDate && now <= endDate;
+      });
+
+      if(activeCampaigns.length > 0) {
+        // Assuming highest priority is the first one for now.
+        setActiveCampaign(activeCampaigns[0]);
+      }
 
       const financeCompaniesQuery = query(collection(db, "finance_companies"), where("isActive", "==", true), orderBy("displayOrder"));
       const financeCompaniesSnapshot = await getDocs(financeCompaniesQuery);
@@ -284,6 +317,7 @@ export default function Home() {
 
   return (
     <div ref={main}>
+      {activeCampaign && <CampaignBanner campaign={activeCampaign} />}
       {showPromoBanner && <PromoBanner banner={promoBanner} onClose={() => setShowPromoBanner(false)} />}
       <ReceiptLookup isOpen={isReceiptModalOpen} onClose={() => setReceiptModalOpen(false)} />
       <section id="hero" aria-label="Hero">

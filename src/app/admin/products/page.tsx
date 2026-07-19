@@ -18,6 +18,16 @@ interface ProductData {
     specs: Spec[];
     category: string;
     createdAt?: FieldValue;
+    offer?: {
+        enabled: boolean;
+        type: 'percentage' | 'fixed';
+        value: number;
+        title: string;
+        startDate: string;
+        endDate: string;
+        countdownEnabled: boolean;
+        badgeColor: string;
+    };
 }
 
 const categories = [
@@ -47,7 +57,17 @@ const db = getFirestore(app);
 // Modal Component
 const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, onClose: () => void, product: ProductData | null, onSave: () => void }) => {
     const getInitialFormState = (): Omit<ProductData, 'id' | 'createdAt'> => ({
-        name: '', engine: '', price: '', financeEnabled: false, imageUrl: '', badge: '', specs: [], category: 'classic'
+        name: '', engine: '', price: '', financeEnabled: false, imageUrl: '', badge: '', specs: [], category: 'classic',
+        offer: {
+            enabled: false,
+            type: 'percentage',
+            value: 0,
+            title: '',
+            startDate: '',
+            endDate: '',
+            countdownEnabled: false,
+            badgeColor: '#FF0000'
+        }
     });
 
     const [formState, setFormState] = useState<Omit<ProductData, 'id' | 'createdAt'>>(getInitialFormState());
@@ -55,7 +75,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
 
     useEffect(() => {
         if (isOpen) {
-            setFormState(product ? { ...product } : getInitialFormState());
+            setFormState(product ? { ...getInitialFormState(), ...product } : getInitialFormState());
         }
     }, [isOpen, product]);
 
@@ -67,6 +87,20 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
         } else {
             setFormState(prevState => ({ ...prevState, [name]: value }));
         }
+    };
+
+    const handleOfferChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+        const { name, value, type } = e.target;
+        const isCheckbox = type === 'checkbox';
+        const { checked } = e.target as HTMLInputElement;
+
+        setFormState(prevState => ({
+            ...prevState,
+            offer: {
+                ...prevState.offer!,
+                [name]: isCheckbox ? checked : value
+            }
+        }));
     };
 
     const handleImageUpload = (url: string, publicId: string) => {
@@ -168,6 +202,49 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
                                 </div>
                             ))}
                             <button type="button" onClick={addSpecField} className="btn-outline mt-2">Add Spec</button>
+                        </div>
+
+                        <div style={{marginTop: '1.5rem'}}>
+                            <h4 style={{fontFamily: 'var(--font-heading)', fontSize: '1.4rem', marginBottom: '1rem'}}>Discount Offer</h4>
+                             <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                <label style={{ marginBottom: 0 }}>Offer Enabled</label>
+                                <input type="checkbox" name="enabled" checked={formState.offer?.enabled} onChange={handleOfferChange} style={{width: '1.2rem', height: '1.2rem'}}/>
+                            </div>
+                            {formState.offer?.enabled && (
+                                <div className="form-grid" style={{ gridTemplateColumns: '1fr 1fr', gap: '16px', marginTop: '1rem' }}>
+                                    <div className="form-group">
+                                        <label>Offer Title</label>
+                                        <input type="text" name="title" value={formState.offer.title} onChange={handleOfferChange} placeholder="e.g., Limited Time Offer" />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Offer Type</label>
+                                        <select name="type" value={formState.offer.type} onChange={handleOfferChange}>
+                                            <option value="percentage">Percentage</option>
+                                            <option value="fixed">Fixed Amount</option>
+                                        </select>
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Discount Value</label>
+                                        <input type="number" name="value" value={formState.offer.value} onChange={handleOfferChange} placeholder="e.g., 10 or 15000" />
+                                    </div>
+                                    <div className a="form-group">
+                                        <label>Offer Badge Color</label>
+                                        <input type="color" name="badgeColor" value={formState.offer.badgeColor} onChange={handleOfferChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Offer Start Date</label>
+                                        <input type="date" name="startDate" value={formState.offer.startDate} onChange={handleOfferChange} />
+                                    </div>
+                                    <div className="form-group">
+                                        <label>Offer End Date</label>
+                                        <input type="date" name="endDate" value={formState.offer.endDate} onChange={handleOfferChange} />
+                                    </div>
+                                     <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                        <label style={{ marginBottom: 0 }}>Countdown Enabled</label>
+                                        <input type="checkbox" name="countdownEnabled" checked={formState.offer.countdownEnabled} onChange={handleOfferChange} style={{width: '1.2rem', height: '1.2rem'}}/>
+                                    </div>
+                                </div>
+                            )}
                         </div>
 
                         <div className="modal-footer" style={{paddingTop: '1.5rem', marginTop: '1.5rem', borderTop: '1px solid var(--glass-border)'}}>
@@ -279,6 +356,7 @@ const ProductManagement = () => {
                                 <th>Category</th>
                                 <th>Price</th>
                                 <th>Finance</th>
+                                <th>Offer</th>
                                 <th style={{ textAlign: 'right' }}>Actions</th>
                             </tr>
                         </thead>
@@ -296,6 +374,7 @@ const ProductManagement = () => {
                                     <td><span className="event-admin-type-badge event-type-offer">{p.category}</span></td>
                                     <td>{p.price}</td>
                                     <td><span className={`status-badge ${p.financeEnabled ? 'status-approved' : 'status-pending'}`}>{p.financeEnabled ? 'Yes' : 'No'}</span></td>
+                                    <td><span className={`status-badge ${p.offer?.enabled ? 'status-approved' : 'status-pending'}`}>{p.offer?.enabled ? 'Active' : 'Inactive'}</span></td>
                                     <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
                                         <button onClick={() => handleEditClick(p)} className="btn-outline"><i className="fas fa-pencil-alt"></i> Edit</button>
                                         <button onClick={() => handleDeleteProduct(p)} className="btn-delete"><i className="fas fa-trash"></i> Delete</button>
@@ -303,7 +382,7 @@ const ProductManagement = () => {
                                 </tr>
                             )) : (
                                 <tr>
-                                    <td colSpan={6} style={{textAlign: 'center', padding: '4rem'}}>
+                                    <td colSpan={7} style={{textAlign: 'center', padding: '4rem'}}>
                                         <p>No models found for '{activeFilter}'.</p>
                                     </td>
                                 </tr>

@@ -67,6 +67,12 @@ const AdminLayout = ({ children }: { children: React.ReactNode }) => {
                         <li><Link href="/admin/messages" className={pathname.startsWith('/admin/messages') ? 'active' : ''}><i className="fas fa-envelope"></i> Messages</Link></li>
                         <li><Link href="/admin/reviews" className={pathname.startsWith('/admin/reviews') ? 'active' : ''}><i className="fas fa-star"></i> Reviews</Link></li>
                         <li><Link href="/admin/products" className={pathname.startsWith('/admin/products') ? 'active' : ''}><i className="fas fa-motorcycle"></i> Products</Link></li>
+                        <li className={pathname.startsWith('/admin/marketing') ? 'active' : ''}>
+                            <Link href="/admin/marketing"><i className="fas fa-bullhorn"></i> Marketing</Link>
+                            <ul className="submenu">
+                                <li><Link href="/admin/marketing" className={pathname === '/admin/marketing' ? 'sub-active' : ''}>Discount Campaigns</Link></li>
+                            </ul>
+                        </li>
                         <li className={pathname.startsWith('/admin/finance') ? 'active' : ''}>
                             <Link href="/admin/finance/companies"><i className="fas fa-hand-holding-usd"></i> Finance</Link>
                             <ul className="submenu">

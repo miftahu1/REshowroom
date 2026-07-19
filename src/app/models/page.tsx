@@ -6,6 +6,8 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getFirestore, collection, getDocs, query, orderBy } from "firebase/firestore";
 import '../globals.css';
 import { buildUrl } from '../../utils/cloudinary';
+import { getEffectivePrice } from '../../lib/pricing';
+import { ProductData, CampaignData } from '../../types';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -21,17 +23,6 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
-interface Model {
-  id: string;
-  name: string;
-  engine: string;
-  price: string;
-  imageUrl: string;
-  category: string;
-  badge?: string;
-  specs?: { label: string; value: string }[];
-}
-
 const filterOptions = [
     { id: 'all', name: 'All Models', icon: 'fa-solid fa-motorcycle' },
     { id: 'classic', name: 'Classic', icon: 'fa-solid fa-chess-knight' },
@@ -41,27 +32,34 @@ const filterOptions = [
 ];
 
 const ModelsPage = () => {
-  const [allModels, setAllModels] = useState<Model[]>([]);
-  const [filteredModels, setFilteredModels] = useState<Model[]>([]);
+  const [allModels, setAllModels] = useState<ProductData[]>([]);
+  const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
+  const [filteredModels, setFilteredModels] = useState<ProductData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState('all');
 
   useEffect(() => {
-    const fetchModels = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
         const modelsQuery = query(collection(db, "products"), orderBy("createdAt"));
         const modelsSnapshot = await getDocs(modelsQuery);
-        const models = modelsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as Model);
+        const models = modelsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as ProductData);
         setAllModels(models);
         setFilteredModels(models);
+
+        const campaignsQuery = query(collection(db, "campaigns"));
+        const campaignsSnapshot = await getDocs(campaignsQuery);
+        const campaigns = campaignsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as CampaignData);
+        setCampaigns(campaigns);
+
       } catch (error) {
-          console.error("Error fetching models: ", error);
+          console.error("Error fetching data: ", error);
       } finally {
           setLoading(false);
       }
     };
-    fetchModels();
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -97,38 +95,82 @@ const ModelsPage = () => {
             <div style={{textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)'}}>Loading models...</div>
         ) : (
             <div className="models-grid">
-                {filteredModels.map(model => (
-                    <Link href={`/model/${model.id}`} key={model.id} className="model-card-link">
-                        <div className="model-card">
-                            <div className="model-card-img">
-                                <img src={buildUrl(model.imageUrl)} alt={model.name} />
-                                {model.badge && <div className="model-card-badge">{model.badge}</div>}
-                            </div>
-                            <div className="model-card-body">
-                            <h3 className="model-card-name">{model.name}</h3>
-                            <p className="model-card-engine">{model.engine}</p>
-                            {model.specs && (
-                                <div className="model-card-specs">
-                                    {model.specs.map((spec, index) => spec.value && spec.label && (
-                                        <div key={index} className="model-spec">
-                                            <span className="model-spec-val">{spec.value}</span>
-                                            <span className="model-spec-label">{spec.label}</span>
+                {filteredModels.map(model => {
+                    const pricing = getEffectivePrice(model, campaigns);
+                    return (
+                        <Link href={`/model/${model.id}`} key={model.id} className="model-card-link">
+                            <div className="model-card">
+                                <div className="model-card-img">
+                                    <img src={buildUrl(model.imageUrl)} alt={model.name} />
+                                    {pricing.offerTitle && (
+                                        <div className="model-card-badge" style={{ backgroundColor: pricing.badge?.color }}>
+                                            {pricing.badge?.text}
                                         </div>
-                                    ))}
+                                    )}
                                 </div>
-                            )}
-                            <div className="model-card-footer">
-                                <div className="model-price">{model.price}</div>
-                                <div className="model-explore-btn">Explore &rarr;</div>
+                                <div className="model-card-body">
+                                <h3 className="model-card-name">{model.name}</h3>
+                                <p className="model-card-engine">{model.engine}</p>
+                                
+                                <div className="model-card-footer">
+                                    <div className="model-price">
+                                        {pricing.finalPrice !== pricing.originalPrice ? (
+                                            <>
+                                                <span className="original-price">₹{pricing.originalPrice}</span>
+                                                <span className="final-price">₹{pricing.finalPrice} onwards</span>
+                                            </>
+                                        ) : (
+                                            <span className="final-price">₹{pricing.originalPrice} onwards</span>
+                                        )}
+                                    </div>
+                                    <div className="model-explore-btn">Explore &rarr;</div>
+                                </div>
+                                {pricing.countdown && <CountdownTimer endDate={pricing.countdown} />}
+                                </div>
                             </div>
-                            </div>
-                        </div>
-                    </Link>
-                ))}
+                        </Link>
+                    )
+                })}
             </div>
         )}
     </div>
   );
+};
+
+const CountdownTimer = ({ endDate }: { endDate: string }) => {
+    const calculateTimeLeft = () => {
+        const difference = +new Date(endDate) - +new Date();
+        let timeLeft = {};
+
+        if (difference > 0) {
+            timeLeft = {
+                days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+                hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+                minutes: Math.floor((difference / 1000 / 60) % 60),
+            };
+        }
+
+        return timeLeft;
+    };
+
+    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setTimeLeft(calculateTimeLeft());
+        }, 1000);
+
+        return () => clearTimeout(timer);
+    });
+
+    return (
+        <div className="countdown-timer">
+            {timeLeft.days > 0 && <span>{timeLeft.days}d </span>}
+            {timeLeft.hours > 0 && <span>{timeLeft.hours}h </span>}
+            {timeLeft.minutes > 0 && <span>{timeLeft.minutes}m </span>}
+            <span>left</span>
+        </div>
+    );
 };
 
 export default ModelsPage;
