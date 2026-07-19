@@ -3778,3 +3778,127 @@ footer {
         grid-template-columns: repeat(3, 1fr);
     }
 }
+
+/* ===== Offer Banner and Countdown Timers ===== */
+
+/* Offer Banner on Model Detail Page */
+.offer-banner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 20px;
+    padding: 24px 32px;
+    border-radius: 16px;
+    margin-bottom: 48px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.15) 0%, rgba(201, 168, 76, 0.05) 100%);
+}
+
+.offer-banner-content h3 {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--text-primary);
+    margin: 0 0 4px;
+}
+
+.offer-banner-content p {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin: 0;
+}
+
+/* Countdown Timer on Model Detail Page */
+.countdown-timer-detail {
+    text-align: right;
+}
+
+.countdown-timer-detail h4 {
+    font-family: var(--font-body);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 10px;
+}
+
+.timer-boxes {
+    display: flex;
+    gap: 10px;
+}
+
+.timer-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 70px;
+    padding: 10px 8px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.timer-box span:first-child {
+    font-family: var(--font-heading);
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+}
+
+.timer-box span:last-child {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* Model Price on Detail Page */
+.model-price .original-price {
+    font-size: 1.5rem;
+    text-decoration: line-through;
+    margin-right: 1rem;
+    opacity: 0.6;
+    font-weight: 400;
+}
+
+.model-price .final-price {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: var(--gold);
+}
+
+/* Countdown Timer on Product Card (models page) */
+.countdown-timer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+    color: white;
+    text-align: center;
+    font-size: 0.8rem;
+    font-weight: bold;
+    padding: 18px 10px 8px;
+    border-radius: 0 0 22px 22px; /* Match card radius */
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+.model-card:hover .countdown-timer {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.countdown-timer span {
+    color: var(--gold);
+    margin: 0 2px;
+}

@@ -32,9 +32,14 @@ interface TimeLeft {
 const filterOptions = [
     { id: 'all', name: 'All Models', icon: 'fa-solid fa-motorcycle' },
     { id: 'classic', name: 'Classic', icon: 'fa-solid fa-chess-knight' },
-    { id: 'adventure', name: 'Adventure', icon: 'fa-solid fa-compass' },
-    { id: 'roadster', name: 'Roadster', icon: 'fa-solid fa-bolt' },
-    { id: 'cruiser', name: 'Cruiser', icon: 'fa-solid fa-road' },
+    { id: 'hunter', name: 'Hunter', icon: 'fa-solid fa-user-secret' },
+    { id: 'bullet', name: 'Bullet', icon: 'fa-solid fa-meteor' },
+    { id: 'himalayan', name: 'Himalayan', icon: 'fa-solid fa-mountain' },
+    { id: 'scram', name: 'Scram', icon: 'fa-solid fa-bolt' },
+    { id: 'meteor', name: 'Meteor', icon: 'fa-solid fa-rocket' },
+    { id: 'super-meteor', name: 'Super Meteor', icon: 'fa-solid fa-star' },
+    { id: 'continental-gt', name: 'Continental GT', icon: 'fa-solid fa-flag-checkered' },
+    { id: 'interceptor', name: 'Interceptor', icon: 'fa-solid fa-fighter-jet' },
 ];
 
 const ModelsPage = () => {
@@ -56,8 +61,8 @@ const ModelsPage = () => {
 
         const campaignsQuery = query(collection(db, "campaigns"));
         const campaignsSnapshot = await getDocs(campaignsQuery);
-        const campaigns = campaignsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as CampaignData);
-        setCampaigns(campaigns);
+        const campaignsData = campaignsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as CampaignData);
+        setCampaigns(campaignsData);
 
       } catch (error) {
           console.error("Error fetching data: ", error);
@@ -89,8 +94,7 @@ const ModelsPage = () => {
             <button 
               key={option.id} 
               onClick={() => setActiveFilter(option.id)} 
-              className={`filter-btn ${activeFilter === option.id ? 'active' : ''}`}>
-              <i className={`${option.icon} filter-btn-icon`}></i>
+              className={`filter-btn ${activeFilter === option.id ? 'active' : ''}`}>\n              <i className={`${option.icon} filter-btn-icon`}></i>
               <span>{option.name}</span>
             </button>
           ))}
@@ -109,8 +113,8 @@ const ModelsPage = () => {
                                 <div className="model-card-img">
                                     <img src={buildUrl(model.imageUrl)} alt={model.name} />
                                     {pricing.offerTitle && (
-                                        <div className="model-card-badge" style={{ backgroundColor: pricing.badge?.color }}>
-                                            {pricing.badge?.text}
+                                        <div className="model-card-badge" style={{ backgroundColor: pricing.badge?.color || 'var(--gold)' }}>
+                                            {pricing.badge?.text || 'Offer'}
                                         </div>
                                     )}
                                 </div>
@@ -122,17 +126,17 @@ const ModelsPage = () => {
                                     <div className="model-price">
                                         {pricing.finalPrice !== pricing.originalPrice ? (
                                             <>
-                                                <span className="original-price">₹{pricing.originalPrice}</span>
-                                                <span className="final-price">₹{pricing.finalPrice} onwards</span>
+                                                <span className="original-price" style={{fontSize: '0.9rem'}}>₹{pricing.originalPrice}</span>
+                                                <span className="final-price" style={{fontSize: '1.2rem'}}>₹{pricing.finalPrice}</span>
                                             </>
                                         ) : (
-                                            <span className="final-price">₹{pricing.originalPrice} onwards</span>
+                                            <span className="final-price" style={{fontSize: '1.2rem'}}>₹{pricing.originalPrice} onwards</span>
                                         )}
                                     </div>
                                     <div className="model-explore-btn">Explore &rarr;</div>
                                 </div>
-                                {pricing.countdown && <CountdownTimer endDate={pricing.countdown} />}
                                 </div>
+                                {pricing.countdown && <CountdownTimer endDate={pricing.countdown} />}
                             </div>
                         </Link>
                     )
@@ -169,12 +173,16 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
         return () => clearTimeout(timer);
     });
 
+    if (!timeLeft.days && !timeLeft.hours && !timeLeft.minutes) {
+        return null;
+    }
+
     return (
         <div className="countdown-timer">
             {(timeLeft.days || 0) > 0 && <span>{timeLeft.days}d </span>}
             {(timeLeft.hours || 0) > 0 && <span>{timeLeft.hours}h </span>}
             {(timeLeft.minutes || 0) > 0 && <span>{timeLeft.minutes}m </span>}
-            <span>left</span>
+            left!
         </div>
     );
 };

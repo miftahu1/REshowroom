@@ -52,8 +52,8 @@ const ModelDetailPage = () => {
 
                 const campaignsQuery = query(collection(db, "campaigns"));
                 const campaignsSnapshot = await getDocs(campaignsQuery);
-                const campaigns = campaignsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as CampaignData);
-                setCampaigns(campaigns);
+                const campaignsData = campaignsSnapshot.docs.map(doc => Object.assign({ id: doc.id }, doc.data()) as CampaignData);
+                setCampaigns(campaignsData);
 
                 setLoading(false);
             };
@@ -62,7 +62,7 @@ const ModelDetailPage = () => {
     }, [id]);
 
     if (loading) {
-        return <div className="loading-container"><div></div><div></div><div></div></div>;
+        return <div className="loading-container" style={{minHeight: '100vh', display: 'grid', placeContent: 'center'}}><div className="loading-spinner"></div></div>;
     }
 
     if (notFound) {
@@ -82,10 +82,10 @@ const ModelDetailPage = () => {
            </div>
 
             {pricing.offerTitle && (
-                <div className="offer-banner" style={{ backgroundColor: pricing.badge?.color || 'var(--gold)' }}>
+                <div className="offer-banner">
                     <div className="offer-banner-content">
                         <h3>{pricing.offerTitle}</h3>
-                        <p>Save up to {pricing.discountPercentage}%</p>
+                        <p>Save up to {pricing.discountPercentage}% with this limited-time offer!</p>
                     </div>
                     {pricing.countdown && <CountdownTimer endDate={pricing.countdown} />}
                 </div>
@@ -97,7 +97,7 @@ const ModelDetailPage = () => {
               </div>
               <div className="about-content">
                   <span className="section-tag">Model Details</span>
-                  <h2 className="section-title" id="about-title">{product.name}</h2>
+                  <h2 className="section-title" style={{textAlign: 'left'}}>{product.name}</h2>
                   <p>{product.engine}</p>
                     <div className="model-card-specs" style={{borderTop: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)', padding: '24px 0', marginBottom: '32px'}}>
                         {product.specs?.map((spec: any, index: number) => spec.value && spec.label && (
@@ -107,16 +107,16 @@ const ModelDetailPage = () => {
                             </div>
                         ))}
                     </div>
-                    <div className="model-price" style={{fontSize: '1.8rem', marginBottom: '32px'}}>
+                    <div className="model-price" style={{marginBottom: '32px'}}>
                          {pricing.finalPrice !== pricing.originalPrice ? (
-                            <>
-                                <span className="original-price" style={{textDecoration: 'line-through', marginRight: '1rem', opacity: 0.7}}>
-                                    ₹{pricing.originalPrice}
-                                </span>
+                            <div>
+                                <span className="original-price">₹{pricing.originalPrice}</span>
                                 <span className="final-price">₹{pricing.finalPrice} onwards</span>
-                            </>
+                            </div>
                         ) : (
-                            <span className="final-price">₹{pricing.originalPrice} onwards</span>
+                            <div>
+                                <span className="final-price">₹{pricing.originalPrice} onwards</span>
+                            </div>
                         )}
                     </div>
                   <a href="/#test-ride" className="btn-primary">
@@ -131,7 +131,7 @@ const ModelDetailPage = () => {
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
     const calculateTimeLeft = (): TimeLeft => {
         const difference = +new Date(endDate) - +new Date();
-        let timeLeft: TimeLeft = {};
+        let timeLeft: TimeLeft = { days: 0, hours: 0, minutes: 0, seconds: 0 };
 
         if (difference > 0) {
             timeLeft = {
@@ -155,17 +155,19 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
         return () => clearTimeout(timer);
     });
 
-    return (
+    const timerComponents = timeLeft.days !== undefined && timeLeft.hours !== undefined;
+
+    return timerComponents ? (
         <div className="countdown-timer-detail">
             <h4>Offer Ends In</h4>
             <div className="timer-boxes">
-                <div className="timer-box"><span>{timeLeft.days || 0}</span><span>Days</span></div>
-                <div className="timer-box"><span>{timeLeft.hours || 0}</span><span>Hours</span></div>
-                <div className="timer-box"><span>{timeLeft.minutes || 0}</span><span>Minutes</span></div>
-                 <div className="timer-box"><span>{timeLeft.seconds || 0}</span><span>Seconds</span></div>
+                <div className="timer-box"><span>{timeLeft.days}</span><span>Days</span></div>
+                <div className="timer-box"><span>{timeLeft.hours}</span><span>Hours</span></div>
+                <div className="timer-box"><span>{timeLeft.minutes}</span><span>Minutes</span></div>
+                 <div className="timer-box"><span>{timeLeft.seconds}</span><span>Seconds</span></div>
             </div>
         </div>
-    );
+    ) : null;
 };
 
 export default ModelDetailPage;
