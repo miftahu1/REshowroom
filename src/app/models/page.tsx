@@ -94,7 +94,8 @@ const ModelsPage = () => {
             <button 
               key={option.id} 
               onClick={() => setActiveFilter(option.id)} 
-              className={`filter-btn ${activeFilter === option.id ? 'active' : ''}`}>\n              <i className={`${option.icon} filter-btn-icon`}></i>
+              className={`filter-btn ${activeFilter === option.id ? 'active' : ''}`}>
+              <i className={`${option.icon} filter-btn-icon`}></i>
               <span>{option.name}</span>
             </button>
           ))}
@@ -179,10 +180,13 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
 
     return (
         <div className="countdown-timer">
-            {(timeLeft.days || 0) > 0 && <span>{timeLeft.days}d </span>}
-            {(timeLeft.hours || 0) > 0 && <span>{timeLeft.hours}h </span>}
-            {(timeLeft.minutes || 0) > 0 && <span>{timeLeft.minutes}m </span>}
-            left!
+            <i className="fa-regular fa-clock"></i>
+            <span>
+                {(timeLeft.days || 0) > 0 && <strong>{timeLeft.days}d </strong>}
+                {(timeLeft.hours || 0) > 0 && <strong>{timeLeft.hours}h </strong>}
+                {(timeLeft.minutes || 0) > 0 && <strong>{timeLeft.minutes}m </strong>}
+                left to grab this offer!
+            </span>
         </div>
     );
 };
