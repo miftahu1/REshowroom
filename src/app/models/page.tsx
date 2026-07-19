@@ -23,6 +23,12 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const db = getFirestore(app);
 
+interface TimeLeft {
+    days?: number;
+    hours?: number;
+    minutes?: number;
+}
+
 const filterOptions = [
     { id: 'all', name: 'All Models', icon: 'fa-solid fa-motorcycle' },
     { id: 'classic', name: 'Classic', icon: 'fa-solid fa-chess-knight' },
@@ -138,9 +144,9 @@ const ModelsPage = () => {
 };
 
 const CountdownTimer = ({ endDate }: { endDate: string }) => {
-    const calculateTimeLeft = () => {
+    const calculateTimeLeft = (): TimeLeft => {
         const difference = +new Date(endDate) - +new Date();
-        let timeLeft = {};
+        let timeLeft: TimeLeft = {};
 
         if (difference > 0) {
             timeLeft = {
@@ -153,7 +159,7 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
         return timeLeft;
     };
 
-    const [timeLeft, setTimeLeft] = useState(calculateTimeLeft());
+    const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft());
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -165,9 +171,9 @@ const CountdownTimer = ({ endDate }: { endDate: string }) => {
 
     return (
         <div className="countdown-timer">
-            {timeLeft.days > 0 && <span>{timeLeft.days}d </span>}
-            {timeLeft.hours > 0 && <span>{timeLeft.hours}h </span>}
-            {timeLeft.minutes > 0 && <span>{timeLeft.minutes}m </span>}
+            {(timeLeft.days || 0) > 0 && <span>{timeLeft.days}d </span>}
+            {(timeLeft.hours || 0) > 0 && <span>{timeLeft.hours}h </span>}
+            {(timeLeft.minutes || 0) > 0 && <span>{timeLeft.minutes}m </span>}
             <span>left</span>
         </div>
     );
