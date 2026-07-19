@@ -51,10 +51,10 @@ const BookingEditModal = ({ isOpen, onClose, booking, onSave }: { isOpen: boolea
                 </div>
                 <div className="modal-body">
                     <div className="form-grid" style={{ gridTemplateColumns: '1fr', gap: '16px' }}>
-                        <div className="form-group"><label>Name</label><input name="name" type="text" value={formState.name || ''} onChange={handleInputChange} /></div>
-                        <div className="form-group"><label>Phone</label><input name="phone" type="text" value={formState.phone || ''} onChange={handleInputChange} /></div>
-                        <div className="form-group"><label>Email</label><input name="email" type="email" value={formState.email || ''} onChange={handleInputChange} /></div>
-                        <div className="form-group"><label>Model</label><input name="model" type="text" value={formState.model || ''} onChange={handleInputChange} /></div>
+                        <div className="form-group"><label>Name</label><input name="name" type="text" value={formState.name || ''} onChange={handleInputChange} readOnly /></div>
+                        <div className="form-group"><label>Phone</label><input name="phone" type="text" value={formState.phone || ''} onChange={handleInputChange} readOnly /></div>
+                        <div className="form-group"><label>Email</label><input name="email" type="email" value={formState.email || ''} onChange={handleInputChange} readOnly /></div>
+                        <div className="form-group"><label>Model</label><input name="model" type="text" value={formState.model || ''} onChange={handleInputChange} readOnly /></div>
                         <div className="form-group"><label>Preferred Date</label><input name="date" type="date" value={formState.date || ''} onChange={handleInputChange} /></div>
                         <div className="form-group"><label>Manager's Note</label><textarea name="managerNote" value={formState.managerNote || ''} onChange={handleInputChange} placeholder="Add a note for the user (e.g., reason for date change)"></textarea></div>
                     </div>
@@ -258,7 +258,7 @@ const BookingsManagement = () => {
                             </span>
                         </td>
                         <td style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                             <button onClick={() => handleEditClick(booking)} className="btn-outline" style={{padding: '8px 12px', fontSize: '0.8rem'}}><i className="fa-solid fa-pencil"></i> Edit</button>
+                             <button onClick={() => handleEditClick(booking)} className="btn-outline" style={{padding: '8px 12px', fontSize: '0.8rem'}} disabled={booking.status && booking.status !== 'Pending'}><i className="fa-solid fa-pencil"></i> Edit</button>
                             {(!booking.status || booking.status === 'Pending') && (
                                 <>
                                     <button onClick={() => handleStatusChange(booking.id, 'Approved', booking)} className="btn-primary" style={{padding: '8px 12px', fontSize: '0.8rem', background: 'var(--green)', borderColor: 'var(--green)'}}><i className="fa-solid fa-check"></i> Approve</button>
