@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getFirestore, doc, getDoc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteField } from "firebase/firestore";
 import ImageUploader from '@/components/ImageUploader';
 import { CldImage } from 'next-cloudinary';
 
@@ -123,6 +123,7 @@ const Settings = () => {
     const handleUpdateBanner = async (e: React.FormEvent) => {
         e.preventDefault();
         setSuccessMessage('');
+        setMessage('');
         try {
             await setDoc(doc(db, 'settings', 'promoBanner'), promoBanner);
             setSuccessMessage('Promotional banner updated successfully!');
@@ -134,6 +135,7 @@ const Settings = () => {
 
     const handleHeroImageUpload = async (publicId: string) => {
         setSuccessMessage('');
+        setMessage('');
         try {
             await setDoc(doc(db, 'settings', 'homepage'), { heroImage: publicId });
             setHeroImage(publicId);
@@ -141,6 +143,21 @@ const Settings = () => {
         } catch (error) {
             console.error('Failed to update hero image:', error);
             setMessage('Failed to update hero image. Please try again.');
+        }
+    };
+    
+    const handleDeleteHeroImage = async () => {
+        if (!window.confirm('Are you sure you want to delete the hero image? This will revert to the default image.')) return;
+        setSuccessMessage('');
+        setMessage('');
+        try {
+            const docRef = doc(db, 'settings', 'homepage');
+            await updateDoc(docRef, { heroImage: deleteField() });
+            setHeroImage('');
+            setSuccessMessage('Hero image has been deleted. The site will now display the default image.');
+        } catch (error) {
+            console.error('Failed to delete hero image:', error);
+            setMessage('Failed to delete hero image. Please try again.');
         }
     };
 
@@ -173,17 +190,38 @@ const Settings = () => {
                 <div className="form-group" style={{marginTop: '20px'}}>
                     <label>Hero Section Bike Image</label>
                     <p className="text-muted" style={{fontSize: '0.9rem', marginTop: '-5px', marginBottom: '15px'}}>Recommended aspect ratio: 4:3. This image replaces the default bike image in the hero section.</p>
-                    {heroImage && (
-                        <div style={{marginBottom: '1rem'}}>
-                            <p style={{marginBottom: '0.5rem', fontSize: '0.8rem'}}>Current Image:</p>
-                            <CldImage src={heroImage} width="400" height="300" alt="Current Hero Image" style={{borderRadius: '8px'}} />
+                    {heroImage ? (
+                        <div style={{marginBottom: '1rem', position: 'relative', display: 'inline-block'}}>
+                             <CldImage src={heroImage} width="400" height="300" alt="Current Hero Image" style={{borderRadius: '8px'}} format="auto" quality="auto" />
+                             <button 
+                                onClick={handleDeleteHeroImage}
+                                style={{
+                                    position: 'absolute', 
+                                    top: '12px', 
+                                    right: '12px', 
+                                    background: 'rgba(0,0,0,0.6)', 
+                                    color: 'white', 
+                                    border: 'none', 
+                                    borderRadius: '50%', 
+                                    width: '32px', 
+                                    height: '32px', 
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                }}
+                                aria-label="Delete hero image"
+                             >
+                                 <i className="fa-solid fa-trash"></i>
+                             </button>
                         </div>
+                    ) : (
+                        <p style={{fontStyle: 'italic', color: 'var(--gray-400)'}}>No custom hero image set. Displaying default image.</p>
                     )}
                     <ImageUploader
                         onUploadSuccess={(url, publicId) => handleHeroImageUpload(publicId)}
                         aspectRatio={4/3}
                         folder="re_homepage"
-                        publicId={heroImage || undefined}
                     />
                 </div>
             </div>

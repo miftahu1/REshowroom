@@ -333,6 +333,8 @@ export default function Home() {
                         priority
                         width={500}
                         height={500}
+                        format="auto"
+                        quality="auto"
                     />
                 ) : (
                     <img id="hero-bike" src="/assets/images/hunter350.png" alt="Royal Enfield Hunter 350 — hero showcase" loading="eager" />
@@ -371,7 +373,7 @@ export default function Home() {
                  <Link key={product.id} href={`/model/${product.id}`} passHref>
                     <article className="model-card" role="article" id={product.name === 'Hunter 350' ? 'hunter-card' : undefined}>
                     <div className="model-card-img">
-                        <CldImage src={product.imageUrl} width="400" height="400" alt={`Royal Enfield ${product.name}`} loading="lazy" />
+                        <CldImage src={product.imageUrl} width="400" height="400" alt={`Royal Enfield ${product.name}`} loading="lazy" format="auto" quality="auto" />
                         {product.badge && <span className="model-card-badge">{product.badge}</span>}
                     </div>
                     <div className="model-card-body">
@@ -422,7 +424,7 @@ export default function Home() {
                 <div key={ev.id} className="home-event-card glass-card">
                   {ev.imageUrl && (
                     <div className="home-event-card-img">
-                       <CldImage src={ev.imageUrl} alt={ev.title} loading="lazy" width="400" height="200" style={{objectFit: 'cover'}} />
+                       <CldImage src={ev.imageUrl} alt={ev.title} loading="lazy" width="400" height="200" style={{objectFit: 'cover'}} format="auto" quality="auto" />
                     </div>
                   )}
                   <div className="home-event-card-body">
@@ -674,7 +676,7 @@ export default function Home() {
                 <div className="finance-partners-list">
                     {financeCompanies.map(c => (
                         <div key={c.id} className="partner-logo-card">
-                            <CldImage src={c.logo} alt={c.name} width={100} height={100} style={{objectFit: 'contain'}} />
+                            <CldImage src={c.logo} alt={c.name} width={100} height={100} style={{objectFit: 'contain'}} format="auto" quality="auto" />
                         </div>
                     ))}
                 </div>
