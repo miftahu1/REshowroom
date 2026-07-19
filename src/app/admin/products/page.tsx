@@ -227,7 +227,7 @@ const ProductModal = ({ isOpen, onClose, product, onSave }: { isOpen: boolean, o
                                         <label>Discount Value</label>
                                         <input type="number" name="value" value={formState.offer.value} onChange={handleOfferChange} placeholder="e.g., 10 or 15000" />
                                     </div>
-                                    <div className a="form-group">
+                                    <div className="form-group">
                                         <label>Offer Badge Color</label>
                                         <input type="color" name="badgeColor" value={formState.offer.badgeColor} onChange={handleOfferChange} />
                                     </div>
