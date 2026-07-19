@@ -3918,6 +3918,17 @@ footer {
 
 /* ===== Home Page Campaign Banner ===== */
 
+@keyframes fade-slide-down {
+    from{
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to{
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .campaign-banner-home {
     position: relative;
     z-index: 10; /* Ensures it's above the hero content */
@@ -3937,6 +3948,7 @@ footer {
     backdrop-filter: blur(15px);
     -webkit-backdrop-filter: blur(15px);
     overflow: hidden; /* For pseudo-elements */
+    animation: fade-slide-down 0.75s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 /* Glitter effect */

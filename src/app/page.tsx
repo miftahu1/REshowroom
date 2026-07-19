@@ -317,7 +317,6 @@ export default function Home() {
 
   return (
     <div ref={main}>
-      {activeCampaign && <CampaignBanner campaign={activeCampaign} />}
       {showPromoBanner && <PromoBanner banner={promoBanner} onClose={() => setShowPromoBanner(false)} />}
       <ReceiptLookup isOpen={isReceiptModalOpen} onClose={() => setReceiptModalOpen(false)} />
       <section id="hero" aria-label="Hero">
@@ -402,6 +401,7 @@ export default function Home() {
           <h2 className="section-title" id="models-title">Featured Models</h2>
           <p className="section-subtitle">Each machine handcrafted to inspire — discover the motorcycle that speaks your language.</p>
         </div>
+        {activeCampaign && <CampaignBanner campaign={activeCampaign} />}
         <div className="models-grid">
             {products.map(product => (
                  <Link key={product.id} href={`/model/${product.id}`} passHref>
